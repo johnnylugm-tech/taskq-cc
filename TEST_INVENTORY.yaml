@@ -1,20 +1,1201 @@
-# TEST_INVENTORY.yaml — P1 Naming Authority
-# Maps every FR to expected test function names. These are the AUTHORITATIVE names
-# that derive_test_cases.md preserves in TEST_SPEC.md (P2 single source of truth).
-# Specified per FR and per test category (unit/integration/cross_cutting).
-# If no name is specified for a category, derive_test_cases.md fills the gap with
-# names derived via the 7-Question Protocol.
-format_version: "1.1"
+# TEST_INVENTORY.yaml — P1 Test Case Inventory for taskq-api (Round 1)
+# Maps every AC ID enumerated in 01-requirements/TRACEABILITY_MATRIX.md §2 (FR ↔ SRS Mapping)
+# to a separate tc_id entry. Each AC = one tc (no sub-letter range collapse allowed).
+# Downstream consumers: 02-architecture/TEST_SPEC.md (derive_test_cases.md), 03-development/tests/*.
+# Naming convention: tc_id = TC-<TYPE><NN>-<MM>; test_function = test_ac_<n>_<m>_<slug>.
+# Layer taxonomy: integration | unit | gates | perf | smoke.
+# Total enumerated = by_fr_total = by_layer_total = total_test_cases (no arithmetic drift).
 
-fr_tests:
-  FR-01:
-    unit:
-      - test_fr01_example_unit
+test_inventory:
+  format_version: "2.0"
+  generated_by: "Agent A — Requirements Engineer (Sub-Task 4/4 Round 1)"
+  generated_date: "2026-08-19"
+  source_matrix: "01-requirements/TRACEABILITY_MATRIX.md"
+  source_srs: "01-requirements/SRS.md"
+  source_spec: "SPEC.md v1.0.0 (2026-07-30)"
+  scope_total: "10 FR + 12 NFR = 22 requirements; 92 enumerated AC IDs (FR 47 + NFR 45)"
+
+  naming_convention:
+    tc_id_pattern: "TC-<TYPE><NN>-<MM>"
+    tc_id_examples: ["TC-FR01-01", "TC-FR10-05", "TC-NFR01-01", "TC-NFR12-02"]
+    test_function_pattern: "test_ac_<n>_<m>_<slug>"
+    test_function_examples: ["test_ac_1_1_post_creates_task_returns_201", "test_ac_n1_2_list_p95_below_80ms"]
+    layer_values: [integration, unit, gates, perf, smoke]
+
+  tests:
+
+    # ===== FR-01: 任務資源 CRUD API (7 ACs; all integration) =====
+    - tc_id: TC-FR01-01
+      fr: FR-01
+      ac_refs: [AC-1.1]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr01_tasks.py"
+      test_function: "test_ac_1_1_post_creates_task_returns_201"
+      title: "POST /v1/tasks with valid write-scope key and valid body returns 201 + new task id"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR01-02
+      fr: FR-01
+      ac_refs: [AC-1.2]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr01_tasks.py"
+      test_function: "test_ac_1_2_invalid_payload_returns_422_problem_json"
+      title: "POST /v1/tasks with body failing any FR-01 validation rule returns 422 + problem+json"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR01-03
+      fr: FR-01
+      ac_refs: [AC-1.3]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr01_tasks.py"
+      test_function: "test_ac_1_3_get_task_returns_columns_or_404"
+      title: "GET /v1/tasks/{id} with read-scope key returns all columns; unknown id returns 404 + problem+json"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR01-04
+      fr: FR-01
+      ac_refs: [AC-1.4]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr01_tasks.py"
+      test_function: "test_ac_1_4_list_pagination_default_max_200_over_cap_returns_422"
+      title: "GET /v1/tasks cursor-paginated; default limit=50, max=200; limit>200 returns 422"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR01-05
+      fr: FR-01
+      ac_refs: [AC-1.5]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr01_tasks.py"
+      test_function: "test_ac_1_5_list_query_supports_status_cursor_no_offset"
+      title: "GET /v1/tasks supports ?status= and ?cursor=; offset-based pagination not accepted"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR01-06
+      fr: FR-01
+      ac_refs: [AC-1.6]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr01_tasks.py"
+      test_function: "test_ac_1_6_delete_removes_task_and_result_row_same_transaction"
+      title: "DELETE /v1/tasks/{id} with admin-scope key removes task and linked task_results in same transaction"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR01-07
+      fr: FR-01
+      ac_refs: [AC-1.7]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr06_n_plus_one.py"
+      test_function: "test_ac_1_7_list_sql_count_constant_regardless_of_rows"
+      title: "List endpoint SQL statement count is constant regardless of rows returned (N+1 guard)"
+      cross_ref_frs: [FR-06]
+      cross_ref_nfrs: [NFR-01, NFR-10]
+      status: DRAFT
+
+    # ===== FR-02: 任務執行端點 (5 ACs; all integration) =====
+    - tc_id: TC-FR02-01
+      fr: FR-02
+      ac_refs: [AC-2.1]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr02_run.py"
+      test_function: "test_ac_2_1_post_run_returns_202_and_runs_to_terminal_state"
+      title: "POST /v1/tasks/{id}/run with write-scope key returns 202 with run_id; task transitions to terminal state"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR02-02
+      fr: FR-02
+      ac_refs: [AC-2.2]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr02_run.py"
+      test_function: "test_ac_2_2_runner_uses_subprocess_exec_no_shell_true"
+      title: "Runner invokes asyncio.create_subprocess_exec(*shlex.split(command)); never shell=True; grep returns zero hits"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR02-03
+      fr: FR-02
+      ac_refs: [AC-2.3]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr02_run.py"
+      test_function: "test_ac_2_3_timeout_kills_child_no_orphans_terminal_state_timeout"
+      title: "Task exceeding TASKQ_TASK_TIMEOUT is killed (process.kill + await wait); no orphan children; final state=timeout"
+      cross_ref_frs: [FR-08]
+      cross_ref_nfrs: [NFR-03, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR02-04
+      fr: FR-02
+      ac_refs: [AC-2.4]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr02_run.py"
+      test_function: "test_ac_2_4_result_row_carries_five_columns"
+      title: "After run, task_results row carries exit_code, stdout_tail, stderr_tail, duration_ms, finished_at"
+      cross_ref_frs: [FR-07]
+      cross_ref_nfrs: [NFR-04, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR02-05
+      fr: FR-02
+      ac_refs: [AC-2.5]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr02_run.py"
+      test_function: "test_ac_2_5_get_runs_returns_history_newest_first"
+      title: "GET /v1/tasks/{id}/runs with read-scope key returns run history ordered newest-first"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+
+    # ===== FR-03: API Key 認證 (5 integration + 1 unit) =====
+    - tc_id: TC-FR03-01
+      fr: FR-03
+      ac_refs: [AC-3.1]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr03_auth.py"
+      test_function: "test_ac_3_1_v1_endpoint_without_api_key_returns_401_problem_json"
+      title: "Request to any /v1/* endpoint without X-API-Key returns 401 + problem+json (across ≥3 endpoints)"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR03-02
+      fr: FR-03
+      ac_refs: [AC-3.2]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr03_auth.py"
+      test_function: "test_ac_3_2_api_keys_table_stores_sha256_hash_no_plaintext"
+      title: "api_keys.key_hash is 64-char lowercase hex SHA-256 digest; no plaintext persisted"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02, NFR-04, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR03-03
+      fr: FR-03
+      ac_refs: [AC-3.3]
+      layer: unit
+      test_file: "03-development/tests/unit/test_auth_hashing.py"
+      test_function: "test_ac_3_3_hmac_compare_digest_successful_and_constant_time_for_wrong_key"
+      title: "Key comparison uses hmac.compare_digest; successful + constant-time compare for wrong key"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02]
+      status: DRAFT
+    - tc_id: TC-FR03-04
+      fr: FR-03
+      ac_refs: [AC-3.4]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr03_auth.py"
+      test_function: "test_ac_3_4_key_create_cli_prints_plaintext_once_no_persistent_store"
+      title: "python -m taskq_api key create --scope <scope> prints plaintext exactly once; not written to any persistent store"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02, NFR-04, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR03-05
+      fr: FR-03
+      ac_refs: [AC-3.5]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr03_auth.py"
+      test_function: "test_ac_3_5_revoked_key_returns_401_even_if_hash_matches"
+      title: "Key with revoked_at set is treated as invalid even if hash would otherwise match (401)"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR03-06
+      fr: FR-03
+      ac_refs: [AC-3.6]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr03_healthz_no_auth.py"
+      test_function: "test_ac_3_6_healthz_readyz_reachable_without_api_key"
+      title: "/healthz and /readyz reachable without X-API-Key and return their non-401 responses"
+      cross_ref_frs: [FR-09]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+
+    # ===== FR-04: Scope 授權 (2 integration + 1 unit) =====
+    - tc_id: TC-FR04-01
+      fr: FR-04
+      ac_refs: [AC-4.1]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr04_scope.py"
+      test_function: "test_ac_4_1_insufficient_scope_returns_403_problem_json"
+      title: "Request with insufficient scope returns 403 + problem+json (write key vs admin-only DELETE)"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR04-02
+      fr: FR-04
+      ac_refs: [AC-4.2]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr04_scope.py"
+      test_function: "test_ac_4_2_403_body_does_not_reveal_resource_existence"
+      title: "403 body does not reveal whether the resource (task) exists — existing vs non-existent id bodies indistinguishable"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR04-03
+      fr: FR-04
+      ac_refs: [AC-4.3]
+      layer: unit
+      test_file: "03-development/tests/unit/test_route_dependency_introspection.py"
+      test_function: "test_ac_4_3_all_v1_routes_resolve_through_single_auth_dependency"
+      title: "All /v1/* routes resolve through a single FastAPI dependency; static check enumerates route deps and asserts auth dep on every route"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+
+    # ===== FR-05: 流量控制 (2 integration + 1 unit) =====
+    - tc_id: TC-FR05-01
+      fr: FR-05
+      ac_refs: [AC-5.1]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr05_ratelimit.py"
+      test_function: "test_ac_5_1_burst_over_capacity_returns_429_with_retry_after"
+      title: "Burst requests beyond TASKQ_RATE_BURST against same key return 429 + problem+json + Retry-After header (non-negative int)"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR05-02
+      fr: FR-05
+      ac_refs: [AC-5.2]
+      layer: unit
+      test_file: "03-development/tests/unit/test_ratelimit_lock.py"
+      test_function: "test_ac_5_2_bucket_update_uses_row_level_lock_single_session"
+      title: "Bucket updates take a row-level lock and run inside a single Session/transaction"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02]
+      status: DRAFT
+    - tc_id: TC-FR05-03
+      fr: FR-05
+      ac_refs: [AC-5.3]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr05_ratelimit.py"
+      test_function: "test_ac_5_3_healthz_readyz_exempt_from_rate_limit"
+      title: "/healthz and /readyz are not counted against the bucket (100 health requests with low-burst bucket → no 429)"
+      cross_ref_frs: [FR-09]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+
+    # ===== FR-06: 持久化層與交易邊界 (3 integration + 2 unit) =====
+    - tc_id: TC-FR06-01
+      fr: FR-06
+      ac_refs: [AC-6.1]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr06_pool.py"
+      test_function: "test_ac_6_1_service_api_layers_have_no_sqlalchemy_imports"
+      title: "service/ and api/ layers contain no sqlalchemy imports; .importlinter forbidden contract enforces"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-06, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR06-02
+      fr: FR-06
+      ac_refs: [AC-6.2]
+      layer: unit
+      test_file: "03-development/tests/unit/test_session_context_manager.py"
+      test_function: "test_ac_6_2_session_context_manager_rollback_on_raise_single_commit_on_success"
+      title: "Session lifetime is wrapped in context manager; raise→rollback; success→exactly one commit"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-03]
+      status: DRAFT
+    - tc_id: TC-FR06-03
+      fr: FR-06
+      ac_refs: [AC-6.3]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr06_pool.py"
+      test_function: "test_ac_6_3_repository_wide_grep_sql_concat_zero_matches"
+      title: "Repository-wide grep for SQL string-concat patterns (f-string/%/+) returns zero matches in 03-development/src/"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR06-04
+      fr: FR-06
+      ac_refs: [AC-6.4]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr06_n_plus_one.py"
+      test_function: "test_ac_6_4_selectinload_joinedload_constant_sql_count_for_10_100_1000_rows"
+      title: "Relationship queries on list endpoint use selectinload/joinedload; SQL count constant for 10/100/1000 rows"
+      cross_ref_frs: [FR-01]
+      cross_ref_nfrs: [NFR-01, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR06-05
+      fr: FR-06
+      ac_refs: [AC-6.5]
+      layer: unit
+      test_file: "03-development/tests/unit/test_session_context_manager.py"
+      test_function: "test_ac_6_5_engine_pool_size_and_pre_ping_configured"
+      title: "SQLAlchemy engine configured with pool_size=TASKQ_DB_POOL_SIZE and pool_pre_ping=True"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-03]
+      status: DRAFT
+
+    # ===== FR-07: Schema Migration (5 ACs; all integration) =====
+    - tc_id: TC-FR07-01
+      fr: FR-07
+      ac_refs: [AC-7.1]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr07_migrations.py"
+      test_function: "test_ac_7_1_alembic_upgrade_head_and_downgrade_base_exit_zero"
+      title: "alembic upgrade head and alembic downgrade base both exit 0"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-09, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR07-02
+      fr: FR-07
+      ac_refs: [AC-7.2]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr07_migrations.py"
+      test_function: "test_ac_7_2_round_trip_byte_identical_columns_real_sqlite"
+      title: "upgrade head → write sample → downgrade -1 → upgrade head leaves every column byte-identical (v3 focus; real SQLite file)"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-09, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR07-03
+      fr: FR-07
+      ac_refs: [AC-7.3]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr07_migrations.py"
+      test_function: "test_ac_7_3_v3_revision_has_real_downgrade_no_drop_table_shortcut"
+      title: "v3 revision contains real downgrade() reverse-migrating data; no op.execute(DROP TABLE ...) shortcut"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-09, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR07-04
+      fr: FR-07
+      ac_refs: [AC-7.4]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr07_migrations.py"
+      test_function: "test_ac_7_4_offline_sql_generation_expected_tables_and_columns"
+      title: "Migration files covered by tests; offline SQL for each revision contains expected tables/columns in expected order"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-09, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR07-05
+      fr: FR-07
+      ac_refs: [AC-7.5]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr07_migrations.py"
+      test_function: "test_ac_7_5_failing_migration_rolls_back_readyz_returns_503"
+      title: "Failing migration rolls back; DB stays at prior revision; /readyz returns 503 with failure detail"
+      cross_ref_frs: [FR-09]
+      cross_ref_nfrs: [NFR-03, NFR-09, NFR-10]
+      status: DRAFT
+
+    # ===== FR-08: 非同步執行器 (4 integration + 1 unit) =====
+    - tc_id: TC-FR08-01
+      fr: FR-08
+      ac_refs: [AC-8.1]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr08_async_runner.py"
+      test_function: "test_ac_8_1_over_cap_tasks_are_queued_no_unbounded_coroutines"
+      title: "Tasks beyond TASKQ_MAX_CONCURRENT are queued, not spawned ad-hoc; ≤ cap+1 subprocess_exec calls live at any moment"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR08-02
+      fr: FR-08
+      ac_refs: [AC-8.2]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr08_async_runner.py"
+      test_function: "test_ac_8_2_timed_out_task_killed_and_awaited_no_orphans"
+      title: "Timed-out task has child process.kill-ed and await process.wait-ed; no orphan child processes after test"
+      cross_ref_frs: [FR-02]
+      cross_ref_nfrs: [NFR-03, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR08-03
+      fr: FR-08
+      ac_refs: [AC-8.3]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr08_graceful_drain.py"
+      test_function: "test_ac_8_3_graceful_drain_then_interrupt_remaining_no_orphans"
+      title: "Shutdown: in-flight tasks get TASKQ_DRAIN_TIMEOUT to complete; tasks still running after drain marked interrupted; no orphans"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-03, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR08-04
+      fr: FR-08
+      ac_refs: [AC-8.4]
+      layer: unit
+      test_file: "03-development/tests/unit/test_runner_cancellation.py"
+      test_function: "test_ac_8_4_cancelled_error_propagates_not_swallowed_by_except_exception"
+      title: "asyncio.CancelledError inside task handler propagates out (not caught by except Exception); injected and surfaces"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-03]
+      status: DRAFT
+    - tc_id: TC-FR08-05
+      fr: FR-08
+      ac_refs: [AC-8.5]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr08_async_runner.py"
+      test_function: "test_ac_8_5_runner_constructs_taskgroup_not_bare_gather_or_fire_and_forget"
+      title: "Background execution coordinated by asyncio.TaskGroup; AST/unit test asserts TaskGroup (not bare gather / asyncio.create_task)"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+
+    # ===== FR-09: 健康檢查與可觀測性 (3 ACs; all integration) =====
+    - tc_id: TC-FR09-01
+      fr: FR-09
+      ac_refs: [AC-9.1]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr09_healthz.py"
+      test_function: "test_ac_9_1_healthz_returns_200_status_ok_no_api_key_required"
+      title: "GET /healthz returns 200 {\"status\":\"ok\"} while process alive; no X-API-Key required"
+      cross_ref_frs: [FR-03]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR09-02
+      fr: FR-09
+      ac_refs: [AC-9.2]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr09_readyz_db_down.py"
+      test_function: "test_ac_9_2_readyz_db_unreachable_returns_503_with_db_detail"
+      title: "GET /readyz returns 200 when DB reachable and alembic current==head; returns 503 with detail naming failing side otherwise (DB path)"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-03, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR09-03
+      fr: FR-09
+      ac_refs: [AC-9.3]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr09_metrics.py"
+      test_function: "test_ac_9_3_metrics_admin_returns_counts_latency_denial_non_admin_403"
+      title: "GET /v1/metrics with admin-scope key returns task counts, latency percentiles, rate-limit denial counts; non-admin returns 403"
+      cross_ref_frs: [FR-04]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+
+    # ===== FR-10: 錯誤契約 RFC 7807 (4 integration + 1 unit) =====
+    - tc_id: TC-FR10-01
+      fr: FR-10
+      ac_refs: [AC-10.1]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr10_problem_json.py"
+      test_function: "test_ac_10_1_non_2xx_responses_carry_problem_json_six_fields"
+      title: "Every non-2xx response carries Content-Type: application/problem+json + body with type/title/status/detail/instance/correlation_id"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR10-02
+      fr: FR-10
+      ac_refs: [AC-10.2]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr10_problem_json.py"
+      test_function: "test_ac_10_2_500_detail_has_no_stack_sql_or_paths"
+      title: "detail field contains no stack trace, no SQL fragment, no absolute file path; triggered-500 test asserts absence"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-02, NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR10-03
+      fr: FR-10
+      ac_refs: [AC-10.3]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr10_correlation_id.py"
+      test_function: "test_ac_10_3_x_correlation_id_header_matches_log"
+      title: "Every non-2xx response carries X-Correlation-Id header that also appears in server log for same request"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR10-04
+      fr: FR-10
+      ac_refs: [AC-10.4]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr10_problem_json.py"
+      test_function: "test_ac_10_4_status_code_sweep_eight_codes_each_triggered"
+      title: "Status codes 422/401/403/404/409/429/503/500 each have at least one integration test that triggers them"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-FR10-05
+      fr: FR-10
+      ac_refs: [AC-10.5]
+      layer: unit
+      test_file: "03-development/tests/unit/test_fr10_cancelled_error.py"
+      test_function: "test_ac_10_5_cancelled_error_propagates_not_500"
+      title: "asyncio.CancelledError does not become 500; it propagates upward; injected test asserts no 500"
+      cross_ref_frs: [FR-08]
+      cross_ref_nfrs: [NFR-03]
+      status: DRAFT
+
+    # ===== NFR-01: 效能與查詢效率 (3 ACs; perf) =====
+    - tc_id: TC-NFR01-01
+      fr: null
+      ac_refs: [AC-N1.1]
+      layer: perf
+      test_file: "03-development/tests/perf/test_n1_latency.py"
+      test_function: "test_ac_n1_1_get_task_p95_below_30ms_at_10k_rows"
+      title: "GET /v1/tasks/{id} p95 latency at 10,000 rows below 30 ms (pytest-benchmark)"
+      cross_ref_frs: [FR-01]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-NFR01-02
+      fr: null
+      ac_refs: [AC-N1.2]
+      layer: perf
+      test_file: "03-development/tests/perf/test_n1_latency.py"
+      test_function: "test_ac_n1_2_list_p95_below_80ms_at_10k_rows"
+      title: "GET /v1/tasks?limit=50 p95 latency at 10,000 rows below 80 ms (pytest-benchmark)"
+      cross_ref_frs: [FR-01]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-NFR01-03
+      fr: null
+      ac_refs: [AC-N1.3]
+      layer: perf
+      test_file: "03-development/tests/perf/test_n1_sql_count.py"
+      test_function: "test_ac_n1_3_list_sql_count_constant_at_10_100_1000_rows"
+      title: "List endpoint SQL statement count is constant regardless of returned row count (N+1 guard; 10/100/1000 rows)"
+      cross_ref_frs: [FR-01, FR-06]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+
+    # ===== NFR-02: HTTP 與資料層安全 (7 ACs; gates) =====
+    - tc_id: TC-NFR02-01
+      fr: null
+      ac_refs: [AC-N2.1]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n2_grep_gates.py"
+      test_function: "test_ac_n2_1_grep_shell_true_eval_exec_zero_hits"
+      title: "Repository-wide grep for shell=True, eval(, exec( over 03-development/src/ returns zero hits"
+      cross_ref_frs: [FR-02]
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR02-02
+      fr: null
+      ac_refs: [AC-N2.2]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n2_grep_gates.py"
+      test_function: "test_ac_n2_2_grep_sql_string_concat_zero_hits"
+      title: "Repository-wide scan for SQL string-concat patterns (f-string/%/+) in 03-development/src/ returns zero hits"
+      cross_ref_frs: [FR-06]
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR02-03
+      fr: null
+      ac_refs: [AC-N2.3]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n2_grep_gates.py"
+      test_function: "test_ac_n2_3_api_keys_sha256_hmac_constant_time_no_plaintext"
+      title: "API keys stored as SHA-256 hashes and compared with hmac.compare_digest; api_keys.key_hash 64-char lowercase hex; no plaintext"
+      cross_ref_frs: [FR-03]
+      cross_ref_nfrs: [NFR-04]
+      status: DRAFT
+    - tc_id: TC-NFR02-04
+      fr: null
+      ac_refs: [AC-N2.4]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n2_grep_gates.py"
+      test_function: "test_ac_n2_4_403_bodies_indistinguishable_for_existing_and_nonexistent_ids"
+      title: "403 responses do not reveal whether the resource exists; bodies for existing/non-existent id indistinguishable on existence axis"
+      cross_ref_frs: [FR-04]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-NFR02-05
+      fr: null
+      ac_refs: [AC-N2.5]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n2_grep_gates.py"
+      test_function: "test_ac_n2_5_500_error_body_no_stack_sql_or_paths"
+      title: "Error response bodies do not contain stack traces, SQL fragments, or file paths; triggered-500 test asserts absence"
+      cross_ref_frs: [FR-10]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-NFR02-06
+      fr: null
+      ac_refs: [AC-N2.6]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n2_grep_gates.py"
+      test_function: "test_ac_n2_6_cors_deny_by_default_origin_not_allowlisted"
+      title: "CORS denies all origins by default; TASKQ_CORS_ORIGINS is the only allowlist; non-allowlisted Origin receives no CORS allow"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR02-07
+      fr: null
+      ac_refs: [AC-N2.7]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n2_grep_gates.py"
+      test_function: "test_ac_n2_7_bandit_r_zero_high_zero_medium"
+      title: "bandit -r 03-development/src/ reports 0 HIGH and 0 MEDIUM findings"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+
+    # ===== NFR-03: 錯誤處理、交易與非同步正確性 (3 integration + 2 unit + 1 gates) =====
+    - tc_id: TC-NFR03-01
+      fr: null
+      ac_refs: [AC-N3.1]
+      layer: unit
+      test_file: "03-development/tests/unit/test_n3_session_cm.py"
+      test_function: "test_ac_n3_1_transaction_context_manager_rollback_or_single_commit"
+      title: "Every request's transaction wrapped in context manager; raise→rollback; success→exactly one commit"
+      cross_ref_frs: [FR-06]
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR03-02
+      fr: null
+      ac_refs: [AC-N3.2]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n3_except_swallow.py"
+      test_function: "test_ac_n3_2_no_bare_except_or_except_exception_pass"
+      title: "Codebase contains no bare except: and no except Exception: pass; static/grep gate returns zero hits"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR03-03
+      fr: null
+      ac_refs: [AC-N3.3]
+      layer: unit
+      test_file: "03-development/tests/unit/test_n3_except_swallow.py"
+      test_function: "test_ac_n3_3_cancelled_error_propagates_in_task_handler"
+      title: "asyncio.CancelledError raised inside task handler propagates upward; unit test injects CancelledError and asserts it surfaces"
+      cross_ref_frs: [FR-08]
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR03-04
+      fr: null
+      ac_refs: [AC-N3.4]
+      layer: integration
+      test_file: "03-development/tests/integration/test_n3_readyz_db.py"
+      test_function: "test_ac_n3_4_db_failure_causes_readyz_503_with_db_detail_no_retry_loop"
+      title: "Database connection failure causes /readyz to return 503 with detail naming the DB; no silent infinite-retry loop"
+      cross_ref_frs: [FR-09]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-NFR03-05
+      fr: null
+      ac_refs: [AC-N3.5]
+      layer: integration
+      test_file: "03-development/tests/integration/test_n3_orphan_pid.py"
+      test_function: "test_ac_n3_5_timeout_kills_child_awaits_exit_no_orphan_pid"
+      title: "Timed-out task kills child process and awaits its exit; no orphan child PID remains after the test"
+      cross_ref_frs: [FR-02, FR-08]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-NFR03-06
+      fr: null
+      ac_refs: [AC-N3.6]
+      layer: integration
+      test_file: "03-development/tests/integration/test_n3_migration_rollback.py"
+      test_function: "test_ac_n3_6_failed_migration_rolls_back_readyz_503"
+      title: "Failed migration rolls back transaction; DB stays at prior revision; /readyz returns 503 with failure detail"
+      cross_ref_frs: [FR-07, FR-09]
+      cross_ref_nfrs: [NFR-09, NFR-10]
+      status: DRAFT
+
+    # ===== NFR-04: 敏感資料遮蔽 (2 integration + 1 unit) =====
+    - tc_id: TC-NFR04-01
+      fr: null
+      ac_refs: [AC-N4.1]
+      layer: unit
+      test_file: "03-development/tests/unit/test_n4_redaction.py"
+      test_function: "test_ac_n4_1_redaction_helper_replaces_sk_token_bearer_postgres"
+      title: "stdout_tail/stderr_tail/logs/error bodies redacted before write/emit; SPEC regex patterns replaced with [REDACTED]"
+      cross_ref_frs: [FR-02]
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR04-02
+      fr: null
+      ac_refs: [AC-N4.2]
+      layer: integration
+      test_file: "03-development/tests/integration/test_n4_db_url_password.py"
+      test_function: "test_ac_n4_2_db_url_password_absent_from_logs_errors_metrics"
+      title: "Database connection string (incl. password) does not appear in any log, error message, or /v1/metrics response"
+      cross_ref_frs: [FR-06]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-NFR04-03
+      fr: null
+      ac_refs: [AC-N4.3]
+      layer: integration
+      test_file: "03-development/tests/integration/test_n4_key_plaintext_once.py"
+      test_function: "test_ac_n4_3_key_plaintext_printed_once_not_persisted_to_logs_db_metrics"
+      title: "API key plaintext printed exactly once at key create time; not written to any persistent store (logs, DB, metrics)"
+      cross_ref_frs: [FR-03]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+
+    # ===== NFR-05: 文件覆蓋 (1 integration + 1 unit) =====
+    - tc_id: TC-NFR05-01
+      fr: null
+      ac_refs: [AC-N5.1]
+      layer: unit
+      test_file: "03-development/tests/unit/test_n5_docstrings.py"
+      test_function: "test_ac_n5_1_public_functions_classes_have_fr_or_nfr_tagged_docstrings"
+      title: "100% of public functions/classes carry docstring containing [FR-XX] or [NFR-XX]; ast-docstrings reports 0 missing-public-docstring"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR05-02
+      fr: null
+      ac_refs: [AC-N5.2]
+      layer: integration
+      test_file: "03-development/tests/integration/test_n5_openapi_shape.py"
+      test_function: "test_ac_n5_2_openapi_json_has_summary_and_description_for_every_route"
+      title: "Every FastAPI endpoint appears in /openapi.json with both summary and description; integration test asserts field presence"
+      cross_ref_frs: []
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+
+    # ===== NFR-06: 架構分層契約 (4 ACs; all gates) =====
+    - tc_id: TC-NFR06-01
+      fr: null
+      ac_refs: [AC-N6.1]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n6_importlinter.py"
+      test_function: "test_ac_n6_1_importlinter_exists_declares_layers_contract"
+      title: ".importlinter exists at project root and declares layers contract api > service > repository > models; config/errors independence"
+      cross_ref_frs: [FR-06]
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR06-02
+      fr: null
+      ac_refs: [AC-N6.2]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n6_importlinter.py"
+      test_function: "test_ac_n6_2_importlinter_forbidden_sqlalchemy_outside_repository"
+      title: ".importlinter declares forbidden contract banning sqlalchemy imports outside repository/; negative test rejects with non-zero exit"
+      cross_ref_frs: [FR-06]
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR06-03
+      fr: null
+      ac_refs: [AC-N6.3]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n6_importlinter.py"
+      test_function: "test_ac_n6_3_lint_imports_ci_exits_zero"
+      title: "lint-imports runs in CI and exits 0"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR06-04
+      fr: null
+      ac_refs: [AC-N6.4]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n6_importlinter.py"
+      test_function: "test_ac_n6_4_no_degradation_no_ignore_imports_or_downgrade"
+      title: "No degradation permitted: deleting .importlinter, ignore_imports wildcard, or downgrading the contract to obtain pass is rejected"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+
+    # ===== NFR-07: 依賴與授權合規 (4 ACs; all unit) =====
+    - tc_id: TC-NFR07-01
+      fr: null
+      ac_refs: [AC-N7.1]
+      layer: unit
+      test_file: "03-development/tests/unit/test_n7_lock_pin.py"
+      test_function: "test_ac_n7_1_requirements_pinned_with_equals_and_lock_present"
+      title: "Every runtime dependency in requirements.txt pinned with ==; transitive fully locked in requirements.lock"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR07-02
+      fr: null
+      ac_refs: [AC-N7.2]
+      layer: unit
+      test_file: "03-development/tests/unit/test_n7_license_allowlist.py"
+      test_function: "test_ac_n7_2_all_deps_in_mit_bsd_apache_psf_allowlist"
+      title: "Allowed license set is MIT/BSD-2-Clause/BSD-3-Clause/Apache-2.0/PSF; every dependency (direct + transitive) in this set"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR07-03
+      fr: null
+      ac_refs: [AC-N7.3]
+      layer: unit
+      test_file: "03-development/tests/unit/test_n7_license_allowlist.py"
+      test_function: "test_ac_n7_3_license_scan_covers_full_tree_with_system"
+      title: "License scan covers the entire dependency tree (direct + transitive), not only first-party requirements.txt"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR07-04
+      fr: null
+      ac_refs: [AC-N7.4]
+      layer: unit
+      test_file: "03-development/tests/unit/test_n7_sbom_shape.py"
+      test_function: "test_ac_n7_4_sbom_json_one_record_per_dep_with_required_fields"
+      title: "08-config/SBOM.json produced with one record per dependency carrying name/version/license/direct|transitive"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+
+    # ===== NFR-08: 變異測試 (3 ACs; all gates) =====
+    - tc_id: TC-NFR08-01
+      fr: null
+      ac_refs: [AC-N8.1]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n8_harness_config_flag.py"
+      test_function: "test_ac_n8_1_harness_config_mutation_testing_flag_true"
+      title: ".methodology/harness_config.json has features.mutation_testing: true; file not modified to lower threshold"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR08-02
+      fr: null
+      ac_refs: [AC-N8.2]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n8_harness_config_flag.py"
+      test_function: "test_ac_n8_2_mutmut_score_at_least_70_over_service_and_repository"
+      title: "mutmut run followed by mutmut results reports mutation score ≥ 70 over service/ and repository/"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR08-03
+      fr: null
+      ac_refs: [AC-N8.3]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n8_harness_config_flag.py"
+      test_function: "test_ac_n8_3_mutation_scope_annotated_service_repository_with_rationale"
+      title: "Mutation scope annotated in harness_config.json as limited to service/ + repository/ with recorded rationale (execution-time budget)"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+
+    # ===== NFR-09: 驗證真實性 (1 integration + 1 unit + 3 gates) =====
+    - tc_id: TC-NFR09-01
+      fr: null
+      ac_refs: [AC-N9.1]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n9_pytest_skipped.py"
+      test_function: "test_ac_n9_1_pytest_reports_skipped_count_zero"
+      title: "pytest 03-development/tests -q reports skipped count of 0"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR09-02
+      fr: null
+      ac_refs: [AC-N9.2]
+      layer: unit
+      test_file: "03-development/tests/unit/test_n9_assertions.py"
+      test_function: "test_ac_n9_2_every_test_function_has_at_least_one_assert"
+      title: "Every test function contains at least one assert (or non-skipped raises); ast-assertions scanner reports 0 zero-assertion tests"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR09-03
+      fr: null
+      ac_refs: [AC-N9.3]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n9_filter_flags.py"
+      test_function: "test_ac_n9_3_no_test_excluded_via_ignore_k_deselect_collect_ignore"
+      title: "No test excluded via --ignore, -k, --deselect, collect_ignore, or removal from testpaths; CI runs full suite unfiltered"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR09-04
+      fr: null
+      ac_refs: [AC-N9.4]
+      layer: integration
+      test_file: "03-development/tests/integration/test_fr07_migrations.py"
+      test_function: "test_ac_n9_4_fr07_migration_real_sqlite_file_not_in_memory_mock"
+      title: "FR-07 three-step migration tested against a real SQLite file (not in-memory mock); round-trip compares actual row data; not downgraded to skip"
+      cross_ref_frs: [FR-07]
+      cross_ref_nfrs: [NFR-10]
+      status: DRAFT
+    - tc_id: TC-NFR09-05
+      fr: null
+      ac_refs: [AC-N9.5]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n9_filter_flags.py"
+      test_function: "test_ac_n9_5_traceability_matrix_verified_only_from_live_scan"
+      title: "TRACEABILITY_MATRIX.md marks VERIFIED only after a test has actually executed and passed; matrix is live scan output, not hand-edited"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+
+    # ===== NFR-10: 整合覆蓋 (3 ACs; all integration) =====
+    - tc_id: TC-NFR10-01
+      fr: null
+      ac_refs: [AC-N10.1]
+      layer: integration
+      test_file: "03-development/tests/integration/conftest.py"
+      test_function: "test_ac_n10_1_integration_line_coverage_at_least_80_percent"
+      title: "03-development/tests/integration/ line coverage is at least 80%"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR10-02
+      fr: null
+      ac_refs: [AC-N10.2]
+      layer: integration
+      test_file: "03-development/tests/integration/conftest.py"
+      test_function: "test_ac_n10_2_integration_tests_use_asgi_transport_no_direct_handler_calls"
+      title: "Integration tests driven through httpx.AsyncClient(transport=ASGITransport(app)); no integration test calls a handler function directly"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR10-03
+      fr: null
+      ac_refs: [AC-N10.3]
+      layer: integration
+      test_file: "03-development/tests/integration/conftest.py"
+      test_function: "test_ac_n10_3_integration_suite_covers_each_error_code_and_flows"
+      title: "Integration tests cover at least one example of each error code (401/403/404/409/422/429/503) + migration round-trip + rate-limit trigger/recover + graceful drain"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+
+    # ===== NFR-11: 可讀性 (3 ACs; all gates) =====
+    - tc_id: TC-NFR11-01
+      fr: null
+      ac_refs: [AC-N11.1]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n11_readability.py"
+      test_function: "test_ac_n11_1_mi_at_least_80_cc_at_most_10"
+      title: "Project MI (LLOC-weighted) ≥ 80; per-function cyclomatic complexity ≤ 10 (readability-v2 / radon-mi gate)"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR11-02
+      fr: null
+      ac_refs: [AC-N11.2]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n11_filesystem.py"
+      test_function: "test_ac_n11_2_no_file_over_400_lines_no_dir_over_15_files"
+      title: "No file exceeds 400 lines; no directory contains more than 15 files (filesystem gate)"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR11-03
+      fr: null
+      ac_refs: [AC-N11.3]
+      layer: gates
+      test_file: "03-development/tests/gates/test_n11_filesystem.py"
+      test_function: "test_ac_n11_3_no_api_handler_over_40_lines_business_logic_in_service"
+      title: "No API handler exceeds 40 lines; business logic sunk into service/"
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+
+    # ===== NFR-12: 系統驗證目標 (2 ACs; smoke) =====
+    - tc_id: TC-NFR12-01
+      fr: null
+      ac_refs: [AC-N12.1]
+      layer: smoke
+      test_file: "Makefile"
+      test_function: "test_ac_n12_1_makefile_defines_verify_system_chains_upgrade_tests_smoke_round_trip"
+      title: "Makefile defines verify-system target chaining (1) alembic upgrade head, (2) full test suite, (3) service start + /healthz+ /readyz smoke, (4) alembic downgrade base + upgrade head round-trip"
+      cross_ref_frs: [FR-07, FR-09]
+      cross_ref_nfrs: []
+      status: DRAFT
+    - tc_id: TC-NFR12-02
+      fr: null
+      ac_refs: [AC-N12.2]
+      layer: smoke
+      test_file: "Makefile"
+      test_function: "test_ac_n12_2_make_verify_system_exits_zero_stdout_contains_pass"
+      title: "make verify-system exits 0 and stdout contains literal \"verify-system: PASS\""
+      cross_ref_frs: []
+      cross_ref_nfrs: []
+      status: DRAFT
+
+  by_fr:
+    FR-01:
+      tc_count: 7
+      ac_ids: [AC-1.1, AC-1.2, AC-1.3, AC-1.4, AC-1.5, AC-1.6, AC-1.7]
+      tcs: [TC-FR01-01, TC-FR01-02, TC-FR01-03, TC-FR01-04, TC-FR01-05, TC-FR01-06, TC-FR01-07]
+    FR-02:
+      tc_count: 5
+      ac_ids: [AC-2.1, AC-2.2, AC-2.3, AC-2.4, AC-2.5]
+      tcs: [TC-FR02-01, TC-FR02-02, TC-FR02-03, TC-FR02-04, TC-FR02-05]
+    FR-03:
+      tc_count: 6
+      ac_ids: [AC-3.1, AC-3.2, AC-3.3, AC-3.4, AC-3.5, AC-3.6]
+      tcs: [TC-FR03-01, TC-FR03-02, TC-FR03-03, TC-FR03-04, TC-FR03-05, TC-FR03-06]
+    FR-04:
+      tc_count: 3
+      ac_ids: [AC-4.1, AC-4.2, AC-4.3]
+      tcs: [TC-FR04-01, TC-FR04-02, TC-FR04-03]
+    FR-05:
+      tc_count: 3
+      ac_ids: [AC-5.1, AC-5.2, AC-5.3]
+      tcs: [TC-FR05-01, TC-FR05-02, TC-FR05-03]
+    FR-06:
+      tc_count: 5
+      ac_ids: [AC-6.1, AC-6.2, AC-6.3, AC-6.4, AC-6.5]
+      tcs: [TC-FR06-01, TC-FR06-02, TC-FR06-03, TC-FR06-04, TC-FR06-05]
+    FR-07:
+      tc_count: 5
+      ac_ids: [AC-7.1, AC-7.2, AC-7.3, AC-7.4, AC-7.5]
+      tcs: [TC-FR07-01, TC-FR07-02, TC-FR07-03, TC-FR07-04, TC-FR07-05]
+    FR-08:
+      tc_count: 5
+      ac_ids: [AC-8.1, AC-8.2, AC-8.3, AC-8.4, AC-8.5]
+      tcs: [TC-FR08-01, TC-FR08-02, TC-FR08-03, TC-FR08-04, TC-FR08-05]
+    FR-09:
+      tc_count: 3
+      ac_ids: [AC-9.1, AC-9.2, AC-9.3]
+      tcs: [TC-FR09-01, TC-FR09-02, TC-FR09-03]
+    FR-10:
+      tc_count: 5
+      ac_ids: [AC-10.1, AC-10.2, AC-10.3, AC-10.4, AC-10.5]
+      tcs: [TC-FR10-01, TC-FR10-02, TC-FR10-03, TC-FR10-04, TC-FR10-05]
+    NFR-01:
+      tc_count: 3
+      ac_ids: [AC-N1.1, AC-N1.2, AC-N1.3]
+      tcs: [TC-NFR01-01, TC-NFR01-02, TC-NFR01-03]
+    NFR-02:
+      tc_count: 7
+      ac_ids: [AC-N2.1, AC-N2.2, AC-N2.3, AC-N2.4, AC-N2.5, AC-N2.6, AC-N2.7]
+      tcs: [TC-NFR02-01, TC-NFR02-02, TC-NFR02-03, TC-NFR02-04, TC-NFR02-05, TC-NFR02-06, TC-NFR02-07]
+    NFR-03:
+      tc_count: 6
+      ac_ids: [AC-N3.1, AC-N3.2, AC-N3.3, AC-N3.4, AC-N3.5, AC-N3.6]
+      tcs: [TC-NFR03-01, TC-NFR03-02, TC-NFR03-03, TC-NFR03-04, TC-NFR03-05, TC-NFR03-06]
+    NFR-04:
+      tc_count: 3
+      ac_ids: [AC-N4.1, AC-N4.2, AC-N4.3]
+      tcs: [TC-NFR04-01, TC-NFR04-02, TC-NFR04-03]
+    NFR-05:
+      tc_count: 2
+      ac_ids: [AC-N5.1, AC-N5.2]
+      tcs: [TC-NFR05-01, TC-NFR05-02]
+    NFR-06:
+      tc_count: 4
+      ac_ids: [AC-N6.1, AC-N6.2, AC-N6.3, AC-N6.4]
+      tcs: [TC-NFR06-01, TC-NFR06-02, TC-NFR06-03, TC-NFR06-04]
+    NFR-07:
+      tc_count: 4
+      ac_ids: [AC-N7.1, AC-N7.2, AC-N7.3, AC-N7.4]
+      tcs: [TC-NFR07-01, TC-NFR07-02, TC-NFR07-03, TC-NFR07-04]
+    NFR-08:
+      tc_count: 3
+      ac_ids: [AC-N8.1, AC-N8.2, AC-N8.3]
+      tcs: [TC-NFR08-01, TC-NFR08-02, TC-NFR08-03]
+    NFR-09:
+      tc_count: 5
+      ac_ids: [AC-N9.1, AC-N9.2, AC-N9.3, AC-N9.4, AC-N9.5]
+      tcs: [TC-NFR09-01, TC-NFR09-02, TC-NFR09-03, TC-NFR09-04, TC-NFR09-05]
+    NFR-10:
+      tc_count: 3
+      ac_ids: [AC-N10.1, AC-N10.2, AC-N10.3]
+      tcs: [TC-NFR10-01, TC-NFR10-02, TC-NFR10-03]
+    NFR-11:
+      tc_count: 3
+      ac_ids: [AC-N11.1, AC-N11.2, AC-N11.3]
+      tcs: [TC-NFR11-01, TC-NFR11-02, TC-NFR11-03]
+    NFR-12:
+      tc_count: 2
+      ac_ids: [AC-N12.1, AC-N12.2]
+      tcs: [TC-NFR12-01, TC-NFR12-02]
+
+  by_fr_total: 92
+
+  by_layer:
     integration:
-      - test_fr01_example_integration
+      count: 50
+      tcs:
+        - TC-FR01-01
+        - TC-FR01-02
+        - TC-FR01-03
+        - TC-FR01-04
+        - TC-FR01-05
+        - TC-FR01-06
+        - TC-FR01-07
+        - TC-FR02-01
+        - TC-FR02-02
+        - TC-FR02-03
+        - TC-FR02-04
+        - TC-FR02-05
+        - TC-FR03-01
+        - TC-FR03-02
+        - TC-FR03-04
+        - TC-FR03-05
+        - TC-FR03-06
+        - TC-FR04-01
+        - TC-FR04-02
+        - TC-FR05-01
+        - TC-FR05-03
+        - TC-FR06-01
+        - TC-FR06-03
+        - TC-FR06-04
+        - TC-FR07-01
+        - TC-FR07-02
+        - TC-FR07-03
+        - TC-FR07-04
+        - TC-FR07-05
+        - TC-FR08-01
+        - TC-FR08-02
+        - TC-FR08-03
+        - TC-FR08-05
+        - TC-FR09-01
+        - TC-FR09-02
+        - TC-FR09-03
+        - TC-FR10-01
+        - TC-FR10-02
+        - TC-FR10-03
+        - TC-FR10-04
+        - TC-NFR03-04
+        - TC-NFR03-05
+        - TC-NFR03-06
+        - TC-NFR04-02
+        - TC-NFR04-03
+        - TC-NFR05-02
+        - TC-NFR09-04
+        - TC-NFR10-01
+        - TC-NFR10-02
+        - TC-NFR10-03
+    unit:
+      count: 16
+      tcs:
+        - TC-FR03-03
+        - TC-FR04-03
+        - TC-FR05-02
+        - TC-FR06-02
+        - TC-FR06-05
+        - TC-FR08-04
+        - TC-FR10-05
+        - TC-NFR03-01
+        - TC-NFR03-03
+        - TC-NFR04-01
+        - TC-NFR05-01
+        - TC-NFR07-01
+        - TC-NFR07-02
+        - TC-NFR07-03
+        - TC-NFR07-04
+        - TC-NFR09-02
+    gates:
+      count: 21
+      tcs:
+        - TC-NFR02-01
+        - TC-NFR02-02
+        - TC-NFR02-03
+        - TC-NFR02-04
+        - TC-NFR02-05
+        - TC-NFR02-06
+        - TC-NFR02-07
+        - TC-NFR03-02
+        - TC-NFR06-01
+        - TC-NFR06-02
+        - TC-NFR06-03
+        - TC-NFR06-04
+        - TC-NFR08-01
+        - TC-NFR08-02
+        - TC-NFR08-03
+        - TC-NFR09-01
+        - TC-NFR09-03
+        - TC-NFR09-05
+        - TC-NFR11-01
+        - TC-NFR11-02
+        - TC-NFR11-03
+    perf:
+      count: 3
+      tcs:
+        - TC-NFR01-01
+        - TC-NFR01-02
+        - TC-NFR01-03
+    smoke:
+      count: 2
+      tcs:
+        - TC-NFR12-01
+        - TC-NFR12-02
 
-cross_cutting:
-  security:
-    - test_security_example
-  deployment:
-    - test_deployment_example
+  by_layer_total: 92
+  total_test_cases: 92
+
+  bijection_check:
+    rule: "every AC ID in matrix §2 → one tc_id; every tc_id → one or more AC IDs (typically 1)"
+    ac_ids_in_matrix_section2: 92
+    tc_ids_in_tests_block: 92
+    ac_ids_unbound: 0
+    tc_ids_orphan: 0
+    note: "matrix §6 cites '70 AC IDs' but the §2 enumeration sums to 92 (FR 47 + NFR 45); this inventory follows the §2 enumeration as the binding test-side reference. The §6 '70' figure is an internal arithmetic drift in the matrix; per the §4 bijection-check note the matrix itself acknowledges the count is '47+45=92' via the parenthetical '(Recount: ... 45 NFR ACs. Plus 35 FR ACs = 70 ACs)' which contradicts its own sum."
