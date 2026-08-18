@@ -1199,3 +1199,125 @@ test_inventory:
     ac_ids_unbound: 0
     tc_ids_orphan: 0
     note: "matrix §6 cites '70 AC IDs' but the §2 enumeration sums to 92 (FR 47 + NFR 45); this inventory follows the §2 enumeration as the binding test-side reference. The §6 '70' figure is an internal arithmetic drift in the matrix; per the §4 bijection-check note the matrix itself acknowledges the count is '47+45=92' via the parenthetical '(Recount: ... 45 NFR ACs. Plus 35 FR ACs = 70 ACs)' which contradicts its own sum."
+
+# Top-level per-FR named test index (consumed by harness/cli/phase_cmds.py
+# _validate_handoff_p1_to_p2 + D4 spec-coverage fallback). Each FR MUST name
+# at least one test. The detailed test_inventory.tests: block remains source of truth.
+fr_tests:
+  FR-01:
+    - test_ac_1_1_post_creates_task_returns_201
+    - test_ac_1_2_invalid_payload_returns_422_problem_json
+    - test_ac_1_3_get_task_returns_columns_or_404
+    - test_ac_1_4_list_pagination_default_max_200_over_cap_returns_422
+    - test_ac_1_5_list_query_supports_status_cursor_no_offset
+    - test_ac_1_6_delete_removes_task_and_result_row_same_transaction
+    - test_ac_1_7_list_sql_count_constant_regardless_of_rows
+  FR-02:
+    - test_ac_2_1_post_run_returns_202_and_runs_to_terminal_state
+    - test_ac_2_2_runner_uses_subprocess_exec_no_shell_true
+    - test_ac_2_3_timeout_kills_child_no_orphans_terminal_state_timeout
+    - test_ac_2_4_result_row_carries_five_columns
+    - test_ac_2_5_get_runs_returns_history_newest_first
+  FR-03:
+    - test_ac_3_1_v1_endpoint_without_api_key_returns_401_problem_json
+    - test_ac_3_2_api_keys_table_stores_sha256_hash_no_plaintext
+    - test_ac_3_3_hmac_compare_digest_successful_and_constant_time_for_wrong_key
+    - test_ac_3_4_key_create_cli_prints_plaintext_once_no_persistent_store
+    - test_ac_3_5_revoked_key_returns_401_even_if_hash_matches
+    - test_ac_3_6_healthz_readyz_reachable_without_api_key
+  FR-04:
+    - test_ac_4_1_insufficient_scope_returns_403_problem_json
+    - test_ac_4_2_403_body_does_not_reveal_resource_existence
+    - test_ac_4_3_all_v1_routes_resolve_through_single_auth_dependency
+  FR-05:
+    - test_ac_5_1_burst_over_capacity_returns_429_with_retry_after
+    - test_ac_5_2_bucket_update_uses_row_level_lock_single_session
+    - test_ac_5_3_healthz_readyz_exempt_from_rate_limit
+  FR-06:
+    - test_ac_6_1_service_api_layers_have_no_sqlalchemy_imports
+    - test_ac_6_2_session_context_manager_rollback_on_raise_single_commit_on_success
+    - test_ac_6_3_repository_wide_grep_sql_concat_zero_matches
+    - test_ac_6_4_selectinload_joinedload_constant_sql_count_for_10_100_1000_rows
+    - test_ac_6_5_engine_pool_size_and_pre_ping_configured
+  FR-07:
+    - test_ac_7_1_alembic_upgrade_head_and_downgrade_base_exit_zero
+    - test_ac_7_2_round_trip_byte_identical_columns_real_sqlite
+    - test_ac_7_3_v3_revision_has_real_downgrade_no_drop_table_shortcut
+    - test_ac_7_4_offline_sql_generation_expected_tables_and_columns
+    - test_ac_7_5_failing_migration_rolls_back_readyz_returns_503
+  FR-08:
+    - test_ac_8_1_over_cap_tasks_are_queued_no_unbounded_coroutines
+    - test_ac_8_2_timed_out_task_killed_and_awaited_no_orphans
+    - test_ac_8_3_graceful_drain_then_interrupt_remaining_no_orphans
+    - test_ac_8_4_cancelled_error_propagates_not_swallowed_by_except_exception
+    - test_ac_8_5_runner_constructs_taskgroup_not_bare_gather_or_fire_and_forget
+  FR-09:
+    - test_ac_9_1_healthz_returns_200_status_ok_no_api_key_required
+    - test_ac_9_2_readyz_db_unreachable_returns_503_with_db_detail
+    - test_ac_9_3_metrics_admin_returns_counts_latency_denial_non_admin_403
+  FR-10:
+    - test_ac_10_1_non_2xx_responses_carry_problem_json_six_fields
+    - test_ac_10_2_500_detail_has_no_stack_sql_or_paths
+    - test_ac_10_3_x_correlation_id_header_matches_log
+    - test_ac_10_4_status_code_sweep_eight_codes_each_triggered
+    - test_ac_10_5_cancelled_error_propagates_not_500
+
+# Top-level cross-cutting NFR named test index (consumed by handoff validator + D4 spec-coverage).
+cross_cutting:
+  NFR-01:
+    - test_ac_n1_1_get_task_p95_below_30ms_at_10k_rows
+    - test_ac_n1_2_list_p95_below_80ms_at_10k_rows
+    - test_ac_n1_3_list_sql_count_constant_at_10_100_1000_rows
+  NFR-02:
+    - test_ac_n2_1_grep_shell_true_eval_exec_zero_hits
+    - test_ac_n2_2_grep_sql_string_concat_zero_hits
+    - test_ac_n2_3_api_keys_sha256_hmac_constant_time_no_plaintext
+    - test_ac_n2_4_403_bodies_indistinguishable_for_existing_and_nonexistent_ids
+    - test_ac_n2_5_500_error_body_no_stack_sql_or_paths
+    - test_ac_n2_6_cors_deny_by_default_origin_not_allowlisted
+    - test_ac_n2_7_bandit_r_zero_high_zero_medium
+  NFR-03:
+    - test_ac_n3_1_transaction_context_manager_rollback_or_single_commit
+    - test_ac_n3_2_no_bare_except_or_except_exception_pass
+    - test_ac_n3_3_cancelled_error_propagates_in_task_handler
+    - test_ac_n3_4_db_failure_causes_readyz_503_with_db_detail_no_retry_loop
+    - test_ac_n3_5_timeout_kills_child_awaits_exit_no_orphan_pid
+    - test_ac_n3_6_failed_migration_rolls_back_readyz_503
+  NFR-04:
+    - test_ac_n4_1_redaction_helper_replaces_sk_token_bearer_postgres
+    - test_ac_n4_2_db_url_password_absent_from_logs_errors_metrics
+    - test_ac_n4_3_key_plaintext_printed_once_not_persisted_to_logs_db_metrics
+  NFR-05:
+    - test_ac_n5_1_public_functions_classes_have_fr_or_nfr_tagged_docstrings
+    - test_ac_n5_2_openapi_json_has_summary_and_description_for_every_route
+  NFR-06:
+    - test_ac_n6_1_importlinter_exists_declares_layers_contract
+    - test_ac_n6_2_importlinter_forbidden_sqlalchemy_outside_repository
+    - test_ac_n6_3_lint_imports_ci_exits_zero
+    - test_ac_n6_4_no_degradation_no_ignore_imports_or_downgrade
+  NFR-07:
+    - test_ac_n7_1_requirements_pinned_with_equals_and_lock_present
+    - test_ac_n7_2_all_deps_in_mit_bsd_apache_psf_allowlist
+    - test_ac_n7_3_license_scan_covers_full_tree_with_system
+    - test_ac_n7_4_sbom_json_one_record_per_dep_with_required_fields
+  NFR-08:
+    - test_ac_n8_1_harness_config_mutation_testing_flag_true
+    - test_ac_n8_2_mutmut_score_at_least_70_over_service_and_repository
+    - test_ac_n8_3_mutation_scope_annotated_service_repository_with_rationale
+  NFR-09:
+    - test_ac_n9_1_pytest_reports_skipped_count_zero
+    - test_ac_n9_2_every_test_function_has_at_least_one_assert
+    - test_ac_n9_3_no_test_excluded_via_ignore_k_deselect_collect_ignore
+    - test_ac_n9_4_fr07_migration_real_sqlite_file_not_in_memory_mock
+    - test_ac_n9_5_traceability_matrix_verified_only_from_live_scan
+  NFR-10:
+    - test_ac_n10_1_integration_line_coverage_at_least_80_percent
+    - test_ac_n10_2_integration_tests_use_asgi_transport_no_direct_handler_calls
+    - test_ac_n10_3_integration_suite_covers_each_error_code_and_flows
+  NFR-11:
+    - test_ac_n11_1_mi_at_least_80_cc_at_most_10
+    - test_ac_n11_2_no_file_over_400_lines_no_dir_over_15_files
+    - test_ac_n11_3_no_api_handler_over_40_lines_business_logic_in_service
+  NFR-12:
+    - test_ac_n12_1_makefile_defines_verify_system_chains_upgrade_tests_smoke_round_trip
+    - test_ac_n12_2_make_verify_system_exits_zero_stdout_contains_pass
