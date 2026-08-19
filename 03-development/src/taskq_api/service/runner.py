@@ -22,6 +22,24 @@ from taskq_api.config import get_settings
 from taskq_api.repository import task_repo
 
 
+# ---------------------------------------------------------------------------
+# FR-02 state machine. The set of values ``Task.status`` may take while a
+# task is being driven through this runner; ``STATE_PENDING`` is the value a
+# row ships with from the FR-01 create path, ``STATE_RUNNING`` is set just
+# before subprocess spawn, and the three terminal values are the strings
+# the runner hands back to the repository at the end of a run.
+#
+# Spelled here (rather than inlined at each call site) so a typo in one
+# place cannot drift the state machine — every writer goes through the
+# same four names.
+# ---------------------------------------------------------------------------
+STATE_PENDING = "pending"
+STATE_RUNNING = "running"
+STATE_DONE = "done"
+STATE_FAILED = "failed"
+STATE_TIMEOUT = "timeout"
+
+
 @dataclass(frozen=True)
 class ExecResult:
     """One execution attempt — populated fields written to ``task_results``."""
@@ -36,10 +54,10 @@ class ExecResult:
 class RunOutcome:
     """Final state of a single task run — ready to persist + transition.
 
-    ``final_state`` is one of ``done``, ``failed``, or ``timeout``; the
-    two strings that drive the FR-02 state machine are spelled here so
-    callers do not re-derive them from exit_code (which would silently
-    diverge if a future state ever means ``exit_code != 0``).
+    ``final_state`` is one of ``STATE_DONE``, ``STATE_FAILED``, or
+    ``STATE_TIMEOUT``; the constant names above drive the FR-02 state
+    machine so callers do not re-derive them from exit_code (which would
+    silently diverge if a future state ever meant ``exit_code != 0``).
     """
 
     exit_code: int
@@ -98,11 +116,12 @@ async def execute_command(command: str, timeout: Optional[float] = None) -> Exec
 async def _collect_outcome(command: str, timeout: float) -> RunOutcome:
     """Resolve a ``RunOutcome`` for ``command`` under the ``timeout`` budget.
 
-    A successful subprocess returns ``"done"`` on exit 0 and ``"failed"``
-    otherwise; a timeout budget returns ``"timeout"`` with the budget as
-    the duration. ``execute_command`` guarantees the child is killed and
-    reaped before the ``TimeoutError`` propagates, so this function only
-    translates the failure mode into a recordable shape.
+    A successful subprocess returns ``STATE_DONE`` on exit 0 and
+    ``STATE_FAILED`` otherwise; an exhausted timeout budget returns
+    ``STATE_TIMEOUT`` with the budget as the duration. ``execute_command``
+    guarantees the child is killed and reaped before ``TimeoutError``
+    propagates, so this function only translates the failure mode into
+    a recordable shape.
     """
     try:
         result = await execute_command(command, timeout=timeout)
@@ -112,28 +131,29 @@ async def _collect_outcome(command: str, timeout: float) -> RunOutcome:
             stdout_tail="",
             stderr_tail="",
             duration_ms=int(timeout * 1000),
-            final_state="timeout",
+            final_state=STATE_TIMEOUT,
         )
     return RunOutcome(
         exit_code=result.exit_code,
         stdout_tail=result.stdout_tail,
         stderr_tail=result.stderr_tail,
         duration_ms=result.duration_ms,
-        final_state="done" if result.exit_code == 0 else "failed",
+        final_state=STATE_DONE if result.exit_code == 0 else STATE_FAILED,
     )
 
 
 async def run_task(task_id: int, command: str) -> None:
     """Run ``command`` for ``task_id`` end-to-end: state + persist + result.
 
-    Transitions the task through ``pending → running → {done|failed|timeout}``,
-    records the FR-02 result row (FR-07 v3 multi-row schema), and never
-    swallows ``asyncio.CancelledError`` (architecture constraint).
+    Transitions the task through
+    ``pending → running → {done|failed|timeout}``, records the FR-02
+    result row (FR-07 v3 multi-row schema), and never swallows
+    ``asyncio.CancelledError`` (architecture constraint).
 
     Citations: SPEC.md §3 FR-02 + FR-08 + NFR-03 + §8 #25; SAD.md §2.2 service.runner.
     """
     started_at = _now()
-    task_repo.update_status(task_id, "running")
+    task_repo.update_status(task_id, STATE_RUNNING)
 
     outcome = await _collect_outcome(command, get_settings().task_timeout)
 
@@ -149,4 +169,14 @@ async def run_task(task_id: int, command: str) -> None:
     task_repo.update_status(task_id, outcome.final_state)
 
 
-__all__ = ["ExecResult", "RunOutcome", "execute_command", "run_task"]
+__all__ = [
+    "ExecResult",
+    "RunOutcome",
+    "STATE_PENDING",
+    "STATE_RUNNING",
+    "STATE_DONE",
+    "STATE_FAILED",
+    "STATE_TIMEOUT",
+    "execute_command",
+    "run_task",
+]

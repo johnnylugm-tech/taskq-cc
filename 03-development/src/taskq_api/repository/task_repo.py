@@ -57,6 +57,21 @@ def _decode_cursor(cursor: str | None) -> Optional[int]:
         return None
 
 
+def _add_and_expunge(instance: Any) -> Any:
+    """Insert ``instance`` via the private engine and detach it from the session.
+
+    Returns the same instance so callers can read attributes after the
+    session closes — the pattern shared by ``create`` and ``record_result``.
+    ``IntegrityError`` is intentionally allowed to propagate so ``create``
+    can translate it into ``DuplicateTaskError`` at its call site.
+    """
+    with session_module.insert_scope() as session:
+        session.add(instance)
+        session.flush()
+        session.expunge(instance)
+    return instance
+
+
 def create(name: str, command: str, status: str = "pending") -> Task:
     """Insert a new task and return the persisted ORM instance.
 
@@ -72,15 +87,9 @@ def create(name: str, command: str, status: str = "pending") -> Task:
     Citations: SPEC.md §3 FR-01 AC-1.1 / AC-1.2.
     """
     try:
-        with session_module.insert_scope() as session:
-            task = Task(name=name, command=command, status=status)
-            session.add(task)
-            session.flush()
-            # expunge so callers can use the instance after the session closes
-            session.expunge(task)
+        return _add_and_expunge(Task(name=name, command=command, status=status))
     except IntegrityError as exc:
         raise DuplicateTaskError(name) from exc
-    return task
 
 
 def get_by_id(task_id: int) -> Optional[Task]:
@@ -174,8 +183,8 @@ def record_result(
 
     Citations: SPEC.md §3 FR-02 "欄位" + §5.2 task_results row.
     """
-    with session_module.insert_scope() as session:
-        row = TaskResult(
+    return _add_and_expunge(
+        TaskResult(
             task_id=task_id,
             started_at=started_at,
             exit_code=exit_code,
@@ -184,10 +193,7 @@ def record_result(
             duration_ms=duration_ms,
             finished_at=finished_at,
         )
-        session.add(row)
-        session.flush()
-        session.expunge(row)
-    return row
+    )
 
 
 def list_runs(task_id: int) -> list[TaskResult]:
