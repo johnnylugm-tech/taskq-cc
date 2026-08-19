@@ -1,0 +1,21 @@
+# Harness-executed: import-linter
+# returncode: 0
+# agent_score: 100.0 | threshold: 100.0
+
+[1m=============[0m
+[1mImport Linter[0m
+[1m=============[0m
+[22m[0m
+[1m---------[0m
+[1mContracts[0m
+[1m---------[0m
+[22m[0m
+[1mAnalyzed 30 files, 62 dependencies.[0m
+[1m-----------------------------------[0m
+[22m[0m
+[22mapi > service > repository > models [0m[32m[22mKEPT[0m[33m[22m[0m[22m[0m
+[22mconfig and errors do not import each other [0m[32m[22mKEPT[0m[33m[22m[0m[22m[0m
+[22msqlalchemy imports restricted to repository and models layers [0m[32m[22mKEPT[0m[33m[22m[0m[22m[0m
+[22mfastapi imports restricted to api and app layers [0m[32m[22mKEPT[0m[33m[22m[0m[22m[0m
+[22m[0m
+[22mContracts: 4 kept, 0 broken.[0m

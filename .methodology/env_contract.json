@@ -1,0 +1,64 @@
+{
+  "classified_at": "2026-08-19T07:07:13Z",
+  "cli_tools": [
+    "alembic",
+    "bandit",
+    "fastapi",
+    "httpx",
+    "importlinter",
+    "lint-imports",
+    "mutmut",
+    "pip-licenses",
+    "piplicenses",
+    "pydantic",
+    "pytest",
+    "pytest_asyncio",
+    "pytest_benchmark",
+    "pytest_cov",
+    "python3.11",
+    "radon",
+    "rg",
+    "sqlalchemy",
+    "uvicorn"
+  ],
+  "enforcer_sha": "9fd9a12ba13d4c33f17ec17c104ac5b9a08711ea",
+  "env_vars": {
+    "dev_opt_in": [],
+    "has_default": [
+      "TASKQ_CORS_ORIGINS",
+      "TASKQ_DB_POOL_SIZE",
+      "TASKQ_DB_URL",
+      "TASKQ_DRAIN_TIMEOUT",
+      "TASKQ_HOST",
+      "TASKQ_LOG_FORMAT",
+      "TASKQ_LOG_LEVEL",
+      "TASKQ_MAX_CONCURRENT",
+      "TASKQ_PORT",
+      "TASKQ_RATE_BURST",
+      "TASKQ_RATE_PER_SEC",
+      "TASKQ_TASK_TIMEOUT"
+    ],
+    "mandatory": []
+  },
+  "infra_services": {
+    "docker_compose_services": [],
+    "required": [
+      {
+        "checked_via": "python3 -c 'import sqlite3; sqlite3.sqlite_version' (3.50.4)",
+        "fix": "SQLite is bundled with Python stdlib; no separate service. The default TASKQ_DB_URL=sqlite:///./taskq.db is a file path.",
+        "name": "sqlite",
+        "reachable": true,
+        "type": "SQLite (file-based, stdlib)"
+      },
+      {
+        "checked_via": "pg_isready -h 127.0.0.1 -p 5432 -t 1 -> '127.0.0.1:5432 - accepting connections'",
+        "fix": "PostgreSQL is reachable but optional — project uses SQLite by default. Switch to PostgreSQL by exporting TASKQ_DB_URL=postgresql://... and re-running migrations.",
+        "name": "postgres",
+        "reachable": true,
+        "type": "PostgreSQL (optional; SQLite is the dev/test default per SPEC §2.1)"
+      }
+    ]
+  },
+  "schema_version": 1,
+  "source_sha256": "e456f7e942c3692a0ed35445b083f75bfc8b40b93b9180e888acdb9520b3b5d7"
+}
