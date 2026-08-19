@@ -33,6 +33,26 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _handle_key_create(args: argparse.Namespace) -> int:
+    """Mint a key and print the plaintext to stdout exactly once (AC-3.4).
+
+    The plaintext is the only piece of the new key the caller ever sees
+    in human-readable form; only the SHA-256 digest lands in
+    ``api_keys.key_hash``.
+    """
+    key_id, plaintext, _key_hash = key_repo.create(scope=args.scope)
+    sys.stdout.write(f"id: {key_id}\nkey: {plaintext}\n")
+    sys.stdout.flush()
+    return 0
+
+
+# Dispatch table — kept tiny on purpose. Adding a new subcommand means
+# one parser entry + one handler; ``main`` itself does not change.
+_HANDLERS: dict[tuple[str, str], "callable[[argparse.Namespace], int]"] = {
+    ("key", "create"): _handle_key_create,
+}
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     """Parse ``argv`` and dispatch to a subcommand handler.
 
@@ -42,17 +62,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     """
     parser = _build_parser()
     args = parser.parse_args(argv)
-
-    if args.command == "key" and args.key_command == "create":
-        key_id, plaintext, _key_hash = key_repo.create(scope=args.scope)
-        # Single-line stdout reveal: the only place the plaintext ever
-        # appears in human-readable form (AC-3.4).
-        sys.stdout.write(f"id: {key_id}\nkey: {plaintext}\n")
-        sys.stdout.flush()
-        return 0
-
-    parser.error(f"unhandled command: {args.command!r}")
-    return 2  # unreachable — parser.error exits — but keeps mypy quiet
+    handler = _HANDLERS.get((args.command, args.key_command))
+    if handler is None:
+        parser.error(f"unhandled command: {args.command!r}")
+        return 2  # unreachable — parser.error exits — but keeps mypy quiet
+    return handler(args)
 
 
 if __name__ == "__main__":
