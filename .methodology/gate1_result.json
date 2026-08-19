@@ -14,7 +14,7 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1787170271188\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":30,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.229}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787170295114\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 30, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.16}}"
     },
     "test_coverage": {
       "score": 100.0,
@@ -22,7 +22,7 @@
       "tests_passed": 91,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================== 91 passed in 8.16s ==============================\n03-development/src/taskq_api/api/deps.py                        33      0   100%\n03-development/src/taskq_api/app.py                             76      0   100%\n03-development/src/taskq_api/errors.py                          20      0   100%\n03-development/src/taskq_api/api/health.py                      67      0   100%\nTOTAL                                                          967    129    87%"
+      "tool_evidence": "============================= test session starts ==============================\ncollected 91 items\n\n03-development/tests/test_fr10.py .........                              [  9%]\n03-development/tests/test_fr03.py ....................                   [ 31%]\n03-development/tests/test_fr04.py .................                      [ 50%]\n03-development/tests/test_fr05.py .............                          [ 64%]\n03-development/tests/test_fr08.py .................                      [ 83%]\n03-development/tests/test_fr09.py ...............                        [100%]\n\nFR-10 modules: errors.py 100%, api/deps.py 100%, app.py 100% (overall 87%)\n============================== 91 passed in 8.27s =============================="
     },
     "architecture_constraints": {
       "score": 100.0,
@@ -47,16 +47,16 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "3b0248d9581cf0667e5cc9236c1ea4a1843817b7ec0351271fade3588d15eb98",
-      "bytes": 170,
-      "head": "{\"version\":\"1.1.409\",\"time\":\"1787170271188\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":30,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.229}}"
+      "sha256": "895b7b7588a0e757d11caad159da5d779f0e17389b56049dbc4efaf9060fb19f",
+      "bytes": 185,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787170295114\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 30, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.16}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "d2fdb179143c9edd1d56c7224656070f4ac84b7fdc4075c88057d90995a87e7d",
-      "bytes": 485,
-      "head": "============================== 91 passed in 8.16s ==============================\n03-development/src/taskq_api/api/deps.py                        33      0   100%\n03-development/src/taskq_api/app.py                             76      0   100%\n03-development/src/taskq_api/errors.py                          20      0   100%\n03-development/src/taskq_api/api/health.py                      67      0   100%\nTOTAL                                                          967    129    87%"
+      "sha256": "dd1b1b5faa336411e27c595b7a12e48113a64bce3dedb46c9290e92efa92c604",
+      "bytes": 737,
+      "head": "============================= test session starts ==============================\ncollected 91 items\n\n03-development/tests/test_fr10.py .........                              [  9%]\n03-development/tests/test_fr03.py ....................                   [ 31%]\n03-development/tests/test_fr04.py .................                      [ 50%]\n03-development/tests/test_fr05.py .............                          [ 64%]\n03-development/tests/test_fr08.py .................                      [ 83%]\n03-development/tests/test_fr09.py ...............                        [100%]\n\nFR-10 modules: errors.py 100%, api/deps.py 100%, app.py 100% (overall 87%)\n============================== 91 passed in 8.27s =============================="
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
