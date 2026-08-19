@@ -2,7 +2,8 @@
 # returncode: 0
 # agent_score: 100.0 | threshold: 80.0
 
-..........................................................               [100%]
+........................................................................ [ 96%]
+...                                                                      [100%]
 ================================ tests coverage ================================
 ______________ coverage: platform darwin, python 3.11.15-final-0 _______________
 
@@ -11,9 +12,9 @@ Name                                                   Stmts   Miss  Cover   Mis
 03-development/src/taskq_api/__init__.py                   0      0   100%
 03-development/src/taskq_api/__main__.py                   5      5     0%   8-16
 03-development/src/taskq_api/api/__init__.py               3      0   100%
-03-development/src/taskq_api/api/deps.py                  15      0   100%
-03-development/src/taskq_api/api/tasks.py                 57      0   100%
-03-development/src/taskq_api/app.py                       37      2    95%   57-58
+03-development/src/taskq_api/api/deps.py                  24      0   100%
+03-development/src/taskq_api/api/tasks.py                 53      0   100%
+03-development/src/taskq_api/app.py                       39      2    95%   57-58
 03-development/src/taskq_api/cli.py                       29      3    90%   67-68, 73
 03-development/src/taskq_api/config.py                    25      1    96%   38
 03-development/src/taskq_api/errors.py                    29      6    79%   37-45, 58, 69-78
@@ -25,9 +26,9 @@ Name                                                   Stmts   Miss  Cover   Mis
 03-development/src/taskq_api/repository/session.py        77     11    86%   86-93, 135-137
 03-development/src/taskq_api/repository/task_repo.py      84      0   100%
 03-development/src/taskq_api/service/__init__.py           3      0   100%
-03-development/src/taskq_api/service/auth.py              29      0   100%
+03-development/src/taskq_api/service/auth.py              26      0   100%
 03-development/src/taskq_api/service/runner.py            56      0   100%
 03-development/src/taskq_api/service/tasks.py             25      0   100%
 ------------------------------------------------------------------------------------
-TOTAL                                                    589     28    95%
-58 passed in 2.97s
+TOTAL                                                    593     28    95%
+75 passed in 3.03s
