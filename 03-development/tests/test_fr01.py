@@ -576,3 +576,132 @@ def test_sec_t01_injection_payload_rejected():  # NFR-02 (security; injection ch
     response = _run_async(_run())
     assert response.status_code == 422
     assert "problem+json" in response.headers.get("content-type", "")
+
+
+# ---------------------------------------------------------------------------
+# Coverage-gap tests — exercise branches that the TEST_SPEC cases above
+# do not reach. These are NOT part of the spec-coverage catalog; they exist
+# solely to drive line coverage to 100% over the five FR-01 measured modules.
+# Each test name targets one or more specific uncovered lines identified by
+# ``coverage report --include=... -m``.
+# ---------------------------------------------------------------------------
+
+
+def test_coverage_whitespace_name_rejected_by_field_validator():  # NFR-02 (input validation — whitespace-only name falls through min_length into the field_validator)
+    """Whitespace-only name must be rejected by ``_name_not_blank`` (line 42).
+
+    The ``min_length=1`` Field constraint catches the truly-empty string
+    case (``""``); this test exercises the ``not value.strip()`` branch
+    of the same validator with a non-empty whitespace string.
+    """
+    from httpx import ASGITransport, AsyncClient
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.post(
+                "/v1/tasks",
+                json={"name": "   ", "command": "echo hi"},
+                headers=_auth_headers("write_key"),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code == 422
+    assert "problem+json" in response.headers.get("content-type", "")
+
+
+def test_coverage_delete_nonexistent_task_returns_404_problem_json():  # NFR-02 (no-existence leak — delete of unknown id must surface as 404), NFR-05 (OpenAPI metadata)
+    """DELETE on an unknown task_id must return 404 + problem+json.
+
+    Drives ``api.tasks:delete_task_endpoint`` into its else-branch
+    (``raise _not_found_problem()``) by way of ``task_repo.delete``
+    returning ``False`` for a missing row.
+    """
+    from httpx import ASGITransport, AsyncClient
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.delete(
+                "/v1/tasks/99999",
+                headers=_auth_headers("admin_key"),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code == 404
+    assert "problem+json" in response.headers.get("content-type", "")
+
+
+def test_coverage_list_with_valid_cursor_decodes_and_paginates():  # NFR-01 (cursor-based pagination — opaque token round-trip), NFR-06 (layering — repository owns SQL), NFR-08 (mutation — cursor decode branch is high-value kill surface)
+    """A cursor built from a real task id must decode + apply ``id > last_id``.
+
+    Drives ``_decode_cursor`` past its except-branch (line 41-42) into
+    the successful ``return int(data["last_id"])`` on line 40, and
+    drives ``list_paginated`` into the ``if last_id is not None`` arm
+    on line 97.
+    """
+    import base64
+    import json
+
+    from httpx import ASGITransport, AsyncClient
+
+    def _encode_cursor(last_id: int) -> str:
+        payload = json.dumps({"last_id": last_id}, separators=(",", ":")).encode()
+        return base64.urlsafe_b64encode(payload).decode().rstrip("=")
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            # Seed two tasks; the second one has id > first one (autoincrement).
+            r1 = await ac.post(
+                "/v1/tasks",
+                json={"name": "cur-a", "command": "echo a"},
+                headers=_auth_headers("write_key"),
+            )
+            r2 = await ac.post(
+                "/v1/tasks",
+                json={"name": "cur-b", "command": "echo b"},
+                headers=_auth_headers("write_key"),
+            )
+            assert r1.status_code == 201, (
+                "seed step r1 must succeed for cursor pagination to be testable"
+            )
+            assert r2.status_code == 201, (
+                "seed step r2 must succeed for cursor pagination to be testable"
+            )
+            id_a = int(r1.json()["id"])
+            id_b = int(r2.json()["id"])
+            assert id_b > id_a, (
+                "autoincrement must give id_b > id_a for this assertion to be meaningful"
+            )
+            cursor = _encode_cursor(id_a)
+            return (
+                await ac.get(
+                    "/v1/tasks",
+                    params={"limit": 50, "cursor": cursor},
+                    headers=_auth_headers("read_key"),
+                ),
+                id_a,
+                id_b,
+            )
+
+    response, id_a, id_b = _run_async(_run())
+    assert response.status_code == 200
+    body = response.json()
+    returned_ids = [int(item["id"]) for item in body.get("items", [])]
+    # Cursor pagination property: every returned id must be > last_id.
+    assert all(rid > id_a for rid in returned_ids), (
+        f"FR-01 AC-1.5: cursor-paginated results must all have id > {id_a}; "
+        f"got {returned_ids}"
+    )
+    # The seeded second task must appear in the page (id_b > id_a).
+    assert id_b in returned_ids, (
+        f"FR-01 AC-1.5: cursor-paginated page must include id_b={id_b}; "
+        f"got {returned_ids}"
+    )
