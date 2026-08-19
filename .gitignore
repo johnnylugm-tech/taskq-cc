@@ -20,3 +20,4 @@ htmlcov/
 .mutmut-cache/
 .code-review-graph/
 .claude/worktrees/
+taskq.db
