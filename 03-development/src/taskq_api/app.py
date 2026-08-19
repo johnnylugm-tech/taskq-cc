@@ -121,17 +121,46 @@ def _log_problem(correlation_id: str, status: int, path: str) -> None:
     )
 
 
+def _problem_body(
+    *,
+    type_uri: str,
+    title: str,
+    status: int,
+    detail: str,
+    instance: str,
+    correlation_id: str,
+) -> dict:
+    """[FR-10] Build the canonical six-field RFC 7807 envelope.
+
+    Centralises the envelope shape so every non-2xx response emits the
+    same six keys (``type`` / ``title`` / ``status`` / ``detail`` /
+    ``instance`` / ``correlation_id``) and a future field rename is a
+    single edit. The 403 handler keeps its own minimal body inline
+    because FR-04 AC-4.2 requires it to drop ``instance`` and
+    ``correlation_id`` to keep the resource-existence footprint
+    path-independent.
+    """
+    return {
+        "type": type_uri,
+        "title": title,
+        "status": status,
+        "detail": detail,
+        "instance": instance,
+        "correlation_id": correlation_id,
+    }
+
+
 def _make_500_body(cid: str, raw_message: str, path: str) -> dict:
     """Build the canonical 500 problem+json body for the current request."""
     safe_detail = _sanitize_detail(raw_message)
-    return {
-        "type": "/errors/internal",
-        "title": "Internal server error",
-        "status": 500,
-        "detail": safe_detail,
-        "instance": path,
-        "correlation_id": cid,
-    }
+    return _problem_body(
+        type_uri="/errors/internal",
+        title="Internal server error",
+        status=500,
+        detail=safe_detail,
+        instance=path,
+        correlation_id=cid,
+    )
 
 
 class _ProblemErrorMiddleware:
@@ -236,28 +265,28 @@ def create_app() -> FastAPI:
                 "detail": exc.detail,
             }
         else:
-            body = {
-                "type": exc.type_uri,
-                "title": exc.title,
-                "status": exc.status,
-                "detail": exc.detail,
-                "instance": str(request.url.path),
-                "correlation_id": cid,
-            }
+            body = _problem_body(
+                type_uri=exc.type_uri,
+                title=exc.title,
+                status=exc.status,
+                detail=exc.detail,
+                instance=str(request.url.path),
+                correlation_id=cid,
+            )
         _log_problem(cid, exc.status, str(request.url.path))
         return _problem_json_response(body, exc.status, cid, exc.headers)
 
     @app.exception_handler(RequestValidationError)
     async def _validation_handler(request: Request, exc: RequestValidationError):  # noqa: ANN202
         cid = correlation_id_for(request)
-        body = {
-            "type": "/errors/invalid-body",
-            "title": "Invalid request body",
-            "status": 422,
-            "detail": "Request body failed validation.",
-            "instance": str(request.url.path),
-            "correlation_id": cid,
-        }
+        body = _problem_body(
+            type_uri="/errors/invalid-body",
+            title="Invalid request body",
+            status=422,
+            detail="Request body failed validation.",
+            instance=str(request.url.path),
+            correlation_id=cid,
+        )
         # Drop the raw validation errors so we never leak SQL or paths.
         # Per FR-10, ``detail`` must not contain internal details.
         _log_problem(cid, 422, str(request.url.path))
