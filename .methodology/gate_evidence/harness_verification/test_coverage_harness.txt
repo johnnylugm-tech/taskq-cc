@@ -2,8 +2,8 @@
 # returncode: 0
 # agent_score: 100.0 | threshold: 80.0
 
-........................................................................ [ 57%]
-.....................................................                    [100%]
+........................................................................ [ 50%]
+......................................................................   [100%]
 =============================== warnings summary ===============================
 03-development/tests/test_fr07.py: 11 warnings
   /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
@@ -26,7 +26,7 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/api/__init__.py                     3      0   100%
 03-development/src/taskq_api/api/deps.py                        29      0   100%
 03-development/src/taskq_api/api/tasks.py                       53      0   100%
-03-development/src/taskq_api/app.py                             47      2    96%   87-88
+03-development/src/taskq_api/app.py                             55      0   100%
 03-development/src/taskq_api/cli.py                             29      3    90%   67-68, 73
 03-development/src/taskq_api/config.py                          25      1    96%   38
 03-development/src/taskq_api/errors.py                          30      6    80%   43-51, 64, 75-84
@@ -41,8 +41,8 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/__init__.py                 3      0   100%
 03-development/src/taskq_api/service/auth.py                    26      0   100%
 03-development/src/taskq_api/service/ratelimit.py                5      0   100%
-03-development/src/taskq_api/service/runner.py                  56      0   100%
+03-development/src/taskq_api/service/runner.py                 125      0   100%
 03-development/src/taskq_api/service/tasks.py                   25      0   100%
 ------------------------------------------------------------------------------------------
-TOTAL                                                          761     17    98%
-125 passed, 11 warnings in 6.57s
+TOTAL                                                          838     15    98%
+142 passed, 11 warnings in 11.85s
