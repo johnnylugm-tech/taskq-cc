@@ -89,7 +89,7 @@ def _request(method: str, path: str, api_key: str) -> httpx.Response:
     return asyncio.run(_go())
 
 
-def test_ac_4_1_insufficient_scope_returns_403_problem_json():
+def test_ac_4_1_insufficient_scope_returns_403_problem_json():  # NFR-02 (NP-02 — authz 403 on insufficient scope), NFR-09 (zero-skip — every test asserts), NFR-10 (integration)
     """AC-4.1 — a ``write`` key against the ``admin``-only DELETE returns 403 + problem+json."""
     response = _request("DELETE", f"/v1/tasks/{EXISTING_ID}", WRITE_KEY)
     result = {
@@ -101,7 +101,7 @@ def test_ac_4_1_insufficient_scope_returns_403_problem_json():
     assert "problem+json" in result["content_type"]
 
 
-def test_ac_4_2_403_body_does_not_reveal_resource_existence():
+def test_ac_4_2_403_body_does_not_reveal_resource_existence():  # NFR-02 (NP-02 — 403 body must not leak resource existence; R4 risk), NFR-09 (zero-skip), NFR-10 (integration)
     """AC-4.2 — 403 bodies for an existing and a non-existent id are indistinguishable.
 
     Covers TEST_SPEC FR-04 rows 2 (existing_id=1) and 3 (existing_id=999).
@@ -129,7 +129,7 @@ def test_ac_4_2_403_body_does_not_reveal_resource_existence():
     assert "instance" not in parsed or str(MISSING_ID) not in str(parsed.get("instance"))
 
 
-def test_ac_4_3_all_v1_routes_resolve_through_single_auth_dependency():
+def test_ac_4_3_all_v1_routes_resolve_through_single_auth_dependency():  # NFR-06 (single-dependency invariant — layering contract on /v1 routes), NFR-09 (zero-skip), NFR-11 (test readability)
     """AC-4.3 — every ``/v1`` route resolves through the one shared auth dependency."""
     app = create_app()
 
@@ -171,7 +171,7 @@ def test_ac_4_3_all_v1_routes_resolve_through_single_auth_dependency():
     assert result["deps_per_route"] == {"require_api_key"}
 
 
-def test_sec_t04_write_scope_denies_admin_endpoint_403():
+def test_sec_t04_write_scope_denies_admin_endpoint_403():  # NFR-02 (NP-02 — write scope denied on admin endpoint), NFR-09 (zero-skip), NFR-10 (integration)
     """SEC-T-04 — a ``write`` scope key is denied on an ``admin`` endpoint with 403."""
     response = _request("DELETE", f"/v1/tasks/{EXISTING_ID}", WRITE_KEY)
     result = {"status": response.status_code}
