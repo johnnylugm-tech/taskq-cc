@@ -115,7 +115,9 @@
         "taskq_api",
         "taskq_api.app",
         "taskq_api.__main__",
-        "taskq_api.cli"
+        "taskq_api.cli",
+        "migrations",
+        "migrations.versions"
       ],
       "allowed_dependencies": [
         "models",
