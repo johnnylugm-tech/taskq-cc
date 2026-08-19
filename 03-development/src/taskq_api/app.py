@@ -1,23 +1,32 @@
-"""[FR-01/FR-03] FastAPI application factory.
+"""[FR-01/FR-03/FR-08] FastAPI application factory.
 
 Wires the routers, the RFC 7807 problem+json exception handlers, and
 the FR-03 exempt health endpoints (``/healthz`` and ``/readyz``).
 
-Citations: SPEC.md §3 FR-03 (FR-09 exemption) + FR-10 (problem+json);
-SAD.md §2.2 L0 app.
+[FR-08] The lifespan context manager invokes ``runner.drain(...)`` on
+shutdown so an in-flight long-running subprocess is given the
+``TASKQ_DRAIN_TIMEOUT`` budget to complete; stragglers are cancelled
+and marked ``state="interrupted"`` so no orphan child process is left
+behind on SIGTERM (NFR-08).
+
+Citations: SPEC.md §3 FR-03 (FR-09 exemption) + FR-10 (problem+json) +
+FR-08 (graceful drain); SAD.md §2.2 L0 app.
 """
 
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from taskq_api.api.tasks import router as tasks_router
+from taskq_api.config import get_settings
 from taskq_api.errors import Problem, correlation_id_for
 from taskq_api.repository import session as session_module
+from taskq_api.service import runner
 
 
 # [FR-07] The migrations ``env.py`` writes this marker file under
@@ -46,10 +55,29 @@ def _problem_json_response(
 
 
 def create_app() -> FastAPI:
+    # [FR-08] The lifespan wires startup/shutdown around the runner:
+    # on shutdown, ``runner.drain(drain_timeout)`` gives in-flight
+    # subprocesses up to ``TASKQ_DRAIN_TIMEOUT`` to complete, then
+    # cancels stragglers and marks them ``interrupted``. The
+    # ``execute_command`` exception handler kills+waits each child
+    # before the cancellation surfaces, so no orphan PIDs are left
+    # behind on SIGTERM (NFR-08 / AC-8.3).
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        # No-op startup — the runner is lazily initialised on first
+        # ``submit`` call (so per-test isolation via ``_isolated_db``
+        # is honoured). The shutdown path is what carries the FR-08
+        # graceful-drain contract.
+        try:
+            yield
+        finally:
+            await runner.drain(get_settings().drain_timeout)
+
     app = FastAPI(
         title="taskq-api",
         version="0.1.0",
         description="FR-01 task CRUD API.",
+        lifespan=lifespan,
     )
     app.include_router(tasks_router)
 
