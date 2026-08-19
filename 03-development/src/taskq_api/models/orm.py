@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -95,4 +95,32 @@ class ApiKey(Base):
     )
 
 
-__all__ = ["Base", "Task", "TaskResult", "ApiKey"]
+class RateBucket(Base):
+    """[FR-05] Per-token rate-limit bucket row.
+
+    FR-05 requires the bucket state to live in the database so it stays
+    consistent across workers — an in-process counter would let a burst
+    of ``capacity`` requests through *per worker*. One row per API key:
+    ``tokens`` is the fractional token count at ``updated_at``; the
+    refill is computed lazily on read (``tokens + elapsed * rate``,
+    clamped to ``TASKQ_RATE_BURST``) rather than by a background timer.
+
+    ``key_id`` is the primary key and is stored as text so the same row
+    identifies a key regardless of whether the caller resolved it to an
+    int or a string id.
+
+    Citations: SPEC.md §3 FR-05 (lines: "以資料庫保存 bucket 狀態
+    (跨 worker 一致)"); ADR-007 (token bucket with row-level lock);
+    SAD.md §2.2 L1 orm.
+    """
+
+    __tablename__ = "rate_buckets"
+
+    key_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tokens: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
+    )
+
+
+__all__ = ["Base", "Task", "TaskResult", "ApiKey", "RateBucket"]

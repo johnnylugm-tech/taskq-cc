@@ -18,12 +18,21 @@ from taskq_api.errors import Problem, correlation_id_for
 from taskq_api.repository import session as session_module
 
 
-def _problem_json_response(payload: dict, status: int, correlation_id: str) -> JSONResponse:
+def _problem_json_response(
+    payload: dict,
+    status: int,
+    correlation_id: str,
+    extra_headers: dict[str, str] | None = None,
+) -> JSONResponse:
+    headers = {"X-Correlation-Id": correlation_id}
+    # [FR-05] A 429 carries ``Retry-After`` next to the problem+json body.
+    # Citations: SPEC.md §3 FR-05 + §7 row 429.
+    headers.update(extra_headers or {})
     return JSONResponse(
         status_code=status,
         content=payload,
         media_type="application/problem+json",
-        headers={"X-Correlation-Id": correlation_id},
+        headers=headers,
     )
 
 
@@ -91,7 +100,7 @@ def create_app() -> FastAPI:
                 "instance": str(request.url.path),
                 "correlation_id": cid,
             }
-        return _problem_json_response(body, exc.status, cid)
+        return _problem_json_response(body, exc.status, cid, exc.headers)
 
     @app.exception_handler(RequestValidationError)
     async def _validation_handler(request: Request, exc: RequestValidationError):  # noqa: ANN202

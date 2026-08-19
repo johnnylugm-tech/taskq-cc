@@ -27,7 +27,30 @@ from __future__ import annotations
 from fastapi import Header
 
 from taskq_api.errors import make_problem
-from taskq_api.service import auth
+from taskq_api.service import auth, ratelimit
+
+
+def _enforce_rate_limit(key_id: str) -> None:
+    """[FR-05] Charge this request against ``key_id``'s token bucket.
+
+    Raises 429 + problem+json + ``Retry-After`` when the bucket is empty.
+    The check lives in the auth dependency, which is mounted only on the
+    ``/v1/*`` routes — that is what makes ``/healthz`` and ``/readyz``
+    exempt (AC-5.3): they declare no dependency, so no token is ever
+    withdrawn on their behalf.
+
+    Citations: SPEC.md §3 FR-05 + §7 row 429 + §8 #9; NFR-02; AC-5.1 /
+    AC-5.3.
+    """
+    allowed, retry_after = ratelimit.check(key_id)
+    if not allowed:
+        raise make_problem(
+            status=429,
+            title="Too Many Requests",
+            detail="Rate limit exceeded.",
+            type_uri="/errors/rate-limit",
+            headers={"Retry-After": str(retry_after)},
+        )
 
 
 def _resolve_or_raise(x_api_key: str | None) -> tuple[str, str]:
@@ -110,6 +133,10 @@ def require_api_key_with_scope(scope: str):
         x_api_key: str | None = Header(default=None, alias="X-API-Key"),
     ) -> tuple[str, str]:
         resolved = _resolve_or_raise(x_api_key)
+        # FR-05: the bucket is keyed on the resolved key id, so the
+        # limit is per-token and an unauthenticated caller can never
+        # drain another key's bucket.
+        _enforce_rate_limit(resolved[0])
         # 401 contract lives in ``_resolve_or_raise``; 403 contract lives
         # in ``enforce_scope``. The split keeps AC-4.2's "403 body must
         # not leak resource existence" guarantee intact: the 401 path

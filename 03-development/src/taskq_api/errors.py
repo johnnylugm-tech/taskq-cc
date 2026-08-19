@@ -26,11 +26,17 @@ class Problem(Exception):
         title: str,
         detail: str,
         type_uri: str = "about:blank",
+        headers: dict[str, str] | None = None,
     ) -> None:
         self.status = status
         self.title = title
         self.detail = detail
         self.type_uri = type_uri
+        # [FR-05] Extra response headers carried by the problem — the 429
+        # contract requires a ``Retry-After`` alongside the problem+json
+        # body, and the header must survive the exception handler.
+        # Citations: SPEC.md §3 FR-05 + §7 row 429.
+        self.headers = headers or {}
         super().__init__(detail)
 
     def to_response(self, correlation_id: str) -> JSONResponse:
@@ -88,8 +94,15 @@ def make_problem(
     title: str,
     detail: str,
     type_uri: str = "about:blank",
+    headers: dict[str, str] | None = None,
 ) -> Problem:
-    return Problem(status=status, title=title, detail=detail, type_uri=type_uri)
+    return Problem(
+        status=status,
+        title=title,
+        detail=detail,
+        type_uri=type_uri,
+        headers=headers,
+    )
 
 
 __all__ = [
