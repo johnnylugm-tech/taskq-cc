@@ -28,9 +28,8 @@ def _encode_cursor(last_id: int) -> str:
 def _decode_cursor(cursor: str | None) -> Optional[int]:
     """Decode an opaque cursor token. Returns ``None`` on any decode error.
 
-    Citations: SPEC.md §3 FR-01 AC-1.5 — cursor is opaque from the client's
-    perspective; the server treats it as a token and never rejects an
-    unparseable value (it falls back to the first page).
+    The cursor is opaque from the client's perspective (FR-01 AC-1.5);
+    an unparseable value falls back to the first page rather than 400.
     """
     if not cursor:
         return None
@@ -78,8 +77,9 @@ def list_paginated(
 ) -> tuple[list[Task], Optional[str]]:
     """Cursor-paginated list of tasks with eager-loaded result rows.
 
-    Citations: SPEC.md §3 FR-01 cursor pagination + NFR-01 N+1 guard.
-    Returns ``(rows, next_cursor)``.
+    Returns ``(rows, next_cursor)``. The count statement is always
+    executed so the SQL surface stays at exactly 3 statements regardless
+    of row count (FR-01 AC-1.7 / NFR-01 N+1 guard).
     """
     last_id = _decode_cursor(cursor)
     with session_scope() as session:
@@ -96,21 +96,14 @@ def list_paginated(
         if last_id is not None:
             page_stmt = page_stmt.where(Task.id > last_id)
 
-        total = session.execute(count_stmt).scalar_one()
+        session.execute(count_stmt).scalar_one()
         rows: list[Task] = list(session.execute(page_stmt).scalars())
-
-        # Eager-load any task_results so the page has them in one round-trip.
-        # The selectinload above emits the follow-up SELECT automatically
-        # — we don't need to issue a manual query here.
 
         next_cursor: Optional[str] = None
         if len(rows) > limit:
             tail = rows[:limit]
             next_cursor = _encode_cursor(tail[-1].id)
             rows = tail
-        # NB: ``total`` is computed solely to keep the SQL count constant at 3
-        # across row counts (see SAD §2 NFR-01 / FR-01 AC-1.7).
-        del total
     return rows, next_cursor
 
 

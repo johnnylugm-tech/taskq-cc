@@ -21,6 +21,16 @@ _DEFAULT_LIMIT = 50
 _MAX_LIMIT = 200
 
 
+def _not_found_problem():
+    """RFC 7807 problem body for an unknown / missing task id."""
+    return make_problem(
+        status=404,
+        title="Not found",
+        detail="Task not found.",
+        type_uri="/errors/not-found",
+    )
+
+
 def _require_scope(required: str):
     """Build a dependency that enforces ``required`` scope."""
     def _dep(
@@ -36,33 +46,18 @@ def create_task_endpoint(
     _api_key: Tuple[str, str] = Depends(_require_scope("write")),
 ):
     """Create a task. FR-01 AC-1.1 / AC-1.2 / SEC-T-01."""
-    payload = service.create_task(name=body.name, command=body.command)
-    return payload
+    return service.create_task(name=body.name, command=body.command)
 
 
 @router.get("/tasks/{task_id}")
 def get_task_endpoint(
-    task_id: str,
+    task_id: int,
     _api_key: Tuple[str, str] = Depends(_require_scope("read")),
 ):
     """Fetch one task by id. FR-01 AC-1.3."""
-    try:
-        numeric_id = int(task_id)
-    except ValueError:
-        raise make_problem(
-            status=404,
-            title="Not found",
-            detail="Task not found.",
-            type_uri="/errors/not-found",
-        )
-    row = service.get_task(numeric_id)
+    row = service.get_task(task_id)
     if row is None:
-        raise make_problem(
-            status=404,
-            title="Not found",
-            detail="Task not found.",
-            type_uri="/errors/not-found",
-        )
+        raise _not_found_problem()
     return row
 
 
@@ -95,27 +90,12 @@ def list_tasks_endpoint(
 
 @router.delete("/tasks/{task_id}", status_code=204)
 def delete_task_endpoint(
-    task_id: str,
+    task_id: int,
     _api_key: Tuple[str, str] = Depends(_require_scope("admin")),
 ):
     """Delete a task (and its result row) atomically. FR-01 AC-1.6."""
-    try:
-        numeric_id = int(task_id)
-    except ValueError:
-        raise make_problem(
-            status=404,
-            title="Not found",
-            detail="Task not found.",
-            type_uri="/errors/not-found",
-        )
-    deleted = service.delete_task(numeric_id)
-    if not deleted:
-        raise make_problem(
-            status=404,
-            title="Not found",
-            detail="Task not found.",
-            type_uri="/errors/not-found",
-        )
+    if not service.delete_task(task_id):
+        raise _not_found_problem()
     return None
 
 
