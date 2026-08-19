@@ -1,4 +1,4 @@
-"""[FR-05] Rate-bucket repository — single transaction, row-level lock.
+"""[FR-05/FR-06] Rate-bucket repository — single transaction, row-level lock.
 
 FR-05 requires that a bucket update "必須在單一交易內以 row-level lock
 進行": one :class:`~sqlalchemy.orm.Session` per :func:`withdraw` call,

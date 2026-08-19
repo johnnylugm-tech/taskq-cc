@@ -1,4 +1,4 @@
-"""[FR-03] API key repository — only the SHA-256 digest is ever persisted.
+"""[FR-03/FR-06] API key repository — only the SHA-256 digest is ever persisted.
 
 The plaintext is minted here and returned to the caller once; only the
 hex digest lands in ``api_keys.key_hash``. The repository never logs or
@@ -6,8 +6,10 @@ echoes the plaintext. ``get_active_by_hash`` filters out rows whose
 ``revoked_at`` is non-null so the auth service can rely on a single
 lookup to decide accept/deny.
 
-Citations: SPEC.md §3 FR-03 + NFR-02 (sha256 only, no plaintext at rest);
-SAD.md §2.2 L2 repository.key_repo.
+All writes go through :func:`session_scope` /
+:func:`insert_scope` — the FR-06 transactional boundary
+(SAD.md §2.2 L2 repository.key_repo; SPEC.md §3 FR-06 + FR-03;
+NFR-02 sha256-only).
 """
 
 from __future__ import annotations

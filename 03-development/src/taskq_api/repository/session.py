@@ -1,6 +1,13 @@
-"""[FR-01] SQLAlchemy engine + session_scope context manager.
+"""[FR-01/FR-06] SQLAlchemy engine + session_scope context manager.
 
-Citations: SPEC.md §3 FR-06 (transaction boundary); SAD.md §2.2 session.
+The engine is built with ``pool_size=settings.db_pool_size`` and
+``pool_pre_ping=True`` (FR-06 AC-6.5). The :func:`session_scope`
+context manager is the single transactional boundary for every
+repository call (FR-06 AC-6.2) — commit on clean exit, rollback on
+any exception, always close.
+
+Citations: SPEC.md §3 FR-06 (transaction boundary + pool config);
+SAD.md §2.2 session; NFR-03 (transactional integrity).
 """
 
 from __future__ import annotations

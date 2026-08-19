@@ -1,4 +1,10 @@
-"""[FR-01/FR-02] Task repository — only consumer of SQL in the project.
+"""[FR-01/FR-02/FR-06] Task repository — only consumer of SQL in the project.
+
+Eager-loads ``Task.result`` via ``selectinload`` on every read path so
+listing 1000 tasks does not become 1000 result-table queries (FR-06
+AC-6.4 / NFR-01 N+1 guard). Every call goes through
+:func:`session_scope` so the transaction boundary is centralised in
+``taskq_api.repository.session`` (FR-06 AC-6.2).
 
 Citations: SPEC.md §3 FR-01 + FR-02 + FR-06; SAD.md §2.2 L2 task_repo;
 NFR-01 (N+1 guard via selectinload).
