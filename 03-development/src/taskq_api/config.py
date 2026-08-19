@@ -1,15 +1,22 @@
-"""[FR-01] Configuration loader for taskq_api.
+"""[FR-01/FR-09] Configuration loader for taskq_api.
 
 Reads ``TASKQ_*`` environment variables once at startup.
 Independence module — no sibling imports.
 
-Citations: SPEC.md §3 FR-06 (env-driven config); SAD.md §2.2 L0 config.
+[FR-09] ``Settings.__repr__`` redacts the userinfo substring from
+``db_url`` so a logger or ``/v1/metrics`` response that picks up the
+repr does not leak the password (SEC-T-05 / SEC-T-08). The raw
+``db_url`` field stays intact for the engine builder.
+
+Citations: SPEC.md §3 FR-06 (env-driven config) + FR-09 (DB URL
+password redaction); SAD.md §2.2 L0 config.
 """
 
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, fields
 
 
 @dataclass(frozen=True)
@@ -29,6 +36,32 @@ class Settings:
     host: str
     port: int
     db_pool_size: int
+
+    def __repr__(self) -> str:  # noqa: D401 — repr override for safety
+        """Return a repr whose ``db_url`` has the userinfo password redacted.
+
+        The raw ``db_url`` field keeps the password because the engine
+        builder needs it; any code path that stringifies the Settings
+        object (a logger formatting ``%r``, ``repr(settings)`` in a
+        debugging session, the ``/v1/metrics`` exception path) sees the
+        redacted form instead.
+        """
+        redacted_url = _REDACT_USERINFO.sub(r"\1[REDACTED]@", self.db_url)
+        # Walk ``fields()`` rather than hand-listing every name so a
+        # future field added to ``Settings`` is picked up here without
+        # a separate edit to ``__repr__``.
+        pairs = [
+            f"{field.name}={redacted_url if field.name == 'db_url' else getattr(self, field.name)!r}"
+            for field in fields(self)
+        ]
+        return f"Settings({', '.join(pairs)})"
+
+
+# [FR-09] Match ``scheme://user:password@host`` and capture the user
+# portion so the password substring can be replaced wholesale with
+# ``[REDACTED]``. Only the password is replaced; the username stays so
+# operators can still tell which credential is in use.
+_REDACT_USERINFO = re.compile(r"(?P<scheme>[a-zA-Z][a-zA-Z0-9+.\-]*)://[^:@\s/]+:[^@\s/]+@")
 
 
 def _tuple_env(name: str, default: tuple[str, ...] = ()) -> tuple[str, ...]:
