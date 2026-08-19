@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from fastapi import Header
 
-from taskq_api.errors import Problem, make_problem
+from taskq_api.errors import make_problem
 from taskq_api.service import auth
 
 
