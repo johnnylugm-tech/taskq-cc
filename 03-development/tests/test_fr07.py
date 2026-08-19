@@ -107,17 +107,17 @@ def _run_alembic(
     subprocesses) and the per-test ``TASKQ_HOME`` / ``TASKQ_DB_URL`` so the
     CLI uses an isolated SQLite file.
     """
-    env = os.environ.copy()
-    env["TASKQ_HOME"] = str(taskq_home)
-    env["TASKQ_DB_URL"] = db_url
+    proc_env = os.environ.copy()
+    proc_env["TASKQ_HOME"] = str(taskq_home)
+    proc_env["TASKQ_DB_URL"] = db_url
     src_root = _SRC_ROOT
-    existing_pp = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = str(src_root) + os.pathsep + existing_pp
+    existing_pp = proc_env.get("PYTHONPATH", "")
+    proc_env["PYTHONPATH"] = str(src_root) + os.pathsep + existing_pp
     return subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         capture_output=True,
         text=True,
-        env=env,
+        env=proc_env,
         cwd=str(cwd),
         check=False,
     )
@@ -578,3 +578,349 @@ def test_ac_7_5_failing_migration_rolls_back_readyz_returns_503(tmp_path, monkey
     # FR07-readyz-503 (applies_to 5) — the readiness probe surfaces
     # the failure with a 503.
     assert result["readyz_status"] == 503
+
+
+# ---------------------------------------------------------------------------
+# In-process coverage tests
+# ---------------------------------------------------------------------------
+# The five TEST_SPEC test cases above run alembic in a SUBPROCESS so that
+# the project's real I/O / SQL semantics are exercised end-to-end. The
+# subprocess boundary, however, is invisible to coverage — the lines the
+# subprocess runs in env.py and the three revision files do not appear
+# in the coverage report from the parent process.
+#
+# These in-process tests re-import the migration modules and drive the
+# same code paths via Alembic's Python API so coverage can see the
+# stmts executed. They are NOT a substitute for the subprocess tests:
+# the subprocess tests are the binding NFR-09 / NFR-12 verification
+# target; the in-process tests exist only to keep the test_coverage
+# dimension ≥ 80%.
+#
+# Each test isolates state via ``tmp_path`` and per-test env vars, so
+# they cannot leak across the subprocess tests above.
+
+
+def _make_alembic_cfg(db_url: str):
+    """Build an in-process alembic ``Config`` pointed at the per-test DB.
+
+    Runs the alembic Python API in the current process so coverage can
+    trace the env.py + revision source code. Mirrors the env wiring the
+    subprocess driver uses (``PYTHONPATH`` ↔ ``prepend_sys_path``,
+    ``TASKQ_DB_URL`` ↔ ``sqlalchemy.url``). The alembic.ini path is
+    passed to the config so env.py's ``if config.config_file_name is
+    not None: fileConfig(...)`` branch fires (matches the subprocess
+    path).
+    """
+    from alembic.config import Config as alembic_config_Config
+
+    cfg = alembic_config_Config(str(_SRC_ROOT / "migrations" / "alembic.ini"))
+    cfg.set_main_option("script_location", str(_SRC_ROOT / "migrations"))
+    cfg.set_main_option("prepend_sys_path", str(_SRC_ROOT))
+    cfg.set_main_option("sqlalchemy.url", db_url)
+    return cfg
+
+
+def test_cov_env_helpers_db_url_and_marker_path(monkeypatch):
+    """Cover env.py:60-68 — ``_db_url`` and ``_migration_failure_marker_path``.
+
+    NFR-12 (execute-verification target) — the unit-level wiring of
+    env.py drives the rest of the migrations; covering these helpers
+    directly guards against regressions in the env contract.
+    """
+    from migrations import env as alembic_env
+
+    # _db_url — TASKQ_DB_URL override wins.
+    monkeypatch.delenv("TASKQ_DB_URL", raising=False)
+    assert alembic_env._db_url() == "sqlite:///./taskq.db"
+    monkeypatch.setenv("TASKQ_DB_URL", "sqlite:///coverage_marker.db")
+    assert alembic_env._db_url() == "sqlite:///coverage_marker.db"
+
+    # _migration_failure_marker_path — TASKQ_HOME controls the directory.
+    monkeypatch.setenv("TASKQ_HOME", "/tmp/coverage_marker_home")
+    marker = alembic_env._migration_failure_marker_path()
+    assert marker.endswith("/.migration_failure.json")
+    assert "/tmp/coverage_marker_home" in marker
+
+
+def test_cov_env__write_migration_failure_marker_writes_file(monkeypatch, tmp_path):
+    """Cover env.py:71-86 — ``_write_migration_failure_marker`` happy path.
+
+    Exercises the branch that creates the TASKQ_HOME directory and
+    writes the JSON marker file. The OSError branch (lines 83-86) is
+    tested by the test_cov_env__write_migration_failure_marker_oserror
+    case below.
+    """
+    from migrations import env as alembic_env
+
+    monkeypatch.setenv("TASKQ_HOME", str(tmp_path))
+    alembic_env._write_migration_failure_marker('{"reason":"coverage"}')
+    marker_path = tmp_path / ".migration_failure.json"
+    assert marker_path.is_file()
+    assert marker_path.read_text(encoding="utf-8") == '{"reason":"coverage"}'
+
+
+def test_cov_env__write_migration_failure_marker_oserror(monkeypatch, tmp_path):
+    """Cover env.py:83-86 — OSError branch in ``_write_migration_failure_marker``.
+
+    Triggered when TASKQ_HOME points at a path whose parent directory
+    cannot be created (e.g. a path underneath a regular file). The
+    function must swallow the OSError so the surrounding migration
+    failure still propagates to the caller.
+    """
+    from migrations import env as alembic_env
+
+    # A path whose parent component is a regular file (not a directory)
+    # makes ``os.makedirs(..., exist_ok=True)`` raise ``NotADirectoryError``
+    # which is a subclass of OSError — the function must swallow it.
+    blocker_file = tmp_path / "regular_file"
+    with open(blocker_file, "wb") as fh:
+        fh.write(b"x")
+    # Point TASKQ_HOME at a directory beneath the regular file so
+    # os.makedirs raises NotADirectoryError (which is OSError).
+    monkeypatch.setenv("TASKQ_HOME", str(blocker_file / "no" / "such" / "dir"))
+    # Should not raise.
+    alembic_env._write_migration_failure_marker("ignored")
+    assert not (blocker_file / ".migration_failure.json").exists()
+
+
+def test_cov_env__force_fail_requested_one_shot(monkeypatch, tmp_path):
+    """Cover env.py:89-100 — ``_force_fail_requested`` one-shot semantics.
+
+    The flag is a one-shot: a follow-up invocation under the same
+    ``TASKQ_MIGRATION_FORCE_FAIL=1`` env var must see the marker and
+    return False, so AC-7.5's ``alembic current`` check can succeed.
+    """
+    from migrations import env as alembic_env
+
+    monkeypatch.setenv("TASKQ_HOME", str(tmp_path))
+    monkeypatch.setenv("TASKQ_MIGRATION_FORCE_FAIL", "0")
+    assert alembic_env._force_fail_requested() is False
+
+    monkeypatch.setenv("TASKQ_MIGRATION_FORCE_FAIL", "1")
+    assert alembic_env._force_fail_requested() is True
+
+    # After the marker is written, the same env returns False.
+    alembic_env._write_migration_failure_marker("coverage")
+    assert alembic_env._force_fail_requested() is False
+
+    # Different env var (unrelated value) — also False.
+    monkeypatch.setenv("TASKQ_MIGRATION_FORCE_FAIL", "")
+    assert alembic_env._force_fail_requested() is False
+
+
+def test_cov_v1_initial_upgrade_and_downgrade_in_process(tmp_path, monkeypatch):
+    """Cover v1_initial.py:27-41, 52-53 — both upgrade() and downgrade().
+
+    Drives the same schema operations in-process so coverage can see
+    the source. Mirrors what AC-7.1's subprocess test verifies
+    end-to-end; the difference is only the process boundary.
+    """
+    from alembic import command
+
+    db_path = tmp_path / "cov_v1.db"
+    db_url = f"sqlite:///{db_path}"
+    monkeypatch.setenv("TASKQ_DB_URL", db_url)
+    monkeypatch.setenv("TASKQ_HOME", str(tmp_path))
+
+    cfg = _make_alembic_cfg(db_url)
+    # Ensure each test starts from a clean alembic_version state.
+    if db_path.exists():
+        db_path.unlink()
+
+    # upgrade head — v1_initial's upgrade() runs.
+    command.upgrade(cfg, "head")
+    with sqlite3.connect(str(db_path)) as conn:
+        tables = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()}
+    assert {"tasks", "api_keys"}.issubset(tables)
+
+    # downgrade base — v1_initial's downgrade() runs.
+    command.downgrade(cfg, "base")
+    with sqlite3.connect(str(db_path)) as conn:
+        tables = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()}
+    assert "tasks" not in tables
+    assert "api_keys" not in tables
+
+
+def test_cov_v2_tags_upgrade_and_downgrade_in_process(tmp_path, monkeypatch):
+    """Cover v2_tags.py:23-47, 57-59 — both upgrade() and downgrade().
+
+    The v2 upgrade creates ``tags`` / ``task_tags`` and the unique
+    index on ``tasks.name``; the downgrade reverses them. Both
+    branches must be exercised to satisfy the test_coverage dimension.
+    To exercise v2's DOWN revision we start at v2 then downgrade to v1.
+    """
+    from alembic import command
+
+    db_path = tmp_path / "cov_v2.db"
+    db_url = f"sqlite:///{db_path}"
+    monkeypatch.setenv("TASKQ_DB_URL", db_url)
+    monkeypatch.setenv("TASKQ_HOME", str(tmp_path))
+
+    cfg = _make_alembic_cfg(db_url)
+    if db_path.exists():
+        db_path.unlink()
+
+    # upgrade to v2_tags — v2_tags.upgrade() runs after v1_initial's.
+    command.upgrade(cfg, "v2_tags")
+    with sqlite3.connect(str(db_path)) as conn:
+        tables = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()}
+        indexes = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='index'"
+        ).fetchall()}
+    assert {"tags", "task_tags"}.issubset(tables)
+    assert "uq_tasks_name" in indexes
+
+    # downgrade to v1_initial — v2_tags.downgrade() runs.
+    command.downgrade(cfg, "v1_initial")
+    with sqlite3.connect(str(db_path)) as conn:
+        tables = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()}
+        indexes = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='index'"
+        ).fetchall()}
+    assert "tags" not in tables
+    assert "task_tags" not in tables
+    assert "uq_tasks_name" not in indexes
+
+
+def test_cov_v3_split_upgrade_and_downgrade_in_process(tmp_path, monkeypatch):
+    """Cover v3_split_results.py:46-67, 79-93 — both upgrade() and downgrade().
+
+    The v3 upgrade splits ``tasks.result_json`` into ``task_results``
+    rows; the downgrade is a real reverse migration that re-merges
+    and restores the column. Both branches must run so coverage sees
+    the data-migration SQL.
+    """
+    from alembic import command
+
+    db_path = tmp_path / "cov_v3.db"
+    db_url = f"sqlite:///{db_path}"
+    monkeypatch.setenv("TASKQ_DB_URL", db_url)
+    monkeypatch.setenv("TASKQ_HOME", str(tmp_path))
+
+    cfg = _make_alembic_cfg(db_url)
+    if db_path.exists():
+        db_path.unlink()
+
+    # upgrade to v3 — v3_split_results.upgrade() runs.
+    command.upgrade(cfg, "v3_split_results")
+    with sqlite3.connect(str(db_path)) as conn:
+        tables = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()}
+    assert "task_results" in tables
+
+    # Insert a row with a sample result_json so the v3 downgrade has
+    # non-trivial data to reverse-migrate.
+    with sqlite3.connect(str(db_path)) as conn:
+        cur = conn.execute(
+            "INSERT INTO tasks (name, command) VALUES (?, ?)",
+            ("cov-v3-sample", "echo"),
+        )
+        task_id = cur.lastrowid
+        conn.execute(
+            "INSERT INTO task_results (task_id, result_json) VALUES (?, ?)",
+            (task_id, '{"exit_code": 0}'),
+        )
+        conn.commit()
+
+    # downgrade to v2_tags — v3_split_results.downgrade() runs.
+    command.downgrade(cfg, "v2_tags")
+    with sqlite3.connect(str(db_path)) as conn:
+        tables = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()}
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(tasks)").fetchall()}
+    assert "task_results" not in tables
+    assert "result_json" in cols
+
+    # upgrade to v3 again — v3_split_results.upgrade() rebuilds task_results.
+    command.upgrade(cfg, "v3_split_results")
+    with sqlite3.connect(str(db_path)) as conn:
+        tables = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()}
+    assert "task_results" in tables
+
+
+def test_cov_env_run_migrations_online_and_offline_in_process(tmp_path, monkeypatch):
+    """Cover env.py:108-153 + dispatch branch — both runners via the alembic API.
+
+    Drives alembic's online mode (live DB) and offline mode (SQL
+    generation) in-process so coverage can see the run_migrations_online
+    and run_migrations_offline bodies. The dockerfile-style
+    ``is_offline_mode()`` dispatch branch is exercised by the offline
+    invocation.
+    """
+    import contextlib
+    import io
+
+    from alembic import command
+
+    db_path = tmp_path / "cov_online.db"
+    db_url = f"sqlite:///{db_path}"
+    monkeypatch.setenv("TASKQ_DB_URL", db_url)
+    monkeypatch.setenv("TASKQ_HOME", str(tmp_path))
+
+    cfg = _make_alembic_cfg(db_url)
+    if db_path.exists():
+        db_path.unlink()
+
+    # Online mode — run_migrations_online() executes against a real DB.
+    command.upgrade(cfg, "head")
+    with sqlite3.connect(str(db_path)) as conn:
+        assert conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='tasks'"
+        ).fetchone() is not None
+
+    # Offline mode — SQL is emitted to stdout; run_migrations_offline() runs.
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        command.upgrade(cfg, "head", sql=True)
+    sql = buf.getvalue()
+    assert "CREATE TABLE tasks" in sql
+    assert "CREATE TABLE api_keys" in sql
+    assert "CREATE TABLE task_results" in sql
+
+
+def test_cov_env_force_fail_writes_marker_and_raises_in_process(tmp_path, monkeypatch):
+    """Cover env.py:148-153 — failure-injection branch raises RuntimeError.
+
+    Mirrors the AC-7.5 subprocess test but in-process. The branch
+    writes the marker file via ``_write_migration_failure_marker`` and
+    then raises ``RuntimeError("simulated migration failure")``; the
+    surrounding alembic transaction swallows the command exit code
+    but the marker survives.
+    """
+    from alembic import command
+
+    db_path = tmp_path / "cov_fail.db"
+    db_url = f"sqlite:///{db_path}"
+    monkeypatch.setenv("TASKQ_DB_URL", db_url)
+    monkeypatch.setenv("TASKQ_HOME", str(tmp_path))
+
+    cfg = _make_alembic_cfg(db_url)
+    if db_path.exists():
+        db_path.unlink()
+
+    # Pre-stage v2 so the v3 attempt has something to roll back from.
+    command.upgrade(cfg, "v2_tags")
+
+    # Now enable the failure injection — the next upgrade head must
+    # raise RuntimeError AND write the marker file before raising.
+    monkeypatch.setenv("TASKQ_MIGRATION_FORCE_FAIL", "1")
+    with pytest.raises(Exception) as excinfo:
+        command.upgrade(cfg, "head")
+    assert "simulated migration failure" in str(excinfo.value)
+
+    # The marker file survives the failed transaction.
+    marker = tmp_path / ".migration_failure.json"
+    assert marker.is_file()
+    assert marker.read_text(encoding="utf-8") == '{"reason":"simulated migration failure"}'
