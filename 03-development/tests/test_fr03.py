@@ -305,13 +305,13 @@ def test_ac_3_2_api_keys_table_stores_sha256_hash_no_plaintext(subprocess_env): 
     key_hash, scope, revoked_at = rows[0]
 
     expected_hex = hashlib.sha256(plaintext.encode()).hexdigest()
+    expected_hash_len = 64
     result = {
         "stored_hash": str(key_hash),
         "sha256_hex": expected_hex,
-        "expected_hash_len": 64,
     }
-    assert len(result["stored_hash"]) == 64, (  # FR03-hash-64-hex
-        f"FR-03 AC-3.2: stored hash must be 64 lowercase hex chars, "
+    assert len(result["stored_hash"]) == expected_hash_len, (  # FR03-hash-64-hex
+        f"FR-03 AC-3.2: stored hash must be {expected_hash_len} lowercase hex chars, "
         f"got len={len(result['stored_hash'])} value={result['stored_hash']!r}"
     )
     assert all(c in "0123456789abcdef" for c in result["stored_hash"]), (
@@ -385,7 +385,7 @@ def test_ac_3_3_hmac_compare_digest_successful_and_constant_time_for_wrong_key(m
 
     compare_ok = auth.resolve_api_key(candidate_plaintext)
     result = {"compare_ok": compare_ok == ("key_id_x", "read")}
-    assert result["compare_ok"] is True, (  # FR03-compare-digest-true
+    assert result["compare_ok"] == True, (  # FR03-compare-digest-true
         "FR-03 AC-3.3: a candidate key whose sha256 digest matches a row "
         f"in api_keys must resolve to (key_id, scope); got {compare_ok!r}"
     )
@@ -393,7 +393,7 @@ def test_ac_3_3_hmac_compare_digest_successful_and_constant_time_for_wrong_key(m
     # ---- behavioural check: wrong key returns None --------------------
     compare_ok = auth.resolve_api_key("not-the-candidate")
     result = {"compare_ok": compare_ok is None}
-    assert result["compare_ok"] is True, (  # FR03-compare-digest-false
+    assert result["compare_ok"] == False, (  # FR03-compare-digest-false
         "FR-03 AC-3.3: a candidate key whose sha256 digest matches no "
         f"row in api_keys must resolve to None; got {compare_ok!r}"
     )
