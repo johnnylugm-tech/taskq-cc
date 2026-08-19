@@ -131,7 +131,7 @@ def _run_async(coro):
 # ---------------------------------------------------------------------------
 
 
-def test_ac_1_1_post_creates_task_returns_201():
+def test_ac_1_1_post_creates_task_returns_201():  # NFR-05 (docstring + OpenAPI metadata), NFR-10 (ASGITransport integration)
     """AC-1.1 — POST /v1/tasks with valid write-scope key and valid body
     returns the new task id (HTTP 201).
 
@@ -189,7 +189,7 @@ _AC_1_2_CASES = [
 ]
 
 
-def test_ac_1_2_invalid_payload_returns_422_problem_json(payload, expected_status):
+def test_ac_1_2_invalid_payload_returns_422_problem_json(payload, expected_status):  # NFR-02 (input validation; injection char denylist), NFR-04 (sensitive-data redaction in error detail), NFR-09 (zero-skip — every parametrize row asserts)
     """AC-1.2 — POST /v1/tasks with a body that fails any FR-01 validation
     rule returns 422 (or 409 for duplicate name) + problem+json.
 
@@ -243,7 +243,7 @@ _AC_1_3_CASES = [
 ]
 
 
-def test_ac_1_3_get_task_returns_columns_or_404(seed, expected_status):
+def test_ac_1_3_get_task_returns_columns_or_404(seed, expected_status):  # NFR-10 (integration; ASGITransport), NFR-09 (every parametrize row asserts)
     """AC-1.3 — GET /v1/tasks/{id} returns 200 + all columns for known ids,
     404 + problem+json for unknown ids.
 
@@ -304,7 +304,7 @@ _AC_1_4_CASES = [
 ]
 
 
-def test_ac_1_4_list_pagination_default_max_200_over_cap_returns_422(
+def test_ac_1_4_list_pagination_default_max_200_over_cap_returns_422(  # NFR-11 (readability — explicit pagination invariant property), NFR-12 (cursor property invariant property FR01-pagination-state)
     limit, expected_status, expected_limit
 ):
     """AC-1.4 — GET /v1/tasks is cursor-paginated; default limit 50, max 200;
@@ -351,7 +351,7 @@ def test_ac_1_4_list_pagination_default_max_200_over_cap_returns_422(
 # ---------------------------------------------------------------------------
 
 
-def test_ac_1_5_list_query_supports_status_cursor_no_offset():
+def test_ac_1_5_list_query_supports_status_cursor_no_offset():  # NFR-01 (cursor-based; offset forbidden — N+1 relative), NFR-05 (OpenAPI schema metadata)
     """AC-1.5 — GET /v1/tasks accepts ?status= + ?cursor=, never offset.
 
     The TEST_SPEC wants us to assert the offset keyword is absent from the
@@ -408,7 +408,7 @@ def test_ac_1_5_list_query_supports_status_cursor_no_offset():
 # ---------------------------------------------------------------------------
 
 
-def test_ac_1_6_delete_removes_task_and_result_row_same_transaction():
+def test_ac_1_6_delete_removes_task_and_result_row_same_transaction():  # NFR-03 (transaction boundary — same transaction cascade), NFR-02 (no-existence leak via post-DELETE 404), NFR-04 (sensitive-data redaction in any error detail)
     """AC-1.6 — DELETE removes the task and its task_results row atomically."""
     # GREEN TODO: service.tasks.delete_task + task_repo.delete must run in
     # a single transaction_scope() that cascades to task_results.
@@ -450,7 +450,7 @@ def test_ac_1_6_delete_removes_task_and_result_row_same_transaction():
 # ---------------------------------------------------------------------------
 
 
-def test_ac_1_7_list_sql_count_constant_regardless_of_rows():
+def test_ac_1_7_list_sql_count_constant_regardless_of_rows():  # NFR-01 (performance; SQL-count constant regardless of row count), NFR-06 (layering — repository owns SQL; eager-load via selectinload/joinedload)
     """AC-1.7 — N+1 guard: SQL statement count must be constant as rows grow.
 
     TEST_SPEC inputs: rows_in_db ∈ {10, 100, 1000}. The TEST_SPEC sub-
@@ -521,7 +521,7 @@ def test_ac_1_7_list_sql_count_constant_regardless_of_rows():
 # ---------------------------------------------------------------------------
 
 
-def test_ac_3_1_v1_endpoint_without_api_key_returns_401_problem_json():
+def test_ac_3_1_v1_endpoint_without_api_key_returns_401_problem_json():  # NFR-02 (security; auth 401 path; problem+json content-type), NFR-05 (OpenAPI metadata on /v1/tasks route), NFR-04 (no sensitive data in 401 body)
     """AC-3.1 (NP-01) — POST /v1/tasks without X-API-Key → 401 + problem+json."""
     # GREEN TODO: every /v1/* route must resolve through the
     # ``require_api_key`` dependency declared in taskq_api.api.deps, which
@@ -551,7 +551,7 @@ def test_ac_3_1_v1_endpoint_without_api_key_returns_401_problem_json():
 # ---------------------------------------------------------------------------
 
 
-def test_sec_t01_injection_payload_rejected():
+def test_sec_t01_injection_payload_rejected():  # NFR-02 (security; injection char denylist in TaskCreate), NFR-04 (sensitive-data redaction in any error detail), NFR-08 (mutation — denylist-driven branch is high-value kill surface)
     """SEC-T-01 / NP-04 — POST /v1/tasks with ``echo; rm -rf /`` is rejected.
 
     TEST_SPEC inputs: api_key="write_key"; body_name="ok";
