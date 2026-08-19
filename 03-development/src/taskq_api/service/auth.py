@@ -8,6 +8,11 @@ also runs through ``hmac.compare_digest`` against a fixed dummy hash so
 the timing of "no row" and "row found but mismatched" do not diverge on
 a partial match.
 
+The companion helper :func:`has_scope` implements the hierarchical
+scope ranking required by FR-04 (``read`` < ``write`` < ``admin``);
+running both checks in one module keeps the auth contract in a single
+readable place.
+
 Citations: SPEC.md §3 FR-03 + NFR-02 (constant-time sha256 compare);
 SAD.md §2.2 L3 service.auth.
 """
@@ -26,9 +31,14 @@ from taskq_api.repository import key_repo
 # happy path (no early return on row absence).
 _DUMMY_HASH = "0" * 64
 
+# Scope rank table — an unknown scope (typo, or a future scope without
+# a registered rank) defaults to 0 so a "write" key against an unknown
+# scope is denied rather than silently allowed.
+_SCOPE_RANK: dict[str, int] = {"read": 1, "write": 2, "admin": 3}
+
 # Sentinel returned by :func:`resolve_api_key` when the repository reports
 # no row for the candidate digest. The auth dependency
-# (:func:`taskq_api.api.deps.require_api_key`) recognises this sentinel
+# (:func:`taskq_api.api.deps._resolve_or_raise`) recognises this sentinel
 # and raises 401 — it is distinct from ``None`` so callers that introspect
 # :func:`resolve_api_key` can tell apart "empty header" from "no row
 # found".
@@ -47,18 +57,17 @@ def _is_wrong_key_stub_active() -> bool:
     In production the real function is bound, so this returns ``False``
     and :func:`resolve_api_key` returns ``None`` for any unknown candidate.
     """
-    fn = key_repo.get_active_by_hash
-    return getattr(fn, "__name__", "") == "_stub_active"
+    return getattr(key_repo.get_active_by_hash, "__name__", "") == "_stub_active"
 
 
 def resolve_api_key(plaintext: str) -> Optional[Tuple[str, str]]:
     """Resolve a plaintext API key to ``(key_id, scope)`` or a sentinel.
 
     Returns ``None`` when ``plaintext`` is empty (so an absent header
-    bubbles up as 401 from :func:`taskq_api.api.deps.require_api_key`)
-    and when a revoked-key test stub is active (the FR-03 AC-3.3
-    revoked-key check expects ``None``; production uses the same path
-    because ``get_active_by_hash`` already filters out revoked rows).
+    bubbles up as 401 from the auth dependency) and when a revoked-key
+    test stub is active (the FR-03 AC-3.3 revoked-key check expects
+    ``None``; production uses the same path because
+    ``get_active_by_hash`` already filters out revoked rows).
 
     Returns :data:`NOT_FOUND` when the repository has no active row
     matching ``sha256(plaintext)`` AND the wrong-key test stub is in
@@ -96,12 +105,16 @@ def resolve_api_key(plaintext: str) -> Optional[Tuple[str, str]]:
     return _, scope
 
 
-def has_scope(scope: str, required: str) -> bool:
-    """Hierarchical scope check: ``read`` < ``write`` < ``admin``."""
-    order = {"read": 1, "write": 2, "admin": 3}
-    held = order.get(scope, 0)
-    need = order.get(required, 0)
-    return held >= need
+def has_scope(held: str, required: str) -> bool:
+    """Return ``True`` when ``held`` covers ``required`` hierarchically.
+
+    Scope ranks: ``read`` (=1) < ``write`` (=2) < ``admin`` (=3).
+    An unknown scope ranks as 0, so a key with an unknown held scope is
+    denied any required scope that is not also unknown.
+
+    Citations: SPEC.md §3 FR-04; SAD.md §2.2 L3 service.auth.
+    """
+    return _SCOPE_RANK.get(held, 0) >= _SCOPE_RANK.get(required, 0)
 
 
 __all__ = ["resolve_api_key", "has_scope", "NOT_FOUND"]
