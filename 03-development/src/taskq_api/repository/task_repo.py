@@ -24,8 +24,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from taskq_api.models.orm import Task, TaskResult
-from taskq_api.repository import session as session_module
-from taskq_api.repository.session import session_scope
+from taskq_api.repository.session import insert_scope, session_scope
 
 
 class DuplicateTaskError(Exception):
@@ -71,7 +70,7 @@ def _add_and_expunge(instance: Any) -> Any:
     ``IntegrityError`` is intentionally allowed to propagate so ``create``
     can translate it into ``DuplicateTaskError`` at its call site.
     """
-    with session_module.insert_scope() as session:
+    with insert_scope() as session:
         session.add(instance)
         session.flush()
         session.expunge(instance)

@@ -1,10 +1,17 @@
-"""[FR-01/FR-06] SQLAlchemy engine + session_scope context manager.
+"""[FR-01/FR-06] SQLAlchemy engines + the transactional session boundary.
 
-The engine is built with ``pool_size=settings.db_pool_size`` and
-``pool_pre_ping=True`` (FR-06 AC-6.5). The :func:`session_scope`
-context manager is the single transactional boundary for every
-repository call (FR-06 AC-6.2) — commit on clean exit, rollback on
-any exception, always close.
+Two policies live here, once each, so no repository module can drift
+from them:
+
+* :func:`build_engine` applies the connection-pool policy —
+  ``pool_size=TASKQ_DB_POOL_SIZE`` and ``pool_pre_ping=True``
+  (FR-06 AC-6.5). Every engine in the project is built through it,
+  including the rate-bucket engine in
+  :mod:`taskq_api.repository.rate_repo`.
+* :func:`transaction` is the single transaction boundary — commit on a
+  clean exit, rollback on any exception, always close (FR-06 AC-6.2).
+  :func:`session_scope` and :func:`insert_scope` are the two named
+  entry points onto it; no repository hand-rolls the boundary.
 
 Citations: SPEC.md §3 FR-06 (transaction boundary + pool config);
 SAD.md §2.2 session; NFR-03 (transactional integrity).
@@ -13,7 +20,7 @@ SAD.md §2.2 session; NFR-03 (transactional integrity).
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Callable, Iterator
 
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -21,146 +28,160 @@ from sqlalchemy.orm import Session, sessionmaker
 from taskq_api.config import get_settings
 from taskq_api.models.orm import Base
 
-_engine: Engine | None = None
-_insert_engine: Engine | None = None
-_SessionFactory: sessionmaker[Session] | None = None
-_InsertSessionFactory: sessionmaker[Session] | None = None
 
+def build_engine(url: str | None = None) -> Engine:
+    """Create an engine carrying the project-wide connection-pool policy.
 
-def _build_engine() -> Engine:
+    ``pool_size`` is read from ``TASKQ_DB_POOL_SIZE`` and
+    ``pool_pre_ping`` is always on, so a connection that went stale while
+    idle in the pool is discarded rather than handed to a caller
+    (FR-06 AC-6.5). ``url`` defaults to ``TASKQ_DB_URL``; callers pass it
+    explicitly only when they have already resolved it.
+
+    Citations: SPEC.md §3 FR-06 (pool_size + pool_pre_ping).
+    """
     settings = get_settings()
-    url = settings.db_url
+    target = settings.db_url if url is None else url
     connect_args: dict = {}
-    if url.startswith("sqlite"):
+    if target.startswith("sqlite"):
+        # SQLite refuses cross-thread connection reuse by default, but the
+        # pool hands a connection to whichever worker thread asks for it.
         connect_args["check_same_thread"] = False
-    engine = create_engine(
-        url,
+    return create_engine(
+        target,
         connect_args=connect_args,
         pool_size=settings.db_pool_size,
         pool_pre_ping=True,
         future=True,
     )
-    return engine
+
+
+@contextmanager
+def transaction(new_session: Callable[[], Session]) -> Iterator[Session]:
+    """Run one unit of work inside a single session with an explicit boundary.
+
+    Commit on a clean exit; on any exception roll back and re-raise (the
+    exception is never swallowed); close the session either way. This is
+    the context manager FR-06 AC-6.2 requires the transaction boundary to
+    be guaranteed by — repository entry points compose it rather than
+    repeating ``try / commit / except rollback / finally close``.
+
+    ``new_session`` is any zero-argument callable returning a
+    :class:`~sqlalchemy.orm.Session`, which a
+    :class:`~sqlalchemy.orm.sessionmaker` already is.
+
+    Citations: SPEC.md §3 FR-06 ("成功 commit、例外 rollback"); NFR-03.
+    """
+    session = new_session()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+class _EngineHandle:
+    """A lazily built engine paired with the session factory bound to it.
+
+    Keeping the two together is what makes a factory unable to outlive
+    its engine: a ``TASKQ_DB_URL`` change (each test gets its own
+    ``tmp_path`` database) rebuilds both in one step, so no factory is
+    ever left pointing at a disposed engine.
+    """
+
+    def __init__(self) -> None:
+        self._engine: Engine | None = None
+        self._factory: sessionmaker[Session] | None = None
+
+    def engine(self) -> Engine:
+        """Return the engine, rebuilding it when the configured URL changed."""
+        url = get_settings().db_url
+        if self._engine is None or str(self._engine.url) != url:
+            self.dispose()
+            self._engine = build_engine(url)
+            # Ensure tables exist for the green TDD step. This is dev/test
+            # only; production schema is owned by Alembic migrations (FR-07).
+            Base.metadata.create_all(self._engine)
+        return self._engine
+
+    def factory(self) -> sessionmaker[Session]:
+        """Return a sessionmaker bound to the current engine."""
+        engine = self.engine()
+        if self._factory is None or self._factory.kw["bind"] is not engine:
+            self._factory = sessionmaker(
+                bind=engine,
+                autoflush=False,
+                autocommit=False,
+                expire_on_commit=False,
+                future=True,
+            )
+        return self._factory
+
+    def dispose(self) -> None:
+        """Drop the engine and its factory; the next access rebuilds both."""
+        if self._engine is not None:
+            self._engine.dispose()
+        self._engine = None
+        self._factory = None
+
+
+# The shared read/write engine, and a private write-only engine (see
+# ``get_insert_engine`` for why the second one exists).
+_read = _EngineHandle()
+_insert = _EngineHandle()
 
 
 def get_engine() -> Engine:
-    """Return the process-wide SQLAlchemy engine, creating it on demand.
+    """Return the process-wide read/write engine, creating it on demand.
 
-    Citations: SPEC.md §3 FR-06 (env-driven DB URL); test isolation —
-    the engine is rebuilt when ``TASKQ_DB_URL`` changes so per-test
-    ``tmp_path`` databases do not leak rows between cases.
+    Rebuilt whenever ``TASKQ_DB_URL`` changes so a per-test ``tmp_path``
+    database cannot leak rows into the next case.
+
+    Citations: SPEC.md §3 FR-06 (env-driven DB URL).
     """
-    global _engine, _SessionFactory
-    current_url = get_settings().db_url
-    if _engine is None or str(_engine.url) != current_url:
-        if _engine is not None:
-            _engine.dispose()
-        _engine = _build_engine()
-        # Ensure tables exist for the green TDD step. This is dev/test only;
-        # production code uses Alembic migrations (FR-07).
-        Base.metadata.create_all(_engine)
-        # Drop the cached session factory — it was bound to the old engine.
-        _SessionFactory = None
-    return _engine
+    return _read.engine()
 
 
 def get_insert_engine() -> Engine:
-    """Separate engine used for inserts.
+    """Return the private insert engine — a distinct :class:`Engine` instance.
 
-    Returns a distinct SQLAlchemy Engine instance so SQLAlchemy
-    ``before_cursor_execute`` listeners attached to ``get_engine()`` (used
-    in AC-1.7 to count the *list_paginated* SQL surface) do not capture
-    write-side SQL. Both engines point at the same database file, so reads
-    through ``get_engine()`` still observe freshly inserted rows.
+    Writes run on their own engine so ``before_cursor_execute`` listeners
+    attached to :func:`get_engine` — how FR-01 AC-1.7 and FR-06 AC-6.4
+    measure the *list_paginated* statement count — never observe
+    write-side traffic. Both engines address the same database, so reads
+    still see freshly inserted rows.
 
-    Citations: SPEC.md §3 FR-06; rebuilt together with the read engine
-    when ``TASKQ_DB_URL`` changes (test isolation).
+    Citations: SPEC.md §3 FR-06; NFR-01 (N+1 guard measurement).
     """
-    global _insert_engine, _InsertSessionFactory
-    current_url = get_settings().db_url
-    if _insert_engine is None or str(_insert_engine.url) != current_url:
-        if _insert_engine is not None:
-            _insert_engine.dispose()
-        _insert_engine = _build_engine()
-        Base.metadata.create_all(_insert_engine)
-        _InsertSessionFactory = None
-    return _insert_engine
+    return _insert.engine()
 
 
 def reset_engine() -> None:
-    """Drop the cached engine so the next call rebuilds from current env."""
-    global _engine, _insert_engine, _SessionFactory, _InsertSessionFactory
-    if _engine is not None:
-        _engine.dispose()
-    if _insert_engine is not None:
-        _insert_engine.dispose()
-    _engine = None
-    _insert_engine = None
-    _SessionFactory = None
-    _InsertSessionFactory = None
-
-
-def _factory() -> sessionmaker[Session]:
-    global _SessionFactory
-    # Always probe ``get_engine()`` so a TASKQ_DB_URL change forces a
-    # factory rebuild bound to the new engine (test isolation).
-    engine = get_engine()
-    if _SessionFactory is None or _SessionFactory.kw["bind"] is not engine:
-        _SessionFactory = sessionmaker(
-            bind=engine,
-            autoflush=False,
-            autocommit=False,
-            expire_on_commit=False,
-            future=True,
-        )
-    return _SessionFactory
-
-
-def _insert_factory() -> sessionmaker[Session]:
-    global _InsertSessionFactory
-    # Mirror of ``_factory`` — bind to the current insert engine so a
-    # URL change rebuilds the factory rather than reusing a stale bind.
-    engine = get_insert_engine()
-    if _InsertSessionFactory is None or _InsertSessionFactory.kw["bind"] is not engine:
-        _InsertSessionFactory = sessionmaker(
-            bind=engine,
-            autoflush=False,
-            autocommit=False,
-            expire_on_commit=False,
-            future=True,
-        )
-    return _InsertSessionFactory
+    """Drop both cached engines so the next call rebuilds from current env."""
+    _read.dispose()
+    _insert.dispose()
 
 
 @contextmanager
 def session_scope() -> Iterator[Session]:
-    """Open a session, commit on success, rollback on error, always close."""
-    session = _factory()()
-    try:
+    """Transactional scope on the shared read/write engine (FR-06 AC-6.2)."""
+    with transaction(_read.factory()) as session:
         yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
 
 
 @contextmanager
 def insert_scope() -> Iterator[Session]:
-    """Open an insert-only session on the private insert engine."""
-    session = _insert_factory()()
-    try:
+    """Transactional scope on the private insert engine (FR-06 AC-6.2)."""
+    with transaction(_insert.factory()) as session:
         yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
 
 
 __all__ = [
+    "build_engine",
+    "transaction",
     "get_engine",
     "get_insert_engine",
     "reset_engine",

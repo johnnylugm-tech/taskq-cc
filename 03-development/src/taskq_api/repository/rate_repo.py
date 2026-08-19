@@ -16,12 +16,18 @@ Locking is dialect-aware:
   carries a ``/* FOR UPDATE */`` suffix so the emitted SQL records that
   intent on this backend too.
 
-The module owns its own engine rather than reusing
-:mod:`taskq_api.repository.session` because that engine is shared with
-the read path, and AC-5.2's instrumentation must see *only* the bucket
-traffic. The engine is additionally a :class:`~sqlalchemy.orm.sessionmaker`
-(see :func:`_engine_for_test`) so the same object can be instrumented for
-both connection-level and session-level SQLAlchemy events.
+The module owns its own engine *instance* rather than reusing the one
+:mod:`taskq_api.repository.session` hands out, because that engine is
+shared with the read path and AC-5.2's instrumentation must see *only*
+the bucket traffic. It is a separate instance, not a separate policy:
+the engine is built by
+:func:`taskq_api.repository.session.build_engine` and the transaction is
+bounded by :func:`taskq_api.repository.session.transaction`, so pool
+configuration and commit/rollback semantics stay identical to every
+other repository (FR-06 AC-6.2 / AC-6.5). The engine is additionally a
+:class:`~sqlalchemy.orm.sessionmaker` (see :func:`_engine_for_test`) so
+the same object can be instrumented for both connection-level and
+session-level SQLAlchemy events.
 
 Citations: SPEC.md §3 FR-05 (bullet "更新必須在單一交易內以 row-level
 lock 進行"); ADR-007 (token bucket with row-level lock); SAD.md §2.2 L2
@@ -33,11 +39,12 @@ from __future__ import annotations
 import math
 from datetime import datetime, timezone
 
-from sqlalchemy import Engine, create_engine, select, text
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import Engine, select, text
+from sqlalchemy.orm import sessionmaker
 
 from taskq_api.config import get_settings
 from taskq_api.models.orm import Base, RateBucket
+from taskq_api.repository.session import build_engine, transaction
 
 
 class _RateEngine(Engine, sessionmaker):
@@ -65,18 +72,15 @@ _engine: _RateEngine | None = None
 def _build_engine() -> _RateEngine:
     """Create the bucket engine and graft the sessionmaker behaviour on.
 
-    Citations: SPEC.md §3 FR-06 (env-driven DB URL).
+    The engine itself comes from
+    :func:`taskq_api.repository.session.build_engine`, so the bucket
+    engine carries exactly the same ``pool_size=TASKQ_DB_POOL_SIZE`` /
+    ``pool_pre_ping=True`` policy as every other engine in the project
+    rather than a second, drifting copy of it (FR-06 AC-6.5).
+
+    Citations: SPEC.md §3 FR-06 (env-driven DB URL + pool config).
     """
-    settings = get_settings()
-    connect_args: dict = {}
-    if settings.db_url.startswith("sqlite"):
-        connect_args["check_same_thread"] = False
-    engine = create_engine(
-        settings.db_url,
-        connect_args=connect_args,
-        pool_pre_ping=True,
-        future=True,
-    )
+    engine = build_engine()
     engine.__class__ = _RateEngine
     sessionmaker.__init__(
         engine,  # type: ignore[reportArgumentType]
@@ -213,8 +217,11 @@ def withdraw(key_id: object) -> tuple[bool, int]:
     engine = get_engine()
     now = datetime.now(timezone.utc)
 
-    session: Session = engine()
-    try:
+    # ``_RateEngine`` is its own sessionmaker, so it is already the
+    # zero-argument session factory ``transaction`` expects. One session,
+    # one transaction, per call — commit / rollback / close are the
+    # shared FR-06 AC-6.2 boundary, not a local re-implementation.
+    with transaction(engine) as session:
         row = session.scalars(_lock_stmt(engine, key)).first()
         if row is None:
             row = RateBucket(key_id=key, tokens=capacity, updated_at=now)
@@ -223,12 +230,6 @@ def withdraw(key_id: object) -> tuple[bool, int]:
             _refill_bucket(row, now, capacity, rate)
 
         allowed, retry_after = _decide_withdrawal(row, rate, int(capacity))
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
 
     return allowed, retry_after
 

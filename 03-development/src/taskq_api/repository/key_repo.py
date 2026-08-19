@@ -16,13 +16,14 @@ from __future__ import annotations
 
 import hashlib
 import secrets
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from typing import Optional, Tuple
 
 from sqlalchemy import select
 
 from taskq_api.models.orm import ApiKey
-from taskq_api.repository import session as session_module
+from taskq_api.repository.session import insert_scope, session_scope
 
 
 def _hash(plaintext: str) -> str:
@@ -50,7 +51,7 @@ def create(scope: str) -> Tuple[int, str, str]:
     """
     plaintext = _generate_plaintext()
     key_hash = _hash(plaintext)
-    with session_module.insert_scope() as session:
+    with insert_scope() as session:
         row = ApiKey(scope=scope, key_hash=key_hash)
         session.add(row)
         session.flush()
@@ -66,7 +67,7 @@ def get_active_by_hash(key_hash: str) -> Optional[Tuple[str, str, str]]:
     ``hmac.compare_digest`` against the candidate digest — constant-time,
     no early return on a partial match.
     """
-    with session_module.session_scope() as session:
+    with session_scope() as session:
         stmt = (
             select(ApiKey)
             .where(ApiKey.key_hash == key_hash)
@@ -83,10 +84,8 @@ def revoke(key_hash: str) -> bool:
 
     Idempotent — a second call on an already-revoked row is a no-op.
     """
-    from datetime import datetime, timezone
-
     now = datetime.now(timezone.utc)
-    with session_module.session_scope() as session:
+    with session_scope() as session:
         stmt = (
             select(ApiKey)
             .where(ApiKey.key_hash == key_hash)
