@@ -79,7 +79,7 @@ def _build_engine() -> _RateEngine:
     )
     engine.__class__ = _RateEngine
     sessionmaker.__init__(
-        engine,
+        engine,  # type: ignore[reportArgumentType]
         bind=engine,
         autoflush=False,
         autocommit=False,
