@@ -2,8 +2,8 @@
 # returncode: 0
 # agent_score: 100.0 | threshold: 80.0
 
-........................................................................ [ 81%]
-................                                                         [100%]
+........................................................................ [ 64%]
+.......................................                                  [100%]
 ================================ tests coverage ================================
 ______________ coverage: platform darwin, python 3.11.15-final-0 _______________
 
@@ -23,14 +23,14 @@ Name                                                   Stmts   Miss  Cover   Mis
 03-development/src/taskq_api/models/schemas.py            35      0   100%
 03-development/src/taskq_api/repository/__init__.py        3      0   100%
 03-development/src/taskq_api/repository/key_repo.py       40      0   100%
-03-development/src/taskq_api/repository/rate_repo.py      72      0   100%
-03-development/src/taskq_api/repository/session.py        77     11    86%   86-93, 135-137
-03-development/src/taskq_api/repository/task_repo.py      84      0   100%
+03-development/src/taskq_api/repository/rate_repo.py      63      0   100%
+03-development/src/taskq_api/repository/session.py        63      0   100%
+03-development/src/taskq_api/repository/task_repo.py      83      0   100%
 03-development/src/taskq_api/service/__init__.py           3      0   100%
 03-development/src/taskq_api/service/auth.py              26      0   100%
 03-development/src/taskq_api/service/ratelimit.py          5      0   100%
 03-development/src/taskq_api/service/runner.py            56      0   100%
 03-development/src/taskq_api/service/tasks.py             25      0   100%
 ------------------------------------------------------------------------------------
-TOTAL                                                    683     28    96%
-88 passed in 4.05s
+TOTAL                                                    659     17    97%
+111 passed in 4.75s
