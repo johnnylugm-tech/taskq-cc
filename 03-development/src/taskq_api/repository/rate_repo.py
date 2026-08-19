@@ -147,6 +147,47 @@ def _as_utc(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
+def _refill_bucket(row: RateBucket, now: datetime, capacity: float, rate: float) -> None:
+    """Apply lazy refill to ``row`` based on elapsed wall-clock time.
+
+    The bucket is refilled by ``elapsed * rate`` tokens, clamped at
+    ``capacity``. ``updated_at`` is advanced to ``now`` so the next call
+    computes elapsed from this point. Clamping is what gives the bucket
+    a steady ceiling — the upper bound is the bucket capacity, not
+    ``tokens + elapsed * rate``.
+
+    Citations: SPEC.md §3 FR-05 (refill = TASKQ_RATE_PER_SEC, capacity =
+    TASKQ_RATE_BURST).
+    """
+    elapsed = max(0.0, (now - _as_utc(row.updated_at)).total_seconds())
+    row.tokens = min(capacity, row.tokens + elapsed * rate)
+    row.updated_at = now
+
+
+def _seconds_until_next_token(tokens: float, rate: float, capacity: int) -> int:
+    """Whole seconds until an empty bucket holds one full token again.
+
+    A non-positive refill rate can never top the bucket up; the caller
+    is told to retry after one full bucket window instead.
+    """
+    if rate > 0:
+        return int(math.ceil((1.0 - tokens) / rate))
+    return capacity
+
+
+def _decide_withdrawal(row: RateBucket, rate: float, capacity: int) -> tuple[bool, int]:
+    """Either deduct one token, or compute how long until the next one.
+
+    Returns ``(allowed, retry_after)`` — ``retry_after`` is 0 when the
+    request is allowed. The deduction mutates ``row``; the caller
+    commits the surrounding transaction.
+    """
+    if row.tokens >= 1.0:
+        row.tokens -= 1.0
+        return True, 0
+    return False, _seconds_until_next_token(row.tokens, rate, capacity)
+
+
 def withdraw(key_id: object) -> tuple[bool, int]:
     """Take one token from ``key_id``'s bucket inside a single transaction.
 
@@ -179,22 +220,9 @@ def withdraw(key_id: object) -> tuple[bool, int]:
             row = RateBucket(key_id=key, tokens=capacity, updated_at=now)
             session.add(row)
         else:
-            elapsed = max(0.0, (now - _as_utc(row.updated_at)).total_seconds())
-            row.tokens = min(capacity, row.tokens + elapsed * rate)
-            row.updated_at = now
+            _refill_bucket(row, now, capacity, rate)
 
-        if row.tokens >= 1.0:
-            row.tokens -= 1.0
-            allowed, retry_after = True, 0
-        else:
-            # Seconds until the bucket holds one whole token again. A
-            # non-positive refill rate can never top the bucket up, so
-            # the caller is told to retry after the full window.
-            deficit = 1.0 - row.tokens
-            retry_after = (
-                int(math.ceil(deficit / rate)) if rate > 0 else int(settings.rate_burst)
-            )
-            allowed = False
+        allowed, retry_after = _decide_withdrawal(row, rate, int(capacity))
         session.commit()
     except Exception:
         session.rollback()
@@ -202,7 +230,7 @@ def withdraw(key_id: object) -> tuple[bool, int]:
     finally:
         session.close()
 
-    return allowed, max(0, retry_after)
+    return allowed, retry_after
 
 
 __all__ = ["get_engine", "withdraw"]
