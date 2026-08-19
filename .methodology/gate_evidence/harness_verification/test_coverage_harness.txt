@@ -26,4 +26,4 @@ Name                                                   Stmts   Miss  Cover   Mis
 03-development/src/taskq_api/service/tasks.py             25      0   100%
 ------------------------------------------------------------------------------------
 TOTAL                                                    392     22    94%
-17 passed in 0.91s
+17 passed in 0.92s

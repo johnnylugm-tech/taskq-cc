@@ -9,12 +9,12 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!"
+      "tool_evidence": "All checks passed!\n"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787150729024\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 16, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.951}}"
+      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1787150773522\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 16,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 0.949\n    }\n}\n"
     },
     "test_coverage": {
       "score": 100.0,
@@ -22,12 +22,12 @@
       "tests_passed": 17,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "collected 17 items\n03-development/tests/test_fr01.py .................                      [100%]\n============================== 17 passed in 0.94s ==============================\nCoverage: 196/196 statements (100%) across 5 FR-01 modules (tasks.py, service/tasks.py, repository/task_repo.py, models/orm.py, models/schemas.py)"
+      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nbenchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)\nrootdir: /Users/johnny/projects/taskq-cc\nplugins: benchmark-5.2.3, cov-7.1.0, asyncio-1.4.0, anyio-4.14.2\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\ncollected 17 items\n\n03-development/tests/test_fr01.py .................                      [100%]\n\n============================== 17 passed in 0.94s ==============================\n\nName                                                   Stmts   Miss  Cover\n--------------------------------------------------------------------------\n03-development/src/taskq_api/api/tasks.py                 37      0   100%\n03-development/src/taskq_api/models/orm.py                27      0   100%\n03-development/src/taskq_api/models/schemas.py            35      0   100%\n03-development/src/taskq_api/repository/task_repo.py      72      0   100%\n03-development/src/taskq_api/service/tasks.py             25      0   100%\n--------------------------------------------------------------------------\nTOTAL                                                    196      0   100%\n"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Import Linter: Analyzed 30 files, 62 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT"
+      "tool_evidence": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 30 files, 62 dependencies.\n-----------------------------------\n\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\n\nContracts: 4 kept, 0 broken.\n"
     }
   },
   "enforcer_sha": "6e7942e2c6992f148201ae95ff66d49336c25a03",
@@ -47,23 +47,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "fe223bbfe65ebb0758565fa6c2efcb6e6c209d07129450eaf8e240dc8edc21bb",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1787150729024\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 16, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.951}}"
+      "sha256": "f484e8aeda8476b1398579bdf4d46d17ebecd407737133784dbb5a5843625d64",
+      "bytes": 250,
+      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1787150773522\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 16,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 0.949\n    }\n}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "0be96ac81dad6abdd19870c49c73b01449eb3b366289e224b53d4152791a78b6",
-      "bytes": 326,
-      "head": "collected 17 items\n03-development/tests/test_fr01.py .................                      [100%]\n============================== 17 passed in 0.94s ==============================\nCoverage: 196/196 statements (100%) across 5 FR-01 modules (tasks.py, service/tasks.py, repository/task_repo.py, models/orm.py, models/schemas.py)"
+      "sha256": "1e71bd2de001ee3fc4fa1a51ba608237936375329a19bea6b066ad2febf6a11d",
+      "bytes": 1405,
+      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nbenchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)\nrootdir: /Users/johnny/projects/taskq-cc\nplugins: benchmark-5.2.3, cov-7.1.0, asyncio-1.4.0, anyio-4.14.2\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\ncollected 17 items\n\n03-development/tests/test_fr01.py .................                      [100%]\n\n============================== 17 passed in 0.94s ==============================\n\nName                                                   Stmts   Miss  Cover\n--------------------------------------------------------------------------\n03-development/src/taskq_api/api/tasks.py                 37      0   100%\n03-development/src/taskq_api/models/orm.py                27      0   100%\n03-development/src/taskq_api/models/schemas.py            35      0   100%\n03-development/src/taskq_api/repository/task_repo.py      72      0   100%\n03-development/src/taskq_api/service/tasks.py             25      0   100%\n--------------------------------------------------------------------------"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "8f802734136d9a1feaac3e4e405312f669bc064691c5a01f2dbd766c72476c77",
-      "bytes": 292,
-      "head": "Import Linter: Analyzed 30 files, 62 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT"
+      "sha256": "8b494030b1194fc2682aacc98afd11da9fdbdebc84f23100f24fe1b75d4d9d7a",
+      "bytes": 386,
+      "head": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 30 files, 62 dependencies.\n-----------------------------------\n\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\n\nContracts: 4 kept, 0 broken."
     }
   },
   "composite_score": 100.0,
