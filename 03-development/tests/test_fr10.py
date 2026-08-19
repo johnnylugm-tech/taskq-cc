@@ -248,12 +248,23 @@ def _trigger_429(monkeypatch) -> tuple[int, str, dict[str, Any]]:
 
 
 def _trigger_503(monkeypatch) -> tuple[int, str, dict[str, Any]]:
-    """AC-10.1 / AC-10.4 row 503: /readyz with a closed DB."""
-    # Point the engine at a path whose parent does not exist.
+    """AC-10.1 / AC-10.4 row 503: /readyz with a closed DB.
+
+    The DB URL is switched to a path whose parent does not exist, then
+    restored afterwards so the sweep loop can re-issue the
+    DB-dependent triggers (404/409/429) in the same test with a
+    working engine.
+    """
+    original_url = os.environ.get("TASKQ_DB_URL")
     closed = Path(os.environ["TASKQ_HOME"]) / "closed_dir" / "wont_open.db"
     os.environ["TASKQ_DB_URL"] = f"sqlite:///{closed}"
     session_module._reset_engine_for_tests()  # type: ignore[attr-defined]
-    resp = _async_request("GET", "/readyz", api_key="")
+    try:
+        resp = _async_request("GET", "/readyz", api_key="")
+    finally:
+        if original_url is not None:
+            os.environ["TASKQ_DB_URL"] = original_url
+        session_module._reset_engine_for_tests()  # type: ignore[attr-defined]
     return resp.status_code, resp.headers.get("content-type", ""), _parse_json_body(resp)
 
 
@@ -267,6 +278,14 @@ def _trigger_500(monkeypatch, *, marker_substring: str | None = None) -> tuple[i
     Returns ``(status, content_type, body, raw_text)``.
     """
     from taskq_api.service import tasks as tasks_service
+
+    # [FR-05] The sweep's ``_trigger_429`` patches ``ratelimit.check``
+    # to deny and that patch persists into this trigger. Under the
+    # inline (auth-dependency) rate limit the deny raises a 429 BEFORE
+    # the route runs, collapsing the 500 row into a 429. Restore the
+    # "allow" outcome so the injected ``RuntimeError`` is what reaches
+    # the handler and surfaces as the 500.
+    monkeypatch.setattr(ratelimit_module, "check", lambda key_id: (True, 0))
 
     secret_path = "/Users/secret/path/leaked"
     marker = marker_substring or secret_path
@@ -302,8 +321,18 @@ _TRIGGER_FNS: list[tuple[int, str]] = [
 ]
 
 
-def _run_sweep(monkeypatch) -> dict[int, tuple[str, dict[str, Any], str]]:
-    """Run every status-code trigger and return ``{status: (content_type, body, raw)}``."""
+def _run_sweep(monkeypatch) -> dict[int, tuple[int, str, dict[str, Any], str]]:
+    """Run every status-code trigger once and return ``{code: (status, content_type, body, raw)}``.
+
+    The status is captured during THIS single pass because the
+    trigger order (422/401/403/404/409/429/503/500) keeps every
+    DB-dependent and monkeypatch-dependent trigger ahead of the
+    triggers that mutate shared state (429 patches ``ratelimit.check``,
+    500 patches ``service.get_task``, 503 closes the DB). Re-issuing a
+    trigger AFTER the sweep would hit those leftover patches and
+    collapse the code under test into a 500 — so the sweep result is
+    the only reliable source of the observed status.
+    """
     triggers: dict[int, Any] = {
         422: lambda: _trigger_422(),
         401: lambda: _trigger_401(),
@@ -314,15 +343,14 @@ def _run_sweep(monkeypatch) -> dict[int, tuple[str, dict[str, Any], str]]:
         503: lambda: _trigger_503(monkeypatch),
         500: lambda: _trigger_500(monkeypatch),
     }
-    results: dict[int, tuple[str, dict[str, Any], str]] = {}
+    results: dict[int, tuple[int, str, dict[str, Any], str]] = {}
     for code, fn in triggers.items():
         if code == 500:
             status, content_type, body, raw = fn()
-            results[code] = (content_type, body, raw)
         else:
             status, content_type, body = fn()
             raw = json_module.dumps(body)
-            results[code] = (content_type, body, raw)
+        results[code] = (status, content_type, body, raw)
     return results
 
 
@@ -360,11 +388,11 @@ def test_ac_10_1_non_2xx_responses_carry_problem_json_six_fields(monkeypatch):  
     result: dict[str, Any] = {
         "content_type": "",
         "fields": [],
-        "sweep": {code: (ct, body) for code, (ct, body, _raw) in sweep.items()},
+        "sweep": {code: (ct, body) for code, (_st, ct, body, _raw) in sweep.items()},
     }
 
     failure_messages: list[str] = []
-    for code, (content_type, body, _raw) in sweep.items():
+    for code, (_st, content_type, body, _raw) in sweep.items():
         # FR10-content-type (applies_to 1) — every non-2xx is problem+json.
         if "problem+json" not in content_type:
             failure_messages.append(
@@ -489,6 +517,25 @@ def test_ac_10_3_x_correlation_id_header_matches_log(monkeypatch):  # NFR-09 (co
             captured_records.append(record)
 
     handler = _CapturingHandler(level=logging.DEBUG)
+    # [FR-10] Capture on the FR-10 audit logger directly (not only via
+    # root propagation): ``migrations.env`` (FR-07) calls
+    # ``logging.config.fileConfig`` in-process during the alembic
+    # round-trip coverage tests, and ``fileConfig`` defaults to
+    # ``disable_existing_loggers=True`` — which sets ``disabled=True``
+    # on every logger that already exists but is not named in
+    # ``alembic.ini``, including ``taskq_api.errors``. A root handler
+    # alone would then capture nothing. Attaching to the source logger
+    # and re-enabling it for the request keeps the AC-10.3 assertion
+    # independent of that external logger state. The root handler is
+    # kept as well so records from any logger are still visible.
+    audit_logger = logging.getLogger("taskq_api.errors")
+    audit_logger.addHandler(handler)
+    old_audit_disabled = audit_logger.disabled
+    old_audit_propagate = audit_logger.propagate
+    old_audit_level = audit_logger.level
+    audit_logger.disabled = False
+    audit_logger.propagate = True
+    audit_logger.setLevel(logging.DEBUG)
     root = logging.getLogger()
     root.addHandler(handler)
     old_level = root.level
@@ -499,6 +546,10 @@ def test_ac_10_3_x_correlation_id_header_matches_log(monkeypatch):  # NFR-09 (co
     finally:
         root.removeHandler(handler)
         root.setLevel(old_level)
+        audit_logger.removeHandler(handler)
+        audit_logger.setLevel(old_audit_level)
+        audit_logger.disabled = old_audit_disabled
+        audit_logger.propagate = old_audit_propagate
 
     expected_header = "X-Correlation-Id"
     header_value = response.headers.get(expected_header, "")
@@ -551,30 +602,11 @@ def test_ac_10_4_status_code_sweep_eight_codes_each_triggered(monkeypatch):  # N
     status_codes_seen: list[int] = []
     failure_messages: list[str] = []
 
-    for code, (content_type, body, raw_text) in sweep.items():
-        # The trigger function returns the response status_code
-        # implicitly through the content_type / body shape — but we
-        # need the integer status for the assertion. Re-issue with
-        # fresh state for each code so the per-test isolation is
-        # preserved.
-        if code == 422:
-            s, _ct, _b = _trigger_422()
-        elif code == 401:
-            s, _ct, _b = _trigger_401()
-        elif code == 403:
-            s, _ct, _b = _trigger_403()
-        elif code == 404:
-            s, _ct, _b = _trigger_404()
-        elif code == 409:
-            s, _ct, _b = _trigger_409()
-        elif code == 429:
-            s, _ct, _b = _trigger_429(monkeypatch)
-        elif code == 503:
-            s, _ct, _b = _trigger_503(monkeypatch)
-        elif code == 500:
-            s, _ct, _b, _raw = _trigger_500(monkeypatch)
-        else:
-            s = -1
+    for code, (s, content_type, body, raw_text) in sweep.items():
+        # The status is captured during the single ``_run_sweep`` pass —
+        # see that helper's docstring for why re-issuing a trigger after
+        # the sweep would hit leftover monkeypatches and collapse the
+        # code under test into a 500.
         status_codes_seen.append(s)
         if s != code:
             failure_messages.append(

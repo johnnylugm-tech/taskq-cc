@@ -6,6 +6,7 @@ Citations: SPEC.md §3 FR-01 + FR-02; SAD.md §2.2 L4 api.tasks.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import uuid
 from typing import Optional, Tuple
 
@@ -63,12 +64,25 @@ def create_task_endpoint(
 
 
 @router.get("/tasks/{task_id}")
-def get_task_endpoint(
+async def get_task_endpoint(
     task_id: int,
     _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("read")),
 ):
-    """Fetch one task by id. FR-01 AC-1.3."""
+    """Fetch one task by id. FR-01 AC-1.3.
+
+    [FR-10] AC-10.5 / NFR-03 — declared ``async`` and awaits the
+    service lookup (when it returns an awaitable) so a
+    :class:`asyncio.CancelledError` raised inside ``service.get_task``
+    surfaces out of the route handler instead of being deferred into a
+    serialisation error. A sync return value (the normal path) is used
+    unchanged.
+
+    Citations: SPEC.md §3 FR-10 status map (CancelledError is not a
+    500); NFR-03 (cancellation propagation).
+    """
     row = service.get_task(task_id)
+    if inspect.isawaitable(row):
+        row = await row
     if row is None:
         raise _not_found_problem()
     return row

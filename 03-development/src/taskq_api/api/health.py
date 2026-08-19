@@ -30,6 +30,7 @@ from fastapi.responses import JSONResponse
 
 from taskq_api.api.deps import require_api_key_with_scope
 from taskq_api.config import get_settings
+from taskq_api.errors import correlation_id_for
 from taskq_api.repository import metrics as metrics_repo
 from taskq_api.repository import session as session_module
 from taskq_api.service import ratelimit as ratelimit_service
@@ -114,11 +115,27 @@ def _not_ready(detail: str) -> JSONResponse:
     not at head) produce the same shape — only the ``detail`` substring
     naming the failing side differs. Centralising the shape here keeps
     the bodies byte-identical so a client can parse one schema.
+
+    [FR-10] The body carries the six RFC 7807 fields
+    (``type`` / ``title`` / ``status`` / ``detail`` / ``instance`` /
+    ``correlation_id``) plus the ``X-Correlation-Id`` header so the
+    503 response is byte-shape-compatible with every other non-2xx
+    emitted by the API (AC-10.1 + AC-10.3).
     """
+    cid = correlation_id_for()
+    body = {
+        "type": "/errors/not-ready",
+        "title": "Service not ready",
+        "status": 503,
+        "detail": detail,
+        "instance": "/readyz",
+        "correlation_id": cid,
+    }
     return JSONResponse(
         status_code=503,
-        content={"status": "not-ready", "detail": detail},
+        content=body,
         media_type="application/problem+json",
+        headers={"X-Correlation-Id": cid},
     )
 
 
