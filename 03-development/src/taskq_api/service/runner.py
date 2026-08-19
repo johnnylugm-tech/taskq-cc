@@ -252,21 +252,23 @@ async def _collect_outcome(command: str, timeout: float) -> RunOutcome:
     )
 
 
-async def _run_inner(
+async def _run_and_persist(
     task_id: int,
     command: str,
     timeout_sec: Optional[float],
 ) -> RunOutcome:
-    """Drive one task through ``running -> {done|failed|timeout}`` + persist.
+    """Run ``command`` for ``task_id`` under ``timeout_sec`` and persist the
+    outcome as ``task_results`` row + terminal state.
 
-    ``timeout_sec`` takes precedence over ``TASKQ_TASK_TIMEOUT`` when
-    supplied — the per-call timeout from ``submit(...)`` is the FR-08
-    "per-task timeout" budget.
+    ``timeout_sec`` falls back to ``TASKQ_TASK_TIMEOUT`` when ``None`` —
+    the per-call timeout from ``submit(...)`` is the FR-08 "per-task
+    timeout" budget. Caller is expected to have transitioned ``task_id``
+    to ``STATE_RUNNING`` already; this helper only writes the terminal
+    result row + final state.
 
     Citations: SPEC.md §3 FR-02 + FR-08 + NFR-03 + §8 #25.
     """
     started_at = _now()
-    task_repo.update_status(task_id, STATE_RUNNING)
     effective_timeout = (
         timeout_sec if timeout_sec is not None else get_settings().task_timeout
     )
@@ -282,6 +284,23 @@ async def _run_inner(
     )
     task_repo.update_status(task_id, outcome.final_state)
     return outcome
+
+
+async def _run_inner(
+    task_id: int,
+    command: str,
+    timeout_sec: Optional[float],
+) -> RunOutcome:
+    """Drive one task through ``running -> {done|failed|timeout}`` + persist.
+
+    Wraps ``_run_and_persist`` with the ``STATE_RUNNING`` transition; used
+    by ``submit`` so the inner coroutine can be tracked in the in-flight
+    registry while it runs.
+
+    Citations: SPEC.md §3 FR-02 + FR-08 + NFR-03 + §8 #25.
+    """
+    task_repo.update_status(task_id, STATE_RUNNING)
+    return await _run_and_persist(task_id, command, timeout_sec)
 
 
 async def submit(
@@ -401,21 +420,8 @@ async def run_task(task_id: int, command: str) -> None:
     Citations: SPEC.md §3 FR-02 + FR-08 + NFR-03 + §8 #25; SAD.md §2.2
     service.runner.
     """
-    started_at = _now()
     task_repo.update_status(task_id, STATE_RUNNING)
-
-    outcome = await _collect_outcome(command, get_settings().task_timeout)
-
-    task_repo.record_result(
-        task_id=task_id,
-        started_at=started_at,
-        exit_code=outcome.exit_code,
-        stdout_tail=outcome.stdout_tail,
-        stderr_tail=outcome.stderr_tail,
-        duration_ms=outcome.duration_ms,
-        finished_at=_now(),
-    )
-    task_repo.update_status(task_id, outcome.final_state)
+    await _run_and_persist(task_id, command, None)
 
 
 __all__ = [
