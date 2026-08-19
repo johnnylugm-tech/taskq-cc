@@ -1,8 +1,8 @@
 # Harness Methodology — Session Handover
 
-**Checkpoint**: `P2-exit-20260818`  
+**Checkpoint**: `P2-exit-20260819`  
 **Phase**: P2 — Architecture & Design  
-**Generated**: 2026-08-18T22:52:49Z
+**Generated**: 2026-08-19T06:50:18Z
 
 > ⚠️  **開始下一個工作階段前，請先執行 `/compact` 壓縮上下文**，再從「接下來的工作」繼續。
 
@@ -53,7 +53,7 @@ P2 phase completed — pushed for record.
 
 ## 交付物清單
 
-- `02-architecture/SAD.md` ✅ (683L)
+- `02-architecture/SAD.md` ✅ (717L)
 
 ## 目前執行狀況
 
@@ -81,28 +81,42 @@ P2 phase completed — pushed for record.
   - ? / persist-ADR.md-try1: **complete**
   - ? / aci-verify: **complete**
   - ? / loadpy-02-architecture-TEST_SPEC-md-a1: **complete**
+  - ? / phase-cursor: **complete**
+  - ? / loadpy-harness-templates-ADR-md-a2: **complete**
+  - ? / b-sad-r2: **complete**
+  - ? / persist-ADR.md-try2: **complete**
+  - ? / constitution-adr: **complete**
+  - ? / persist-TEST_SPEC.md-try2: **EMPTY**
+  - ? / persist-TEST_SPEC.md-try3: **complete**
+  - ? / preflight-1: **complete**
+  - ? / resolve-repo: **complete**
+  - ? / loadpy-harness-templates-ADR-md-a1: **complete**
+  - ? / persist-SAD.md-try1: **complete**
+  - ? / b-test-spec-r1: **complete**
+  - ? / sab-generation: **complete**
+  - ? / constitution-1: **complete**
 
 **Recently Committed Files:**
-  - `.methodology/fr_progress.json`
+  - `.methodology/SAB.json`
+  - `.methodology/agent_b_approvals/ADR.md.json`
+  - `.methodology/agent_b_approvals/SAD.md.json`
+  - `.methodology/agent_b_approvals/TEST_SPEC.md.json`
   - `.methodology/state.json`
+  - `.methodology/trace/attestation.json`
+  - `02-architecture/SAD.md`
+  - `02-architecture/TEST_SPEC.md`
+  - `02-architecture/adr/ADR.md`
+  - `HANDOVER.md`
+  - `TEST_INVENTORY.yaml`
+  - `.methodology/fr_progress.json`
   - `00-summary/Phase1_STAGE_PASS.md`
   - `CLAUDE.md`
-  - `HANDOVER.md`
   - `.methodology/.state.lock`
   - `.methodology/agent_b_approvals/SPEC_TRACKING.md.json`
   - `.methodology/agent_b_approvals/SRS.md.json`
   - `.methodology/agent_b_approvals/TEST_INVENTORY.yaml.json`
   - `.methodology/agent_b_approvals/TRACEABILITY_MATRIX.md.json`
   - `01-requirements/SPEC_TRACKING.md`
-  - `01-requirements/SRS.md`
-  - `01-requirements/TRACEABILITY_MATRIX.md`
-  - `TEST_INVENTORY.yaml`
-  - `srs_vs_spec_diff.json`
-  - `harness`
-  - `.github/workflows/harness_quality_gate.yml`
-  - `.gitignore`
-  - `.gitmodules`
-  - `.methodology/phase1_plan.md`
 
 ## 接下來的工作
 

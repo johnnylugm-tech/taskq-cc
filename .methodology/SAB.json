@@ -158,61 +158,77 @@
   "nfr_traceability": {
     "NFR-01": {
       "type": "performance",
+      "dimension": "performance",
       "target": "p95 < 30ms",
       "module": "taskq_api.repository.task_repo"
     },
     "NFR-02": {
       "type": "security",
+      "dimension": "security",
       "target": "bandit 0 HIGH / 0 MEDIUM; grep shell=True = 0",
       "module": "taskq_api.errors"
     },
     "NFR-03": {
       "type": "reliability",
+      "dimension": "error_handling",
       "target": "CancelledError re-raised; orphan subprocesses = 0",
       "module": "taskq_api.service.runner"
     },
     "NFR-04": {
       "type": "security",
+      "dimension": "security",
       "target": "DB URL absent from any log; secrets regex matches = 100% redacted",
       "module": "taskq_api.config"
     },
     "NFR-05": {
       "type": "documentation",
+      "dimension": "documentation",
       "target": "100% docstring coverage; OpenAPI summary + description on every route",
       "module": "taskq_api.api.tasks"
     },
     "NFR-06": {
       "type": "layering",
+      "dimension": "architecture_constraints",
       "target": "lint-imports exit 0; sqlalchemy imports outside repository = 0",
       "module": "migrations.env"
     },
     "NFR-07": {
       "type": "licensing",
+      "dimension": "license_compliance",
       "target": "every direct + transitive license in allowlist",
       "module": "taskq_api.config"
     },
     "NFR-08": {
       "type": "mutation",
+      "dimension": "mutation_testing",
       "target": ">= 70",
-      "module": "taskq_api.service.tasks"
+      "module": "taskq_api.service.tasks",
+      "scope_layers": [
+        "service",
+        "repository"
+      ]
     },
     "NFR-09": {
       "type": "testability",
+      "dimension": "test_assertion_quality",
       "target": "skipped = 0; zero-assert tests = 0; migration test runs against real SQLite",
       "module": "migrations.versions.v3_split_results"
     },
     "NFR-10": {
       "type": "integration",
+      "dimension": "integration_coverage",
       "target": "integration coverage >= 80%",
       "module": "taskq_api.app"
     },
     "NFR-11": {
       "type": "maintainability",
+      "dimension": "readability",
       "target": "MI >= 80; CC <= 10; file <= 400 LOC; dir <= 15 files; handler <= 40 LOC",
       "module": "taskq_api.service.utils"
     },
     "NFR-12": {
       "type": "verifiability",
+      "dimension": "execute_verification_target",
       "target": "make verify-system exit 0 + stdout contains 'verify-system: PASS'",
       "module": "taskq_api.app"
     }
@@ -280,11 +296,13 @@
     "FR-09": [
       "taskq_api.api.health",
       "taskq_api.app",
-      "taskq_api.config"
+      "taskq_api.config",
+      "taskq_api.repository.session"
     ],
     "FR-10": [
       "taskq_api.errors",
-      "taskq_api.api.deps"
+      "taskq_api.api.deps",
+      "taskq_api.app"
     ]
   },
   "architecture_constraints": [

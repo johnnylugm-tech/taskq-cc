@@ -2,7 +2,7 @@
 
 > Round 2 harness-methodology validation bed: ASGI REST service with real persistence, real schema migration, async background execution, and API key authentication.
 
-## 1. Architecture Overview
+## 1. Overview
 
 `taskq-api` is a Python 3.11 ASGI service that exposes a task queue over HTTP. The system accepts task definitions, persists them via SQLAlchemy ORM, evolves schema through Alembic across three revisions, executes tasks asynchronously via `asyncio`, and authenticates/authorizes every `/v1/*` call with hashed API keys.
 
@@ -38,11 +38,11 @@ Key architectural invariants:
 
 ## 2. Module Design
 
-### 2.1 Directory Structure Design Principles
+### 2.1 Directory Structure (per SPEC.md §6)
 
 **Layer contract (NFR-06):** `api > service > repository > models`; `config` and `errors` are independence modules. Lower layers may not import upper layers. The `repository` layer is the only one allowed to import `sqlalchemy`; any `from sqlalchemy…` in `service/` or `api/` is a forbidden-contract violation and a CI gate failure.
 
-**Source directories (4 + 2 independence + migrations):**
+**Source directories (4 + 2 independence + migrations) — matches SPEC.md §6 exactly:**
 
 | Directory | Layer | Role |
 |-----------|-------|------|
@@ -74,7 +74,9 @@ Key architectural invariants:
 | `taskq_api/models/` | `__init__.py`, `orm.py`, `schemas.py` = 3 | ✓ |
 | `migrations/versions/` | `v1_initial.py`, `v2_tags.py`, `v3_split_results.py` = 3 | ✓ |
 
-**FR → module mapping (10 FRs — one-to-one or one-to-many, no orphan FRs):**
+No god-module: each file owns one concern. Largest file (`service/runner.py`) targets ≤ 400 LOC; handlers cap at 40 LOC each.
+
+**FR → module mapping (10 FRs from SPEC.md §3 — one-to-one or one-to-many, no orphan FRs):**
 
 | FR | Title | Primary module(s) |
 |----|-------|-------------------|
@@ -235,7 +237,7 @@ Key architectural invariants:
 
 | Attribute | Value |
 |-----------|-------|
-| Responsibility | SQLAlchemy declarative: `Task`, `ApiKey`, `RateBucket`, `Tag`, `task_tags` association table, `TaskResult`. Mirrors §5.2 schema. The `ApiKey.key_hash` column is 64-char hex only. |
+| Responsibility | SQLAlchemy declarative: `Task`, `ApiKey`, `RateBucket`, `Tag`, `task_tags` association table, `TaskResult`. Mirrors SPEC.md §5.2 schema. The `ApiKey.key_hash` column is 64-char hex only. |
 | External Interface | ORM classes |
 | Dependencies | `sqlalchemy` |
 
@@ -275,7 +277,7 @@ Key architectural invariants:
 
 | Attribute | Value |
 |-----------|-------|
-| Responsibility | FR-07 v3 — **the migration the round-trip test targets**. Adds `task_results`, copies each row's `result_json` into the new table preserving every field, then drops `tasks.result_json`. `downgrade()` reverses it: creates `tasks.result_json` JSON column, copies rows back, drops `task_results`. The round-trip test (NFR-09 / §8 #12) compares row-by-row. |
+| Responsibility | FR-07 v3 — **the migration the round-trip test targets**. Adds `task_results`, copies each row's `result_json` into the new table preserving every field, then drops `tasks.result_json`. `downgrade()` reverses it: creates `tasks.result_json` JSON column, copies rows back, drops `task_results`. The round-trip test (NFR-09 / SPEC §8 #12) compares row-by-row. |
 
 ### 2.3 Design Principles Applied
 
@@ -288,20 +290,9 @@ Key architectural invariants:
 | 5. Respect CRG edge-detection limits | Cross-file calls via standalone assignment (`row = session_scope()`); no `self.method()` chains across the layer; no dynamic `__getattr__` |
 | 6. Community size ≤ 50 nodes | Largest dir has 6 files × ~6 functions = ~36 nodes; under cap |
 
-## 3. Error Handling
+## 3. Interfaces & Data Flows
 
-| Level | Strategy | Application |
-|-------|----------|-------------|
-| Level 0 — Domain validation | Immediate 4xx via FR-10 problem+json | FR-01 schema validate, FR-04 scope, FR-05 rate-limit |
-| Level 1 — Transient infra | Single retry with bounded backoff (e.g. DB connection acquire `pool_pre_ping`) | FR-06 connection acquisition |
-| Level 2 — Task timeout | `asyncio.wait_for` → `process.kill()` → `await wait()`; mark `timeout` | FR-08 / NFR-03 |
-| Level 3 — Migration failure | Alembic transaction rollback; DB stays at previous revision; `/readyz` returns 503 | FR-07 |
-| Level 4 — Unhandled exception | Generic 500 problem+json; **`detail` field scrubbed** (no stack, no SQL, no path); `correlation_id` added to log + response header | FR-10 / NFR-02 / NFR-04 |
-| Special — `asyncio.CancelledError` | **Re-raise; never catch as generic `Exception`** (NFR-03). Shutdown drains via `lifespan` → `runner.drain(TASKQ_DRAIN_TIMEOUT)` → stragglers marked `interrupted`. |
-
-## 4. Interfaces & Data Flows
-
-### 4.1 Request Flow (CRUD)
+### 3.1 Request Flow (CRUD)
 
 ```
 Client ──HTTP──▶ FastAPI Router (api/tasks.py)
@@ -321,7 +312,7 @@ Client ──HTTP──▶ FastAPI Router (api/tasks.py)
                         └─▶ errors.Problem on any failure            [FR-10]
 ```
 
-### 4.2 Async Execution Flow (FR-02 + FR-08)
+### 3.2 Async Execution Flow (FR-02 + FR-08)
 
 ```
 Client ──POST /v1/tasks/{id}/run──▶ api/tasks.py
@@ -342,7 +333,7 @@ Client ──POST /v1/tasks/{id}/run──▶ api/tasks.py
          └─▶ repository.task_repo.append_result(task_id, exit_code, …)    [transaction 2]
 ```
 
-### 4.3 Migration Round-Trip (FR-07)
+### 3.3 Migration Round-Trip (FR-07)
 
 ```
 alembic upgrade head       ──(v1 → v2 → v3)──▶ task_results created; tasks.result_json removed
@@ -352,41 +343,69 @@ alembic upgrade head       ──(v2 → v3)──▶ re-extracted; data preserv
 assert row == row_orig     [test_fr07_round_trip_preserves_data]
 ```
 
-### 4.4 NFR Handling Matrix
+### 3.4 Data Model (SPEC.md §5.2)
 
-| NFR | Title | Modules that handle it | Verification surface |
-|-----|-------|------------------------|---------------------|
-| NFR-01 | Performance / N+1 prevention | `repository.task_repo` (`selectinload`), `models.orm` (indexes on `tasks.name`, `tasks.created_at`), `config` (pool sizing) | pytest-benchmark `p95 < 30ms`; SQLAlchemy event listener counts statements per request (must be constant w.r.t. row count) |
-| NFR-02 | HTTP + data-layer security | `service.auth`, `service.runner` (no shell=True), `repository.session` (parameterized only), `errors` (sanitized detail), `app` (CORS) | bandit 0/0; grep `shell=True\|eval(\|exec(` = 0; grep SQL string concat = 0 |
-| NFR-03 | Errors / transactions / async correctness | `repository.session`, `service.runner`, `app` (lifespan drain), `errors` (CancelledError not classified) | ast-error-handling scan; explicit test for `CancelledError` re-raise; integration test for orphan kill |
-| NFR-04 | Sensitive data masking | `errors` (detail whitelist), `config` (DB URL never logged), `api.health` (metrics response), `service.runner` (stdout/stderr redaction pre-write), `__main__` (key-create prints plaintext once only) | unit tests asserting no DB URL substring anywhere in logs/metrics; regex test for sk-/Bearer redaction |
-| NFR-05 | Doc coverage | Every module | ast-docstrings scan: 100% coverage, every docstring cites `[FR-XX]` or `[NFR-XX]`; OpenAPI test asserts summary + description on every route |
-| NFR-06 | Layering contract | `taskq_api/` layout + `.importlinter` | `lint-imports` exit 0; forbidden contract: `service`/`api` import `sqlalchemy` → fail |
-| NFR-07 | Dependency compliance | `requirements.txt` + `requirements.lock` | `pip-licenses --with-system` JSON; every license in allowlist; SBOM in `08-config/SBOM.json` |
-| NFR-08 | Mutation testing | `service/`, `repository/` only (harness_config.json documented) | `mutmut run` → score ≥ 70 |
-| NFR-09 | Test assertion realism | All tests; `migrations/versions/*` exercised against real SQLite file | `pytest -q` skipped = 0; `pytest --collect-only` zero-assert = 0; no `xfail` / `skip` / `--ignore` exit |
-| NFR-10 | Integration coverage | `03-development/tests/integration/` via `httpx.AsyncClient(transport=ASGITransport(app))` | pytest-cov integration ≥ 80%; covered codes: 201/401/403/404/409/422/429/503 |
-| NFR-11 | Readability | All modules | LLOC-weighted MI ≥ 80; per-fn CC ≤ 10; file ≤ 400 LOC; dir ≤ 15 files; per-handler ≤ 40 LOC |
-| NFR-12 | System verification target | `Makefile` | `make verify-system` chain: alembic up → test → uvicorn smoke + /healthz + /readyz → alembic down then up; stdout contains `verify-system: PASS` |
+| Table | Revision | Purpose | Primary columns |
+|-------|----------|---------|-----------------|
+| `tasks` | v1 | Task resource | `id` (uuid), `command`, `name`, `status`, `created_at` |
+| `api_keys` | v1 | API key storage (hash only) | `id`, `key_hash` (sha256 hex), `scope`, `created_at`, `revoked_at` |
+| `rate_buckets` | v1 | Per-token token bucket | `key_id` (FK), `tokens`, `updated_at` |
+| `tags` | v2 | Tag labels | `id`, `label` |
+| `task_tags` | v2 | Many-to-many join | `task_id`, `tag_id` (composite PK) |
+| `task_results` | v3 | Subprocess run results | `id`, `task_id` (FK), `exit_code`, `stdout_tail`, `stderr_tail`, `duration_ms`, `finished_at` |
 
-### 4.5 Technology Choices
+`tasks.result_json` is created in v1 and removed in v3 (data migrated to `task_results`) — this is the load-bearing piece for FR-07 round-trip verifiability.
 
-| Technology | Rationale | Justification |
-|-----------|-----------|---------------|
-| FastAPI | Spec-mandated (SPEC §2) | All FR routes live under `/v1/*`; OpenAPI auto-gen satisfies NFR-05 |
-| SQLAlchemy 2.x declarative | Spec-mandated; explicit transaction boundary required | FR-06 |
-| Alembic | Spec-mandated for FR-07 three-step evolution; downgrades must round-trip | FR-07 / NFR-09 special clause |
-| SQLite (dev/test) + Postgres (prod) | SPEC §2; one ORM model both targets | Avoids divergent SQL |
-| `asyncio.TaskGroup` | Python 3.11+ structured concurrency; replaces manual gather/error tracking | FR-08 / NFR-03 |
-| `hmac.compare_digest` | Constant-time comparison | NFR-02 |
-| `pytest-benchmark` + SQLAlchemy event listener | Direct measurement of NFR-01 thresholds | NFR-01 |
-| `httpx.ASGITransport` | Spec-mandated; no in-process double for the wire layer | NFR-10 |
-| `import-linter` + `sqlalchemy` forbidden contract | Spec-mandated | NFR-06 |
-| `mutmut` 2.x | Mutation score ≥ 70 against `service/` + `repository/` | NFR-08 |
-| `bandit` | 0 HIGH / 0 MEDIUM | NFR-02 |
-| `pip-licenses --with-system` | Full transitive scan including system packages | NFR-07 |
+### 3.5 Error Contract Mapping (FR-10)
 
----
+| HTTP | `type` URI | Trigger | Producer module |
+|------|-----------|---------|-----------------|
+| 401 | `/errors/unauthenticated` | Missing/invalid `X-API-Key` | `service.auth` |
+| 403 | `/errors/forbidden` | Scope insufficient (no existence leak) | `api.deps.require_scope` |
+| 404 | `/errors/not-found` | Unknown task id | `service.tasks` |
+| 409 | `/errors/conflict` | Task name uniqueness violation | `service.tasks` |
+| 422 | `/errors/validation` | Pydantic validation, limit > 200, injection chars | `models.schemas` / `service.tasks` |
+| 429 | `/errors/rate-limited` | Token bucket exhausted | `service.ratelimit` |
+| 503 | `/errors/not-ready` | DB down OR `alembic current` ≠ head | `api.health` |
+| 500 | `/errors/internal` | Unhandled (sanitized detail only) | `errors.Problem` |
+
+`asyncio.CancelledError` is **not** mapped — it must propagate (NFR-03).
+
+## 4. NFR Handling
+
+### 4.1 Error Handling Strategy (cross-cutting)
+
+| Level | Strategy | Application |
+|-------|----------|-------------|
+| Level 0 — Domain validation | Immediate 4xx via FR-10 problem+json | FR-01 schema validate, FR-04 scope, FR-05 rate-limit |
+| Level 1 — Transient infra | Single retry with bounded backoff (e.g. DB connection acquire `pool_pre_ping`) | FR-06 connection acquisition |
+| Level 2 — Task timeout | `asyncio.wait_for` → `process.kill()` → `await wait()`; mark `timeout` | FR-08 / NFR-03 |
+| Level 3 — Migration failure | Alembic transaction rollback; DB stays at previous revision; `/readyz` returns 503 | FR-07 |
+| Level 4 — Unhandled exception | Generic 500 problem+json; **`detail` field scrubbed** (no stack, no SQL, no path); `correlation_id` added to log + response header | FR-10 / NFR-02 / NFR-04 |
+| Special — `asyncio.CancelledError` | **Re-raise; never catch as generic `Exception`** (NFR-03). Shutdown drains via `lifespan` → `runner.drain(TASKQ_DRAIN_TIMEOUT)` → stragglers marked `interrupted`. |
+
+### 4.2 NFR Handling Matrix (all 12 NFRs from SPEC.md §4)
+
+| NFR | Title | Handling | Modules | Verification surface |
+|-----|-------|----------|---------|----------------------|
+| NFR-01 | Performance / N+1 prevention (latency) | Cursor pagination, mandatory `selectinload`/`joinedload`, index on `tasks.name` + `tasks.created_at`, sized pool | `repository.task_repo`, `models.orm`, `config` | pytest-benchmark: `p95 < 30ms` (single GET), `p95 < 80ms` (list); SQLAlchemy event listener asserts SQL statement count is constant w.r.t. row count |
+| NFR-02 | HTTP + data-layer security (security) | No `shell=True`/`eval`/`exec`, parameterized SQL only, `hmac.compare_digest`, RFC 7807 sanitized detail, CORS allowlist | `service.auth`, `service.runner`, `repository.session`, `errors`, `app` (CORS) | bandit 0 HIGH / 0 MEDIUM; grep `shell=True\|eval(\|exec(` = 0; grep SQL string concat = 0 |
+| NFR-03 | Errors / transactions / async correctness (reliability) | Explicit transaction boundaries, `CancelledError` re-raise, `process.kill()`+`await wait()` to kill orphans, `/readyz` fail-closed on DB outage | `repository.session`, `service.runner`, `app` (lifespan), `errors` | ast-error-handling scan; explicit test for `CancelledError` re-raise; integration test for orphan kill |
+| NFR-04 | Sensitive data masking (security) | Pre-write regex redaction for `stdout_tail`/`stderr_tail`; DB URL never logged; metrics body whitelisted; API key plaintext printed once at creation only | `errors`, `config`, `api.health`, `service.runner`, `__main__` | unit tests: no DB URL substring in logs/metrics; regex test for sk-/Bearer redaction; key-create output capture |
+| NFR-05 | Doc coverage (documentation) | Every public function/class has docstring citing `[FR-XX]` or `[NFR-XX]`; every FastAPI route has `summary` + `description` for OpenAPI | All modules | ast-docstrings scan: 100% coverage; OpenAPI test asserts summary + description on every route |
+| NFR-06 | Layering contract (architecture) | `.importlinter` layers contract + `sqlalchemy` forbidden contract; `lint-imports` exit 0 | `taskq_api/` layout + `.importlinter` | `lint-imports` exit 0; CI fails on `from sqlalchemy` in `service/` or `api/` |
+| NFR-07 | Dependency compliance (license) | `requirements.txt` pinned; `requirements.lock` covers transitive tree; allowlist: MIT/BSD-2/BSD-3/Apache-2.0/PSF; SBOM at `08-config/SBOM.json` | `requirements.txt`, `requirements.lock` | `pip-licenses --format=json --with-system`; every license ∈ allowlist |
+| NFR-08 | Mutation testing | Scope: `service/` + `repository/` only (per harness_config.json time-budget note); score threshold ≥ 70 | `service/`, `repository/` | `mutmut run` → score ≥ 70 |
+| NFR-09 | Test assertion realism (testability) | No `skip`/`skipif`/`xfail`/no-assert stubs; migrations tested against real SQLite file (not in-memory); round-trip test compares row-by-row | All tests; `migrations/versions/*` | `pytest -q` skipped = 0; zero-assert count = 0; `test_fr07_round_trip_preserves_data` passes against real file |
+| NFR-10 | Integration coverage | `httpx.AsyncClient(transport=ASGITransport(app))` drives integration tests; covers 201/401/403/404/409/422/429/503 each once; rate limit trigger+recovery; graceful drain | `03-development/tests/integration/` | pytest-cov integration ≥ 80% |
+| NFR-11 | Readability | LLOC-weighted MI ≥ 80; per-fn CC ≤ 10; file ≤ 400 LOC; dir ≤ 15 files; per-handler ≤ 40 LOC | All modules | readability-v2 scan |
+| NFR-12 | System verification target (verifiability) | `Makefile` chains: `alembic upgrade head` → tests → uvicorn smoke + `/healthz` + `/readyz` → `alembic downgrade base` → `upgrade head`; stdout must contain `verify-system: PASS` | `Makefile` | `make verify-system` exit 0 + stdout token |
+
+### 4.3 Cost & Capacity Notes
+
+- Pool size `TASKQ_DB_POOL_SIZE` default 5 (FR-06) — sized for SQLite dev; Postgres production allows horizontal scaling.
+- Token bucket state is row-level locked — O(1) per request, scales with key cardinality.
+- Alembic migrations are idempotent within a single revision; round-trip cost is O(N rows) for v3 only.
 
 ## 5. SAB Block (machine-readable — BINDING CONTRACT)
 
@@ -462,7 +481,7 @@ sab:
 
   quality_targets:
     max_complexity: 10          # per FR-11 (CC <= 10)
-    min_coverage: 100           # per §8 #2 (TOTAL 100%)
+    min_coverage: 100           # per SPEC §8 #2 (TOTAL 100%)
     max_coupling: 0.3           # 4-layer pyramid; forbidden contract raises hard fail
 
   nfr_dimension_mapping: {}
@@ -470,50 +489,63 @@ sab:
   nfr_traceability:
     NFR-01:
       type: performance
+      dimension: performance
       target: "p95 < 30ms"
       module: taskq_api.repository.task_repo
     NFR-02:
       type: security
+      dimension: security
       target: "bandit 0 HIGH / 0 MEDIUM; grep shell=True = 0"
       module: taskq_api.errors
     NFR-03:
       type: reliability
+      dimension: error_handling
       target: "CancelledError re-raised; orphan subprocesses = 0"
       module: taskq_api.service.runner
     NFR-04:
       type: security
+      dimension: security
       target: "DB URL absent from any log; secrets regex matches = 100% redacted"
       module: taskq_api.config
     NFR-05:
       type: documentation
+      dimension: documentation
       target: "100% docstring coverage; OpenAPI summary + description on every route"
       module: taskq_api.api.tasks
     NFR-06:
       type: layering
+      dimension: architecture_constraints
       target: "lint-imports exit 0; sqlalchemy imports outside repository = 0"
       module: migrations.env
     NFR-07:
       type: licensing
+      dimension: license_compliance
       target: "every direct + transitive license in allowlist"
       module: taskq_api.config
     NFR-08:
       type: mutation
+      dimension: mutation_testing
       target: ">= 70"
       module: taskq_api.service.tasks
+      scope_layers: ["service", "repository"]
     NFR-09:
       type: testability
+      dimension: test_assertion_quality
       target: "skipped = 0; zero-assert tests = 0; migration test runs against real SQLite"
       module: migrations.versions.v3_split_results
     NFR-10:
       type: integration
+      dimension: integration_coverage
       target: "integration coverage >= 80%"
       module: taskq_api.app
     NFR-11:
       type: maintainability
+      dimension: readability
       target: "MI >= 80; CC <= 10; file <= 400 LOC; dir <= 15 files; handler <= 40 LOC"
       module: taskq_api.service.utils
     NFR-12:
       type: verifiability
+      dimension: execute_verification_target
       target: "make verify-system exit 0 + stdout contains 'verify-system: PASS'"
       module: taskq_api.app
 
@@ -563,9 +595,11 @@ sab:
       - taskq_api.api.health
       - taskq_api.app
       - taskq_api.config
+      - taskq_api.repository.session
     FR-10:
       - taskq_api.errors
       - taskq_api.api.deps
+      - taskq_api.app
 
   architecture_constraints:
     - "no_circular_dependencies"
@@ -597,12 +631,12 @@ Generate: `python3 scripts/generate_sab.py --project . [--overwrite]`
 ```yaml
 security_design:
   version: "1.0"
-  applicability: full
-  justification: ""
-  trust_boundaries:
+  applicability: full   # full | none — none REQUIRES justification and skips the rest
+  justification: ""     # required (>=20 chars) when applicability: none
+  trust_boundaries:     # real project boundaries — schema preserved from render_canonical_security_template()
     - id: TB-01
-      name: "external HTTP → api layer"
-      description: "untrusted clients crossing into the FastAPI router; everything before X-API-Key validation"
+      name: "external HTTP input"
+      description: "requests crossing from unauthenticated clients into the API layer"
     - id: TB-02
       name: "api → service"
       description: "validated requests entering business logic; command strings originate here"
@@ -612,7 +646,7 @@ security_design:
     - id: TB-04
       name: "service → OS subprocess"
       description: "asyncio.create_subprocess_exec into the host shell process tree; the only place the host kernel is reached"
-  threats:
+  threats:              # STRIDE-lite — every boundary needs >=1 threat
     - id: T-01
       boundary: TB-01
       category: tampering
@@ -680,4 +714,4 @@ security_design:
 ```
 <!-- SEC:END -->
 
-Note: `owner_module` names a module declared in the §5 SAB block; `nfr` exists in SPEC.md §4; `verified_by` names the test that proves the mitigation — from Phase 5 onward, `check-artifact-consistency` blocks if that test doesn't exist yet. Threats also seed `bug-hunt-targets`' adversarial-review targeting and force NFR-pattern test cases in `derive_test_cases.md` Step 1c regardless of SRS keywords.
+> **Canonical template note**: YAML field names follow `core/quality_gate.security_design.render_canonical_security_template()`. Project-specific values (TB-01..TB-04, T-01..T-08, owner_module, nfr, verified_by) are populated from SPEC.md §3/§4 analysis. `applicability: full` is correct: the system has a real HTTP attack surface (FR-03 API keys, FR-04 scopes, FR-05 rate limit, FR-08 subprocess execution, FR-10 error contracts).
