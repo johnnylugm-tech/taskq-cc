@@ -403,7 +403,7 @@ def test_ac_10_1_non_2xx_responses_carry_problem_json_six_fields(monkeypatch):  
 # ---------------------------------------------------------------------------
 
 
-def test_ac_10_2_500_detail_has_no_stack_sql_or_paths(monkeypatch):  # NFR-08 (no information disclosure), NFR-09, NP-08
+def test_ac_10_2_500_detail_has_no_stack_sql_or_paths(monkeypatch):  # NFR-02 (no internal detail disclosure), NFR-08 (no information disclosure), NFR-09, NP-08
     """AC-10.2 — when the server raises an unhandled error, the resulting 500 response's ``detail`` is scrubbed.
 
     Covers TEST_SPEC FR-10 row 2. We inject ``RuntimeError`` whose
@@ -675,7 +675,7 @@ def test_ac_10_5_cancelled_error_propagates_not_500(monkeypatch):  # NFR-03 (can
 # ---------------------------------------------------------------------------
 
 
-def test_sec_t05_error_detail_strips_internal_paths(monkeypatch):  # NFR-08 (information disclosure), NP-08
+def test_sec_t05_error_detail_strips_internal_paths(monkeypatch):  # NFR-02 (no internal detail disclosure), NFR-08 (information disclosure), NP-08
     """SEC-T-05 — a 500 raised with an internal absolute path in its message must not leak that path into the response body.
 
     Covers TEST_SPEC FR-10 row 6. We inject a ``RuntimeError`` whose
