@@ -50,13 +50,19 @@ target_metadata = None  # Schema is owned by Alembic; see env docstring.
 
 
 # ---------------------------------------------------------------------------
-# Failure-injection marker — surfaced via /readyz.
+# Tunables — env-driven overrides for ``alembic.ini``.
 # ---------------------------------------------------------------------------
 
+_DEFAULT_DB_URL = "sqlite:///./taskq.db"
 _MIGRATION_FAILURE_MARKER = ".migration_failure.json"
 
 
-def _migration_failure_path() -> str:
+def _db_url() -> str:
+    """Resolve the SQLAlchemy URL — ``TASKQ_DB_URL`` overrides ``alembic.ini``."""
+    return os.environ.get("TASKQ_DB_URL", _DEFAULT_DB_URL)
+
+
+def _migration_failure_marker_path() -> str:
     """Resolve the marker file path under ``TASKQ_HOME``."""
     home = os.environ.get("TASKQ_HOME", ".")
     return os.path.join(home, _MIGRATION_FAILURE_MARKER)
@@ -69,7 +75,7 @@ def _write_migration_failure_marker(detail: str) -> None:
     when the surrounding DB transaction rolls back the marker survives —
     file writes are not transactional.
     """
-    path = _migration_failure_path()
+    path = _migration_failure_marker_path()
     try:
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         with open(path, "w", encoding="utf-8") as fh:
@@ -78,6 +84,20 @@ def _write_migration_failure_marker(detail: str) -> None:
         # If TASKQ_HOME isn't writable the marker is best-effort; the
         # /readyz probe will simply not see the failure.
         pass
+
+
+def _force_fail_requested() -> bool:
+    """Return True iff this is the first attempt under ``TASKQ_MIGRATION_FORCE_FAIL=1``.
+
+    The marker file acts as a one-shot: a follow-up ``alembic current``
+    (still under ``TASKQ_MIGRATION_FORCE_FAIL=1``) sees the marker and
+    proceeds normally, so AC-7.5's ``alembic_current == "v2_tags"`` check
+    works.
+    """
+    return (
+        os.environ.get("TASKQ_MIGRATION_FORCE_FAIL") == "1"
+        and not os.path.exists(_migration_failure_marker_path())
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -96,10 +116,8 @@ def run_migrations_offline() -> None:
     config = context.config
     if config.config_file_name is not None:
         fileConfig(config.config_file_name)
-    url = os.environ.get("TASKQ_DB_URL", "sqlite:///./taskq.db")
-
     context.configure(
-        url=url,
+        url=_db_url(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -118,9 +136,7 @@ def run_migrations_online() -> None:
     if config.config_file_name is not None:
         fileConfig(config.config_file_name)
     section = config.get_section(config.config_ini_section, {})
-    section["sqlalchemy.url"] = os.environ.get(
-        "TASKQ_DB_URL", "sqlite:///./taskq.db"
-    )
+    section["sqlalchemy.url"] = _db_url()
     connectable = engine_from_config(
         section,
         prefix="sqlalchemy.",
@@ -129,18 +145,7 @@ def run_migrations_online() -> None:
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
-            if os.environ.get("TASKQ_MIGRATION_FORCE_FAIL") == "1" and not os.path.exists(
-                _migration_failure_path()
-            ):
-                # First time we see the force-fail flag for this
-                # ``TASKQ_HOME``: persist the failure for the
-                # readiness probe, THEN raise inside the transaction
-                # so alembic rolls back any partial DDL it already
-                # emitted. The marker file acts as a one-shot — a
-                # follow-up ``alembic current`` (still under
-                # ``TASKQ_MIGRATION_FORCE_FAIL=1``) sees the marker
-                # and proceeds normally, so AC-7.5's
-                # ``alembic_current == "v2_tags"`` check works.
+            if _force_fail_requested():
                 _write_migration_failure_marker(
                     '{"reason":"simulated migration failure"}'
                 )
