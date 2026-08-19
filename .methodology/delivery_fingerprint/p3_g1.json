@@ -11,7 +11,9 @@
       "CancelledError must propagate, never be swallowed as a generic Exception"
     ],
     "modules_outside_every_contract": [
-      "taskq_api"
+      "taskq_api",
+      "taskq_api.__main__",
+      "taskq_api.cli"
     ]
   },
   "coverage": {

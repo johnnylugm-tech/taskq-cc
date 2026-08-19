@@ -10,7 +10,7 @@
 [1mContracts[0m
 [1m---------[0m
 [22m[0m
-[1mAnalyzed 35 files, 78 dependencies.[0m
+[1mAnalyzed 43 files, 97 dependencies.[0m
 [1m-----------------------------------[0m
 [22m[0m
 [22mapi > service > repository > models [0m[32m[22mKEPT[0m[33m[22m[0m[22m[0m
