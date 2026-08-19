@@ -1,6 +1,7 @@
-"""[FR-01] SQLAlchemy ORM models.
+"""[FR-01/FR-02] SQLAlchemy ORM models.
 
-Citations: SPEC.md §3 FR-01 (tasks / task_results); SAD.md §2.2 L1 orm.
+Citations: SPEC.md §3 FR-01 (tasks) + FR-02 (task_results v3 multi-row);
+SAD.md §2.2 L1 orm.
 """
 
 from __future__ import annotations
@@ -36,25 +37,31 @@ class Task(Base):
         DateTime(timezone=True), nullable=False, default=_utcnow
     )
 
-    result: Mapped[Optional["TaskResult"]] = relationship(
+    result: Mapped[list["TaskResult"]] = relationship(
         "TaskResult",
         back_populates="task",
-        uselist=False,
         cascade="all, delete-orphan",
     )
 
 
 class TaskResult(Base):
-    """Task execution result row (FR-02 / FR-07 v3).
+    """Task execution result row (FR-02 / FR-07 v3 split_results).
 
     Citations: SPEC.md §3 FR-02 + FR-07; SAD.md §2.2 orm.TaskResult.
+
+    v3 schema: ``task_id`` is no longer unique — a single task accumulates
+    many result rows over time (AC-2.5 requires run history). ``started_at``
+    is added so the reader can return rows newest-first deterministically.
     """
 
     __tablename__ = "task_results"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     task_id: Mapped[int] = mapped_column(
-        ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, unique=True
+        ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False
+    )
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow
     )
     exit_code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     stdout_tail: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

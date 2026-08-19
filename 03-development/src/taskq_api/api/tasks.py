@@ -1,10 +1,12 @@
-"""[FR-01] HTTP routes for the task resource.
+"""[FR-01/FR-02] HTTP routes for the task resource.
 
-Citations: SPEC.md §3 FR-01; SAD.md §2.2 L4 api.tasks.
+Citations: SPEC.md §3 FR-01 + FR-02; SAD.md §2.2 L4 api.tasks.
 """
 
 from __future__ import annotations
 
+import asyncio
+import uuid
 from typing import Optional, Tuple
 
 from fastapi import APIRouter, Depends, Query
@@ -12,7 +14,8 @@ from fastapi import APIRouter, Depends, Query
 from taskq_api.api.deps import enforce_scope, require_api_key
 from taskq_api.errors import make_problem
 from taskq_api.models.schemas import TaskCreate
-from taskq_api.service import tasks as service
+from taskq_api.repository import task_repo
+from taskq_api.service import runner, tasks as service
 
 router = APIRouter(prefix="/v1", tags=["tasks"])
 
@@ -97,6 +100,62 @@ def delete_task_endpoint(
     if not service.delete_task(task_id):
         raise _not_found_problem()
     return None
+
+
+@router.post("/tasks/{task_id}/run", status_code=202)
+async def run_task_endpoint(
+    task_id: int,
+    _api_key: Tuple[str, str] = Depends(_require_scope("write")),
+):
+    """Kick off a task run. FR-02 AC-2.1 / AC-2.3.
+
+    Returns 202 + ``{"run_id": <str>}`` immediately and schedules the
+    actual subprocess execution on the running event loop. An unknown
+    ``task_id`` surfaces as 404 + application/problem+json.
+
+    Citations: SPEC.md §3 FR-02 + NFR-10; SAD.md §2.2 L4 api.tasks.
+    """
+    task = task_repo.get_by_id(task_id)
+    if task is None:
+        raise _not_found_problem()
+    run_id = uuid.uuid4().hex
+    # Fire-and-forget: the event loop runs the coroutine while the
+    # response is in flight; the test polls GET /v1/tasks/{id} for the
+    # terminal state, which gives the loop time to drive the runner.
+    asyncio.create_task(runner.run_task(task_id, task.command))
+    return {"run_id": run_id}
+
+
+@router.get("/tasks/{task_id}/runs")
+def list_runs_endpoint(
+    task_id: int,
+    _api_key: Tuple[str, str] = Depends(_require_scope("read")),
+):
+    """Run history for a task, newest-first. FR-02 AC-2.4 / AC-2.5.
+
+    Returns ``{"items": [...]}``; each item carries the five FR-02 result
+    columns plus ``started_at`` so the client can render history.
+    Unknown ``task_id`` surfaces as 404 + problem+json.
+
+    Citations: SPEC.md §3 FR-02 last bullet + "欄位"; SAD.md §2.2 L4 api.tasks.
+    """
+    if task_repo.get_by_id(task_id) is None:
+        raise _not_found_problem()
+    rows = task_repo.list_runs(task_id)
+    return {
+        "items": [
+            {
+                "id": row.id,
+                "started_at": row.started_at,
+                "exit_code": row.exit_code,
+                "stdout_tail": row.stdout_tail,
+                "stderr_tail": row.stderr_tail,
+                "duration_ms": row.duration_ms,
+                "finished_at": row.finished_at,
+            }
+            for row in rows
+        ]
+    }
 
 
 __all__ = ["router"]

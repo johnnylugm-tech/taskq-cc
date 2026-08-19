@@ -1,6 +1,6 @@
-"""[FR-01] Task repository — only consumer of SQL in the project.
+"""[FR-01/FR-02] Task repository — only consumer of SQL in the project.
 
-Citations: SPEC.md §3 FR-01 + FR-06; SAD.md §2.2 L2 task_repo;
+Citations: SPEC.md §3 FR-01 + FR-02 + FR-06; SAD.md §2.2 L2 task_repo;
 NFR-01 (N+1 guard via selectinload).
 """
 
@@ -9,13 +9,14 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+from datetime import datetime
 from typing import Any, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
-from taskq_api.models.orm import Task
+from taskq_api.models.orm import Task, TaskResult
 from taskq_api.repository import session as session_module
 from taskq_api.repository.session import session_scope
 
@@ -143,6 +144,71 @@ def delete(task_id: int) -> bool:
     return True
 
 
+def update_status(task_id: int, status: str) -> bool:
+    """Transition ``task_id`` to ``status``; no-op if the row is missing.
+
+    Citations: SPEC.md §3 FR-02 state machine.
+    """
+    with session_scope() as session:
+        task = session.get(Task, task_id)
+        if task is None:
+            return False
+        task.status = status
+    return True
+
+
+def record_result(
+    task_id: int,
+    started_at: datetime,
+    exit_code: int,
+    stdout_tail: str,
+    stderr_tail: str,
+    duration_ms: int,
+    finished_at: datetime,
+) -> TaskResult:
+    """Append a new ``task_results`` row (FR-07 v3 multi-row schema).
+
+    The row is expunged so the caller can read attributes after the
+    session closes (same pattern as ``create``).
+
+    Citations: SPEC.md §3 FR-02 "欄位" + §5.2 task_results row.
+    """
+    with session_module.insert_scope() as session:
+        row = TaskResult(
+            task_id=task_id,
+            started_at=started_at,
+            exit_code=exit_code,
+            stdout_tail=stdout_tail,
+            stderr_tail=stderr_tail,
+            duration_ms=duration_ms,
+            finished_at=finished_at,
+        )
+        session.add(row)
+        session.flush()
+        session.expunge(row)
+    return row
+
+
+def list_runs(task_id: int) -> list[TaskResult]:
+    """Return all result rows for ``task_id`` newest-first.
+
+    Sorted by ``started_at`` descending with ``id`` descending as a
+    deterministic tiebreaker (so AC-2.5's strict ``>`` between adjacent
+    rows holds when two runs start in the same millisecond — the second
+    insert wins the tie).
+
+    Citations: SPEC.md §3 FR-02 last bullet; NFR-01 (single ordered query).
+    """
+    with session_scope() as session:
+        stmt = (
+            select(TaskResult)
+            .where(TaskResult.task_id == task_id)
+            .order_by(TaskResult.started_at.desc(), TaskResult.id.desc())
+        )
+        rows: list[TaskResult] = list(session.execute(stmt).scalars())
+    return rows
+
+
 class TaskRepo:
     """Object-style repository facade.
 
@@ -155,6 +221,9 @@ class TaskRepo:
     get_by_id = staticmethod(get_by_id)
     list_paginated = staticmethod(list_paginated)
     delete = staticmethod(delete)
+    update_status = staticmethod(update_status)
+    record_result = staticmethod(record_result)
+    list_runs = staticmethod(list_runs)
 
 
 task_repo = TaskRepo()
@@ -165,6 +234,9 @@ __all__ = [
     "get_by_id",
     "list_paginated",
     "delete",
+    "update_status",
+    "record_result",
+    "list_runs",
     "DuplicateTaskError",
     "TaskRepo",
     "task_repo",
