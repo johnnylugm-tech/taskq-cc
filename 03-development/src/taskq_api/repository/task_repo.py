@@ -10,6 +10,7 @@ import base64
 import binascii
 import json
 from datetime import datetime
+from types import SimpleNamespace
 from typing import Any, Optional
 
 from sqlalchemy import func, select
@@ -209,24 +210,20 @@ def list_runs(task_id: int) -> list[TaskResult]:
     return rows
 
 
-class TaskRepo:
-    """Object-style repository facade.
-
-    Module-level functions above remain the canonical entry points; this
-    class is provided so callers can also instantiate a repository and
-    invoke methods on it (``task_repo.create(...)``).
-    """
-
-    create = staticmethod(create)
-    get_by_id = staticmethod(get_by_id)
-    list_paginated = staticmethod(list_paginated)
-    delete = staticmethod(delete)
-    update_status = staticmethod(update_status)
-    record_result = staticmethod(record_result)
-    list_runs = staticmethod(list_runs)
-
-
-task_repo = TaskRepo()
+# Module-level instance exposing the canonical functions as attributes so
+# callers can write ``task_repo.create(...)`` (the binding shape declared in
+# ``.methodology/SAB.json``). ``SimpleNamespace`` avoids the staticmethod
+# facade that earlier revisions duplicated — every staticmethod on the old
+# ``TaskRepo`` class was already just a re-export of a module function.
+task_repo = SimpleNamespace(
+    create=create,
+    get_by_id=get_by_id,
+    list_paginated=list_paginated,
+    delete=delete,
+    update_status=update_status,
+    record_result=record_result,
+    list_runs=list_runs,
+)
 
 
 __all__ = [
@@ -238,6 +235,5 @@ __all__ = [
     "record_result",
     "list_runs",
     "DuplicateTaskError",
-    "TaskRepo",
     "task_repo",
 ]

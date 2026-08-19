@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, Query
 
 from taskq_api.api.deps import enforce_scope, require_api_key
 from taskq_api.errors import make_problem
+from taskq_api.models.orm import TaskResult
 from taskq_api.models.schemas import TaskCreate
 from taskq_api.repository import task_repo
 from taskq_api.service import runner, tasks as service
@@ -41,6 +42,24 @@ def _require_scope(required: str):
     ) -> Tuple[str, str]:
         return enforce_scope(api_key=api_key, required=required)
     return _dep
+
+
+def _run_row_to_dict(row: TaskResult) -> dict:
+    """Project a ``TaskResult`` ORM row into the FR-02 run-history JSON shape.
+
+    Centralises the column list so adding a column (or renaming one) is a
+    single-line change here rather than a sweep across every caller of
+    ``list_runs_endpoint``.
+    """
+    return {
+        "id": row.id,
+        "started_at": row.started_at,
+        "exit_code": row.exit_code,
+        "stdout_tail": row.stdout_tail,
+        "stderr_tail": row.stderr_tail,
+        "duration_ms": row.duration_ms,
+        "finished_at": row.finished_at,
+    }
 
 
 @router.post("/tasks", status_code=201)
@@ -142,20 +161,7 @@ def list_runs_endpoint(
     if task_repo.get_by_id(task_id) is None:
         raise _not_found_problem()
     rows = task_repo.list_runs(task_id)
-    return {
-        "items": [
-            {
-                "id": row.id,
-                "started_at": row.started_at,
-                "exit_code": row.exit_code,
-                "stdout_tail": row.stdout_tail,
-                "stderr_tail": row.stderr_tail,
-                "duration_ms": row.duration_ms,
-                "finished_at": row.finished_at,
-            }
-            for row in rows
-        ]
-    }
+    return {"items": [_run_row_to_dict(row) for row in rows]}
 
 
 __all__ = ["router"]

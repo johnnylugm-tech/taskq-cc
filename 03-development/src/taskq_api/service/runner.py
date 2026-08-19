@@ -32,6 +32,33 @@ class ExecResult:
     duration_ms: int
 
 
+@dataclass(frozen=True)
+class RunOutcome:
+    """Final state of a single task run — ready to persist + transition.
+
+    ``final_state`` is one of ``done``, ``failed``, or ``timeout``; the
+    two strings that drive the FR-02 state machine are spelled here so
+    callers do not re-derive them from exit_code (which would silently
+    diverge if a future state ever means ``exit_code != 0``).
+    """
+
+    exit_code: int
+    stdout_tail: str
+    stderr_tail: str
+    duration_ms: int
+    final_state: str
+
+
+def _now() -> datetime:
+    """Return a fresh timezone-aware UTC ``datetime``."""
+    return datetime.now(timezone.utc)
+
+
+def _decode_tail(raw: Optional[bytes]) -> str:
+    """Decode subprocess stdout/stderr capture into a UTF-8-safe string."""
+    return (raw or b"").decode(errors="replace")
+
+
 async def execute_command(command: str, timeout: Optional[float] = None) -> ExecResult:
     """Spawn ``command`` via argv-split subprocess, returning an ``ExecResult``.
 
@@ -49,8 +76,6 @@ async def execute_command(command: str, timeout: Optional[float] = None) -> Exec
         stderr=asyncio.subprocess.PIPE,
     )
     started = time.monotonic()
-    stdout_bytes = b""
-    stderr_bytes = b""
     try:
         stdout_bytes, stderr_bytes = await asyncio.wait_for(
             proc.communicate(), timeout=timeout
@@ -64,15 +89,38 @@ async def execute_command(command: str, timeout: Optional[float] = None) -> Exec
     duration_ms = int((time.monotonic() - started) * 1000)
     return ExecResult(
         exit_code=proc.returncode if proc.returncode is not None else -1,
-        stdout_tail=(stdout_bytes or b"").decode(errors="replace"),
-        stderr_tail=(stderr_bytes or b"").decode(errors="replace"),
+        stdout_tail=_decode_tail(stdout_bytes),
+        stderr_tail=_decode_tail(stderr_bytes),
         duration_ms=duration_ms,
     )
 
 
-def _now() -> datetime:
-    """Return a fresh timezone-aware UTC ``datetime``."""
-    return datetime.now(timezone.utc)
+async def _collect_outcome(command: str, timeout: float) -> RunOutcome:
+    """Resolve a ``RunOutcome`` for ``command`` under the ``timeout`` budget.
+
+    A successful subprocess returns ``"done"`` on exit 0 and ``"failed"``
+    otherwise; a timeout budget returns ``"timeout"`` with the budget as
+    the duration. ``execute_command`` guarantees the child is killed and
+    reaped before the ``TimeoutError`` propagates, so this function only
+    translates the failure mode into a recordable shape.
+    """
+    try:
+        result = await execute_command(command, timeout=timeout)
+    except asyncio.TimeoutError:
+        return RunOutcome(
+            exit_code=-1,
+            stdout_tail="",
+            stderr_tail="",
+            duration_ms=int(timeout * 1000),
+            final_state="timeout",
+        )
+    return RunOutcome(
+        exit_code=result.exit_code,
+        stdout_tail=result.stdout_tail,
+        stderr_tail=result.stderr_tail,
+        duration_ms=result.duration_ms,
+        final_state="done" if result.exit_code == 0 else "failed",
+    )
 
 
 async def run_task(task_id: int, command: str) -> None:
@@ -84,40 +132,21 @@ async def run_task(task_id: int, command: str) -> None:
 
     Citations: SPEC.md §3 FR-02 + FR-08 + NFR-03 + §8 #25; SAD.md §2.2 service.runner.
     """
-    settings = get_settings()
-    timeout = settings.task_timeout
     started_at = _now()
     task_repo.update_status(task_id, "running")
 
-    duration_ms = 0
-    exit_code = -1
-    stdout_tail = ""
-    stderr_tail = ""
-    final_state = "failed"
-    try:
-        result = await execute_command(command, timeout=timeout)
-        exit_code = result.exit_code
-        stdout_tail = result.stdout_tail
-        stderr_tail = result.stderr_tail
-        duration_ms = result.duration_ms
-        final_state = "done" if exit_code == 0 else "failed"
-    except asyncio.TimeoutError:
-        # ``execute_command`` already killed + reaped the child; we just
-        # persist a result row with the timeout budget as the duration.
-        duration_ms = int(timeout * 1000)
-        final_state = "timeout"
+    outcome = await _collect_outcome(command, get_settings().task_timeout)
 
-    finished_at = _now()
     task_repo.record_result(
         task_id=task_id,
         started_at=started_at,
-        exit_code=exit_code,
-        stdout_tail=stdout_tail,
-        stderr_tail=stderr_tail,
-        duration_ms=duration_ms,
-        finished_at=finished_at,
+        exit_code=outcome.exit_code,
+        stdout_tail=outcome.stdout_tail,
+        stderr_tail=outcome.stderr_tail,
+        duration_ms=outcome.duration_ms,
+        finished_at=_now(),
     )
-    task_repo.update_status(task_id, final_state)
+    task_repo.update_status(task_id, outcome.final_state)
 
 
-__all__ = ["ExecResult", "execute_command", "run_task"]
+__all__ = ["ExecResult", "RunOutcome", "execute_command", "run_task"]
