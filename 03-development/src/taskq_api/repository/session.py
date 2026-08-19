@@ -19,6 +19,7 @@ SAD.md §2.2 session; NFR-03 (transactional integrity).
 
 from __future__ import annotations
 
+import logging
 from contextlib import contextmanager
 from typing import Callable, Iterator
 
@@ -27,6 +28,17 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from taskq_api.config import get_settings
 from taskq_api.models.orm import Base
+
+# [FR-09 / SEC-T-05] SQLAlchemy's ``sqlalchemy.engine.create`` logger
+# emits the raw connection URL at DEBUG level on every ``create_engine``
+# call. When the URL carries a password (production Postgres,
+# production MySQL, anything with userinfo) the password substring
+# lands in every operator's DEBUG log — a textbook information-
+# disclosure sink. Quiet that one logger to WARNING inside
+# :func:`build_engine` so the URL is never stringified in a log line
+# during the build window; the engine itself still receives the URL
+# and connects normally.
+_SA_CREATE_LOGGER = "sqlalchemy.engine.create"
 
 
 def build_engine(url: str | None = None) -> Engine:
@@ -38,7 +50,12 @@ def build_engine(url: str | None = None) -> Engine:
     (FR-06 AC-6.5). ``url`` defaults to ``TASKQ_DB_URL``; callers pass it
     explicitly only when they have already resolved it.
 
-    Citations: SPEC.md §3 FR-06 (pool_size + pool_pre_ping).
+    [FR-09] ``sqlalchemy.engine.create`` is briefly raised to WARNING so
+    the URL it would otherwise log at DEBUG is not emitted; the original
+    level is restored before returning.
+
+    Citations: SPEC.md §3 FR-06 (pool_size + pool_pre_ping) + FR-09
+    (DB URL password redaction in logs); SEC-T-05.
     """
     settings = get_settings()
     target = settings.db_url if url is None else url
@@ -47,13 +64,20 @@ def build_engine(url: str | None = None) -> Engine:
         # SQLite refuses cross-thread connection reuse by default, but the
         # pool hands a connection to whichever worker thread asks for it.
         connect_args["check_same_thread"] = False
-    return create_engine(
-        target,
-        connect_args=connect_args,
-        pool_size=settings.db_pool_size,
-        pool_pre_ping=True,
-        future=True,
-    )
+    sa_logger = logging.getLogger(_SA_CREATE_LOGGER)
+    original_level = sa_logger.level
+    if sa_logger.level == logging.NOTSET or sa_logger.level < logging.WARNING:
+        sa_logger.setLevel(logging.WARNING)
+    try:
+        return create_engine(
+            target,
+            connect_args=connect_args,
+            pool_size=settings.db_pool_size,
+            pool_pre_ping=True,
+            future=True,
+        )
+    finally:
+        sa_logger.setLevel(original_level)
 
 
 @contextmanager
@@ -163,6 +187,15 @@ def reset_engine() -> None:
     """Drop both cached engines so the next call rebuilds from current env."""
     _read.dispose()
     _insert.dispose()
+
+
+# Test-only alias — kept under a leading-underscore name so production
+# callers do not pick it up via tab-completion or ``from M import *``.
+# The semantics are identical to ``reset_engine``; the alias exists
+# only because a handful of FR-09 readiness tests historically
+# targeted a per-test monkeypatched URL and want a stable name that
+# reads as "test scaffolding" rather than "production reset".
+_reset_engine_for_tests = reset_engine
 
 
 @contextmanager

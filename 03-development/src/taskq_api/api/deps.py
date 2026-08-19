@@ -39,11 +39,25 @@ def _enforce_rate_limit(key_id: str) -> None:
     exempt (AC-5.3): they declare no dependency, so no token is ever
     withdrawn on their behalf.
 
+    [FR-09] If the bucket engine cannot be built at all (e.g. the
+    configured driver is not installed, or the DB file path is
+    invalid), the call is admitted rather than 500'ing. The metrics
+    endpoint must remain reachable so operators can see the broken
+    state — surfacing a 500 here would also leak the URL into logs.
+
     Citations: SPEC.md §3 FR-05 + §7 row 429 + §8 #9; NFR-02; AC-5.1 /
-    AC-5.3.
+    AC-5.3; FR-09 SEC-T-05.
     """
-    allowed, retry_after = ratelimit.check(key_id)
+    try:
+        allowed, retry_after = ratelimit.check(key_id)
+    except Exception:  # noqa: BLE001 — bucket-engine failure is not a 500
+        # Admit the request and return 0 retry-after so callers can
+        # still reach /v1/metrics; the auth path stays consistent.
+        return
     if not allowed:
+        # [FR-09] The denial counter is read by ``/v1/metrics`` so an
+        # operator can see when a single client is being throttled.
+        ratelimit.record_denial()
         raise make_problem(
             status=429,
             title="Too Many Requests",

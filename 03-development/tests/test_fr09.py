@@ -182,16 +182,18 @@ def test_ac_9_2_readyz_db_unreachable_returns_503_with_db_detail():  # NFR-07 (D
             return await client.get(path)
 
     # --- Row 2: DB unreachable ---------------------------------------------
-    # Point the engine at a directory that will refuse SELECT 1. SQLite
-    # raises ``OperationalError: unable to open database file`` when the
-    # path is a directory, which is the cleanest "closed DB" trigger
-    # available without mocking internals (per [UNIT TEST CONTRACT] —
-    # tests must fail because the FEATURE is missing, not because of
-    # external side-effects; this is a real DB-state failure, not a
-    # mock).
-    closed_db_dir = Path(os.environ["TASKQ_HOME"]) / "closed_db"
-    closed_db_dir.mkdir()
-    os.environ["TASKQ_DB_URL"] = f"sqlite:///{closed_db_dir}/wont_open.db"
+    # Point the engine at a path whose parent directory does not exist
+    # AND cannot be created — the connection string itself names a
+    # regular file, so SQLite refuses to open it and raises
+    # ``OperationalError: unable to open database file``. This is the
+    # cleanest "closed DB" trigger available without mocking internals
+    # (per [UNIT TEST CONTRACT] — tests must fail because the FEATURE
+    # is missing, not because of external side-effects; this is a real
+    # DB-state failure, not a mock).
+    closed_db_path = Path(os.environ["TASKQ_HOME"]) / "closed_db_dir" / "wont_open.db"
+    # Do NOT create closed_db_dir — the absent parent is what forces
+    # SQLite to refuse the connection.
+    os.environ["TASKQ_DB_URL"] = f"sqlite:///{closed_db_path}"
     # Force a fresh engine build so the new URL is honoured.
     session_module._reset_engine_for_tests()  # type: ignore[attr-defined]
 
@@ -438,3 +440,373 @@ def test_sec_t08_db_url_absent_from_logs_and_metrics():  # NFR-08 (information d
         f"{[r.getMessage() for r in captured_records]!r}. "
         f"Metrics body: {metrics_body!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# COVERAGE — additional cases to lift the per-module coverage of the
+# FR-09-scoped modules above the 80% Gate 1 threshold. These are NOT
+# extra TEST_SPEC cases; they are targeted unit tests for the lines
+# pytest-cov flags as uncovered under the existing four RED/GREEN
+# cases. Each test asserts behaviour the GREEN code already guarantees;
+# a future refactor that breaks the line is caught here.
+# ---------------------------------------------------------------------------
+
+
+def test_coverage_readyz_migration_marker_file_returns_503():  # coverage — health.py line 157
+    """[COVERAGE] ``/readyz`` returns 503 with ``detail="migration"`` when the FR-07 marker file exists.
+
+    The marker is written by the FR-07 alembic env when
+    ``TASKQ_MIGRATION_FORCE_FAIL=1`` aborts an upgrade. A half-applied
+    migration is worse than a missing DB, so the marker takes
+    precedence over the DB-reachability probe (per the comment in
+    ``readyz_route``).
+    """
+    home = Path(os.environ["TASKQ_HOME"])
+    marker_path = home / ".migration_failure.json"
+    marker_path.write_text('{"forced_failure": true}')
+
+    response = _request("GET", "/readyz", api_key="")
+    assert response.status_code == 503, (
+        f"/readyz must surface migration marker as 503; got {response.status_code}"
+    )
+    body_text = response.text
+    assert "migration" in body_text.lower(), (
+        f"/readyz 503 body must name 'migration' side; got {body_text!r}"
+    )
+
+
+def test_coverage_readyz_alembic_version_present_but_not_at_head_returns_503():  # coverage — health.py lines 102-107
+    """[COVERAGE] ``/readyz`` returns 503 when ``alembic_version`` exists but points at a non-head revision.
+
+    Exercises the ``SELECT version_num FROM alembic_version`` branch
+    inside ``_migration_is_at_head`` (lines 102-107) — the existing
+    RED/GREEN case only triggers the ``alembic_version`` table-missing
+    branch. We seed a stale revision (``v1_initial``) into the table
+    directly so the SELECT path is exercised end-to-end.
+    """
+    db_path = Path(os.environ["TASKQ_HOME"]) / "alembic_mismatch.db"
+    os.environ["TASKQ_DB_URL"] = f"sqlite:///{db_path}"
+    session_module._reset_engine_for_tests()  # type: ignore[attr-defined]
+
+    # Seed alembic_version with a non-head revision.
+    engine = session_module.get_engine()
+    with engine.connect() as conn:
+        conn.exec_driver_sql(
+            "CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL)"
+        )
+        conn.exec_driver_sql(
+            "INSERT INTO alembic_version (version_num) VALUES ('v1_initial')"
+        )
+        conn.commit()
+
+    response = _request("GET", "/readyz", api_key="")
+    assert response.status_code == 503, (
+        f"/readyz must return 503 when alembic_version != head; "
+        f"got {response.status_code} with body {response.text!r}"
+    )
+    assert "migration" in response.text.lower(), (
+        f"/readyz 503 body must name 'migration' side; got {response.text!r}"
+    )
+
+
+def test_coverage_readyz_alembic_at_head_returns_200():  # coverage — health.py lines 175-176
+    """[COVERAGE] ``/readyz`` returns 200 + ``{"status":"ready"}`` when alembic points at head AND DB is reachable.
+
+    Covers the final ``return {"status": "ready"}`` branch (lines
+    175-176). Seeds ``alembic_version`` with the actual head revision
+    (``v3_split_results`` — see migrations/versions/v3_split_results.py)
+    so ``_migration_is_at_head()`` returns ``True``.
+    """
+    db_path = Path(os.environ["TASKQ_HOME"]) / "alembic_at_head.db"
+    os.environ["TASKQ_DB_URL"] = f"sqlite:///{db_path}"
+    session_module._reset_engine_for_tests()  # type: ignore[attr-defined]
+
+    engine = session_module.get_engine()
+    with engine.connect() as conn:
+        conn.exec_driver_sql(
+            "CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL)"
+        )
+        conn.exec_driver_sql(
+            "INSERT INTO alembic_version (version_num) VALUES ('v3_split_results')"
+        )
+        conn.commit()
+
+    response = _request("GET", "/readyz", api_key="")
+    assert response.status_code == 200, (
+        f"/readyz must return 200 when alembic is at head; "
+        f"got {response.status_code} with body {response.text!r}"
+    )
+    body = json_module.loads(response.text)
+    assert body == {"status": "ready"}, (
+        f"/readyz 200 body must be {{'status': 'ready'}}; got {body!r}"
+    )
+
+
+def test_coverage_readyz_alembic_version_table_empty_returns_503():  # coverage — health.py line 106
+    """[COVERAGE] ``_migration_is_at_head`` returns ``False`` when ``alembic_version`` row is ``None``.
+
+    Covers line 106 — the ``if version is None: return False`` branch —
+    which is reached when the ``alembic_version`` table exists but has
+    no rows. The ``/readyz`` endpoint surfaces this as a 503 with
+    ``detail="migration"``.
+    """
+    db_path = Path(os.environ["TASKQ_HOME"]) / "alembic_empty.db"
+    os.environ["TASKQ_DB_URL"] = f"sqlite:///{db_path}"
+    session_module._reset_engine_for_tests()  # type: ignore[attr-defined]
+
+    engine = session_module.get_engine()
+    with engine.connect() as conn:
+        # Create the table but leave it empty — fetchone() returns None.
+        conn.exec_driver_sql(
+            "CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL)"
+        )
+        conn.commit()
+
+    response = _request("GET", "/readyz", api_key="")
+    assert response.status_code == 503, (
+        f"/readyz must return 503 when alembic_version row is NULL; "
+        f"got {response.status_code} with body {response.text!r}"
+    )
+    assert "migration" in response.text.lower(), (
+        f"/readyz 503 body must name 'migration' side; got {response.text!r}"
+    )
+
+
+def test_coverage_readyz_alembic_probe_exception_returns_503():  # coverage — health.py lines 171-174
+    """[COVERAGE] ``/readyz`` returns 503 + ``migration`` when ``_migration_is_at_head`` raises.
+
+    Covers lines 171-174 — the ``except Exception: return _not_ready(
+    "migration")`` defensive branch. The branch fires when the
+    alembic probe itself raises (e.g. alembic_version table was
+    dropped between the metadata query and the version_num query).
+    We exercise it by patching ``_migration_is_at_head`` to raise —
+    the production path that raises is the same one a real race would
+    trigger.
+    """
+    from taskq_api.api import health as health_module
+
+    db_path = Path(os.environ["TASKQ_HOME"]) / "alembic_probe_exc.db"
+    os.environ["TASKQ_DB_URL"] = f"sqlite:///{db_path}"
+    session_module._reset_engine_for_tests()  # type: ignore[attr-defined]
+
+    original = health_module._migration_is_at_head
+
+    def _raise():
+        raise RuntimeError("simulated alembic probe failure")
+
+    health_module._migration_is_at_head = _raise  # type: ignore[assignment]
+    try:
+        response = _request("GET", "/readyz", api_key="")
+    finally:
+        health_module._migration_is_at_head = original  # type: ignore[assignment]
+
+    assert response.status_code == 503, (
+        f"/readyz must return 503 when alembic probe raises; "
+        f"got {response.status_code} with body {response.text!r}"
+    )
+    assert "migration" in response.text.lower(), (
+        f"/readyz 503 body must name 'migration' side; got {response.text!r}"
+    )
+
+
+def test_coverage_app_validation_handler_422_problem_json():  # coverage — app.py lines 114-127
+    """[COVERAGE] FastAPI ``RequestValidationError`` is rendered as 422 + problem+json by ``_validation_handler``.
+
+    Sends a POST to ``/v1/tasks`` with an empty body to trigger
+    ``RequestValidationError`` (the route's ``TaskCreate`` schema
+    rejects the missing fields). Exercises the
+    ``_validation_handler`` registered on the app (lines 114-127).
+    """
+    app = create_app()
+
+    async def _go() -> httpx.Response:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as client:
+            return await client.post(
+                "/v1/tasks", json={}, headers={"X-API-Key": "write_key"}
+            )
+
+    response = asyncio.run(_go())
+    assert response.status_code == 422, (
+        f"Empty POST body must trigger 422 from validation handler; "
+        f"got {response.status_code} with body {response.text!r}"
+    )
+    assert "problem+json" in response.headers.get("content-type", ""), (
+        f"422 response must carry application/problem+json; "
+        f"got content-type {response.headers.get('content-type')!r}"
+    )
+    body = json_module.loads(response.text)
+    assert body["status"] == 422
+    assert body["type"] == "/errors/invalid-body"
+    assert body["title"] == "Invalid request body"
+
+
+def test_coverage_app_non_403_problem_handler():  # coverage — app.py line 104 (else branch)
+    """[COVERAGE] Non-403 ``Problem`` responses are rendered via the full ``else`` branch of ``_problem_handler``.
+
+    Triggers a 404 (missing task) which raises a ``Problem(status=404)``
+    that flows through ``_problem_handler``. The ``else`` branch
+    builds the full body including ``instance`` and ``correlation_id``.
+    """
+    app = create_app()
+
+    async def _go() -> httpx.Response:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as client:
+            return await client.get(
+                "/v1/tasks/99999", headers={"X-API-Key": "admin_key"}
+            )
+
+    response = asyncio.run(_go())
+    # The route returns 404 via Problem; assert the else-branch body shape.
+    assert response.status_code == 404, (
+        f"GET /v1/tasks/99999 must return 404; got {response.status_code}"
+    )
+    assert "problem+json" in response.headers.get("content-type", "")
+    body = json_module.loads(response.text)
+    # else-branch keys present
+    assert "instance" in body, (
+        f"Non-403 problem body must include 'instance'; got {body!r}"
+    )
+    assert "correlation_id" in body, (
+        f"Non-403 problem body must include 'correlation_id'; got {body!r}"
+    )
+
+
+def test_coverage_app_lifespan_drain_finally_branch_runs():  # coverage — app.py lines 64-67
+    """[COVERAGE] The FastAPI ``lifespan`` ``finally`` branch invokes ``runner.drain`` on shutdown.
+
+    Exercises the lifespan context manager around an empty
+    startup/shutdown cycle. The ``try / yield / finally`` block at
+    lines 64-67 must run end-to-end without raising.
+    """
+    from taskq_api.service import runner as runner_module
+
+    drain_calls: list[float] = []
+    original_drain = runner_module.drain
+
+    async def _spy_drain(timeout: float):
+        drain_calls.append(timeout)
+        return await original_drain(timeout)
+
+    async def _run_lifespan():
+        monkeypatched_app = create_app()
+        import taskq_api.app as app_module
+
+        original_runner = app_module.runner
+        app_module.runner = runner_module  # ensure attribute is the module
+        runner_module.drain = _spy_drain  # type: ignore[assignment]
+        try:
+            async with monkeypatched_app.router.lifespan_context(monkeypatched_app):
+                pass  # nothing in-flight — drain returns immediately
+        finally:
+            runner_module.drain = original_drain  # type: ignore[assignment]
+            app_module.runner = original_runner
+
+    asyncio.run(_run_lifespan())
+
+    assert len(drain_calls) == 1, (
+        f"lifespan finally must invoke runner.drain exactly once; "
+        f"saw {len(drain_calls)} calls"
+    )
+
+
+def test_coverage_config_cors_origins_non_empty_parses_csv():  # coverage — config.py line 71
+    """[COVERAGE] ``_tuple_env`` returns the parsed tuple when ``TASKQ_CORS_ORIGINS`` is non-empty.
+
+    Covers the ``return tuple(item.strip() for item in raw.split(",") if
+    item.strip())`` branch (line 71) which is skipped when the env var
+    is unset or empty.
+    """
+    os.environ["TASKQ_CORS_ORIGINS"] = "https://a.example, https://b.example ,,"
+    # Force a fresh Settings load.
+    settings = get_settings()
+    assert "https://a.example" in settings.cors_origins
+    assert "https://b.example" in settings.cors_origins
+    # Empty entries (from the trailing comma) MUST be stripped — line 71
+    # has the ``if item.strip()`` guard that enforces this.
+    assert "" not in settings.cors_origins
+    assert len(settings.cors_origins) == 2
+
+
+def test_coverage_session_transaction_rollback_on_raise():  # coverage — session.py lines 103-105
+    """[COVERAGE] ``transaction`` rolls back AND re-raises on any ``Exception`` (FR-06 AC-6.2).
+
+    Verifies the ``except Exception: session.rollback(); raise`` branch
+    (lines 103-105). A test-only ``session_factory`` records commit and
+    rollback invocations so we can assert the boundary fired.
+    """
+    from taskq_api.repository.session import transaction
+
+    class _SpySession:
+        def __init__(self) -> None:
+            self.committed = False
+            self.rolled_back = False
+            self.closed = False
+
+        def commit(self) -> None:
+            self.committed = True
+
+        def rollback(self) -> None:
+            self.rolled_back = True
+
+        def close(self) -> None:
+            self.closed = True
+
+    spy = _SpySession()
+
+    class _Boom(RuntimeError):
+        pass
+
+    with pytest.raises(_Boom):
+        with transaction(lambda: spy):  # type: ignore[arg-type,return-value]
+            raise _Boom("intentional")
+
+    assert spy.rolled_back is True, (
+        "transaction must call session.rollback() on exception"
+    )
+    assert spy.committed is False, (
+        "transaction must NOT call session.commit() when an exception escaped"
+    )
+    assert spy.closed is True, (
+        "transaction must close the session in the finally block"
+    )
+
+
+def test_coverage_session_get_insert_engine_and_insert_scope():  # coverage — session.py lines 183, 211-212
+    """[COVERAGE] ``get_insert_engine`` returns a distinct engine and ``insert_scope`` opens a transactional session.
+
+    Lines 183 and 211-212 are the bodies of ``get_insert_engine`` and
+    ``insert_scope``. We assert both are reachable from a fresh test
+    process and that ``insert_scope`` yields a usable session (insert
+    + commit + read-back) so a future regression that breaks the
+    write-side engine surfaces here.
+    """
+    from taskq_api.models.orm import Task
+    from taskq_api.repository.session import (
+        get_insert_engine,
+        insert_scope,
+    )
+
+    insert_engine = get_insert_engine()
+    assert insert_engine is not None
+    # The insert engine is distinct from the read engine — the FR-06
+    # contract requires both to coexist so the SQLAlchemy event
+    # listeners on the read engine do not observe write traffic.
+    assert insert_engine is not session_module.get_engine()
+
+    # insert_scope yields a real session — exercise it end-to-end so
+    # the ``with transaction(_insert.factory()) as session: yield`` body
+    # (lines 211-212) is covered.
+    with insert_scope() as session:
+        session.add(Task(name="fr09_coverage_task", command="echo hi", status="pending"))
+    # Read it back via the read engine to prove the commit landed.
+    from taskq_api.repository.session import session_scope
+
+    with session_scope() as session:
+        row = session.query(Task).filter_by(name="fr09_coverage_task").one()
+        assert row.status == "pending"
