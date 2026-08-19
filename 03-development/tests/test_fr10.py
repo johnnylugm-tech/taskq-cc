@@ -758,5 +758,91 @@ def test_sec_t05_error_detail_strips_internal_paths(monkeypatch):  # NFR-02 (no 
 # ---------------------------------------------------------------------------
 
 
-_ = correlation_id_for
 _ = sqlite3
+
+
+# ---------------------------------------------------------------------------
+# Coverage-fix tests — exercise lines that the AC sweep does not hit but
+# Gate 1's per-FR live-coverage check (min_coverage=100) requires.
+#
+#   * errors.py:58           — correlation_id_for(request) returns the
+#                              header value when the client supplied one.
+#   * app.py:88              — _sanitize_detail returns the raw message
+#                              when no AC-10.2 / SEC-T-05 denylist
+#                              substring is present.
+#   * app.py:194-195         — _ProblemErrorMiddleware forwards a
+#                              non-http scope (lifespan / websocket)
+#                              through to the downstream app.
+# ---------------------------------------------------------------------------
+
+
+def test_correlation_id_for_returns_header_value_when_present():
+    """errors.py:58 — header-supplied correlation id is echoed verbatim.
+
+    Gate-1 coverage for ``taskq_api.errors`` requires the
+    ``return header_id`` branch in :func:`correlation_id_for` to be
+    executed. NFR-09 requires that a client-supplied
+    ``X-Correlation-Id`` propagates into both the response header and
+    the audit log so distributed traces stitch back to the server.
+    """
+    from types import SimpleNamespace
+
+    request = SimpleNamespace(headers={"X-Correlation-Id": "client-trace-abc-123"})
+    assert correlation_id_for(request) == "client-trace-abc-123"
+
+
+def test_sanitize_detail_returns_raw_message_when_no_denylist_substring():
+    """app.py:88 — non-denylisted messages survive the sanitizer verbatim.
+
+    The sanitizer replaces any message containing ``Traceback`` /
+    ``SQL`` / ``/Users`` with the generic ``"Internal server error."``
+    sentinel (AC-10.2 / SEC-T-05), but a message that matches NONE of
+    those substrings is returned unchanged so the body still carries
+    useful operator-facing context (e.g. ``"kaboom"``). Gate-1 coverage
+    for ``taskq_api.app`` requires the ``return message`` branch to be
+    exercised at least once.
+    """
+    from taskq_api.app import _sanitize_detail
+
+    assert _sanitize_detail("kaboom") == "kaboom"
+    assert _sanitize_detail("plain operator-facing error") == "plain operator-facing error"
+    # Boundary: empty message also takes the verbatim branch.
+    assert _sanitize_detail("") == ""
+
+
+def test_problem_error_middleware_passes_through_non_http_scope():
+    """app.py:194-195 — non-http scopes bypass the catch-all branch.
+
+    ``_ProblemErrorMiddleware`` is registered as a user middleware
+    inside Starlette's :class:`ServerErrorMiddleware` and outside
+    :class:`ExceptionMiddleware`. Lifespan and websocket scopes flow
+    through the middleware stack; the catch-all ``except Exception``
+    only applies to http scopes, so a non-http scope must call the
+    downstream app and return without producing a response. This
+    covers lines 194-195 of ``taskq_api.app``.
+    """
+    from taskq_api.app import _ProblemErrorMiddleware
+
+    calls: list[dict] = []
+
+    async def downstream_app(scope, receive, send):
+        calls.append({"type": scope["type"], "receive": receive, "send": send})
+
+    mw = _ProblemErrorMiddleware(downstream_app)
+
+    async def _noop_receive():
+        return {"type": "lifespan.startup"}
+
+    async def _noop_send(_msg):
+        return None
+
+    async def _drive():
+        scope = {"type": "lifespan"}
+        await mw(scope, _noop_receive, _noop_send)
+
+    asyncio.run(_drive())
+
+    assert len(calls) == 1
+    assert calls[0]["type"] == "lifespan"
+    assert calls[0]["receive"] is _noop_receive
+    assert calls[0]["send"] is _noop_send
