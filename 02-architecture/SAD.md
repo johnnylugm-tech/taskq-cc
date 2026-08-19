@@ -126,8 +126,15 @@ No god-module: each file owns one concern. Largest file (`service/runner.py`) ta
 | Attribute | Value |
 |-----------|-------|
 | Responsibility | RFC 7807 `application/problem+json` constructors; canonical field whitelist for `detail` (no stack traces, SQL, paths — FR-10 / NFR-04). Independence. |
-| External Interface | `Problem(...)`, `problem_response(status, type_uri, detail, correlation_id)` |
-| Dependencies | `taskq_api.config` (for `correlation_id` propagation) |
+| External Interface | `Problem(...)`, `make_problem(...)`, `correlation_id_for(request)` |
+| Dependencies | stdlib only (`uuid`) + `fastapi.Request` for the header stamp |
+
+> **Round-N amendment (FR-10 IMPROVE):** `errors` no longer imports `config`.
+> `correlation_id_for` mints its id locally (`uuid4().hex` + the inbound
+> `X-Correlation-Id` header), so the previously-allowed `errors -> config`
+> edge is dead. The `.importlinter` `ignore_imports` entries for that edge
+> were removed in lockstep — a constraint the code outgrew is amended in
+> `SAD.md` and `.importlinter` together, never silently.
 
 #### L4 — API
 

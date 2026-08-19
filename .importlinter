@@ -12,6 +12,13 @@ include_external_packages = true
 # Contract 1 — strict layering
 # api > service > repository > models  (+ config/errors as independence siblings)
 # ---------------------------------------------------------------------------
+# Round N: errors -> config was previously listed under `ignore_imports` for
+# both Contract 1 and Contract 2; that import was removed when errors.py was
+# refactored to mint its correlation_id locally (uuid4 + X-Correlation-Id
+# header). The exception became a dead `ignore_imports` and import-linter
+# rejects the configuration as a result ("No matches for ignored import"),
+# so the lines are removed here. errors is now a true independence module —
+# SAD.md §2.2 `taskq_api.errors` row updated to match.
 [importlinter:contract:layer-hierarchy]
 name = api > service > repository > models
 type = layers
@@ -22,13 +29,10 @@ layers =
     taskq_api.models
     taskq_api.config
     taskq_api.errors
-ignore_imports =
-    taskq_api.errors -> taskq_api.config
 
 # ---------------------------------------------------------------------------
 # Contract 2 — independence: config + errors must not import each other
 # (SAB: "config and errors are independence modules with no upward imports")
-# Exception: errors -> config is required for correlation_id propagation.
 # ---------------------------------------------------------------------------
 [importlinter:contract:independence-config-errors]
 name = config and errors do not import each other
@@ -36,8 +40,6 @@ type = independence
 modules =
     taskq_api.config
     taskq_api.errors
-ignore_imports =
-    taskq_api.errors -> taskq_api.config
 
 # ---------------------------------------------------------------------------
 # Contract 3 — sqlalchemy imports must remain inside the repository layer
