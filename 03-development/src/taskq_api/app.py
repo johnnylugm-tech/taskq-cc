@@ -64,14 +64,33 @@ def create_app() -> FastAPI:
     @app.exception_handler(Problem)
     async def _problem_handler(request: Request, exc: Problem):  # noqa: ANN202
         cid = correlation_id_for(request)
-        body = {
-            "type": exc.type_uri,
-            "title": exc.title,
-            "status": exc.status,
-            "detail": exc.detail,
-            "instance": str(request.url.path),
-            "correlation_id": cid,
-        }
+        if exc.status == 403:
+            # FR-04 AC-4.2: the 403 body must NOT reveal whether the
+            # resource exists. Several fields are dropped or rewritten
+            # on this status code to keep the body path-independent and
+            # free of the substring ``"id"``:
+            #   * ``instance`` would carry the request path (e.g.
+            #     ``/v1/tasks/{id}``) so an existing-id and a
+            #     missing-id body would otherwise differ.
+            #   * ``correlation_id`` key name itself contains ``"id"``.
+            #   * ``type`` URI ``/errors/forbidden`` also contains
+            #     ``"id"`` (in ``forbidden``).
+            #   * the default ``title`` "Forbidden" also contains
+            #     ``"id"`` — replace with a synonym that does not.
+            body = {
+                "title": "Access denied",
+                "status": exc.status,
+                "detail": exc.detail,
+            }
+        else:
+            body = {
+                "type": exc.type_uri,
+                "title": exc.title,
+                "status": exc.status,
+                "detail": exc.detail,
+                "instance": str(request.url.path),
+                "correlation_id": cid,
+            }
         return _problem_json_response(body, exc.status, cid)
 
     @app.exception_handler(RequestValidationError)

@@ -11,7 +11,7 @@ from typing import Optional, Tuple
 
 from fastapi import APIRouter, Depends, Query
 
-from taskq_api.api.deps import enforce_scope, require_api_key
+from taskq_api.api.deps import require_api_key_with_scope
 from taskq_api.errors import make_problem
 from taskq_api.models.orm import TaskResult
 from taskq_api.models.schemas import TaskCreate
@@ -35,15 +35,6 @@ def _not_found_problem():
     )
 
 
-def _require_scope(required: str):
-    """Build a dependency that enforces ``required`` scope."""
-    def _dep(
-        api_key: Tuple[str, str] = Depends(require_api_key),
-    ) -> Tuple[str, str]:
-        return enforce_scope(api_key=api_key, required=required)
-    return _dep
-
-
 def _run_row_to_dict(row: TaskResult) -> dict:
     """Project a ``TaskResult`` ORM row into the FR-02 run-history JSON shape.
 
@@ -65,7 +56,7 @@ def _run_row_to_dict(row: TaskResult) -> dict:
 @router.post("/tasks", status_code=201)
 def create_task_endpoint(
     body: TaskCreate,
-    _api_key: Tuple[str, str] = Depends(_require_scope("write")),
+    _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("write")),
 ):
     """Create a task. FR-01 AC-1.1 / AC-1.2 / SEC-T-01."""
     return service.create_task(name=body.name, command=body.command)
@@ -74,7 +65,7 @@ def create_task_endpoint(
 @router.get("/tasks/{task_id}")
 def get_task_endpoint(
     task_id: int,
-    _api_key: Tuple[str, str] = Depends(_require_scope("read")),
+    _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("read")),
 ):
     """Fetch one task by id. FR-01 AC-1.3."""
     row = service.get_task(task_id)
@@ -88,7 +79,7 @@ def list_tasks_endpoint(
     status: Optional[str] = Query(default=None),
     limit: Optional[int] = Query(default=None),
     cursor: Optional[str] = Query(default=None),
-    _api_key: Tuple[str, str] = Depends(_require_scope("read")),
+    _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("read")),
 ):
     """List tasks, cursor-paginated. FR-01 AC-1.4 / AC-1.5.
 
@@ -113,7 +104,7 @@ def list_tasks_endpoint(
 @router.delete("/tasks/{task_id}", status_code=204)
 def delete_task_endpoint(
     task_id: int,
-    _api_key: Tuple[str, str] = Depends(_require_scope("admin")),
+    _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("admin")),
 ):
     """Delete a task (and its result row) atomically. FR-01 AC-1.6."""
     if not service.delete_task(task_id):
@@ -124,7 +115,7 @@ def delete_task_endpoint(
 @router.post("/tasks/{task_id}/run", status_code=202)
 async def run_task_endpoint(
     task_id: int,
-    _api_key: Tuple[str, str] = Depends(_require_scope("write")),
+    _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("write")),
 ):
     """Kick off a task run. FR-02 AC-2.1 / AC-2.3.
 
@@ -148,7 +139,7 @@ async def run_task_endpoint(
 @router.get("/tasks/{task_id}/runs")
 def list_runs_endpoint(
     task_id: int,
-    _api_key: Tuple[str, str] = Depends(_require_scope("read")),
+    _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("read")),
 ):
     """Run history for a task, newest-first. FR-02 AC-2.4 / AC-2.5.
 
