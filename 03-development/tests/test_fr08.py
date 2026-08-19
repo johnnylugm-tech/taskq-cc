@@ -648,3 +648,495 @@ def test_sec_t07_timeout_kills_subprocess_no_orphan(monkeypatch):  # NFR-03 (tim
         "commands could exhaust PIDs/file-descriptors; the runner "
         "must kill+wait the child"
     )
+
+
+# ---------------------------------------------------------------------------
+# Coverage-fix tests — pin the lines the FR-08 catalog leaves uncovered in
+# ``taskq_api/app.py`` (problem+json envelope, /healthz, /readyz, lifespan
+# drain, 403 problem handler, validation handler) and the ``run_task`` +
+# ``drain-no-inflight`` paths in ``taskq_api/service/runner.py``. Every
+# test below is in-process (httpx.ASGITransport or asyncio.run) so
+# pytest-cov measures the FR-08 modules end-to-end.
+# ---------------------------------------------------------------------------
+
+
+def test_drain_with_no_inflight_tasks_returns_zero_count():  # NFR-08 (drain is safe to invoke on an idle runner)
+    """[FR-08] Drain with no in-flight tasks must short-circuit to ``stragglers=0``.
+
+    Covers ``service/runner.py`` line 378 — the early-return branch when
+    ``_in_flight`` is empty. The branch is reachable even by the AC-8.3
+    test (the TaskGroup cancellation drops every Tasks out of the
+    in-flight set before drain inspects it), but explicitly verifying
+    it isolates the no-task path from the drain-with-tasks path.
+    """
+    # Ensure the in-flight registry is empty for this test. The
+    # ``_isolated_db`` autouse fixture already gave us a fresh DB; the
+    # module-level ``_in_flight`` set is shared across tests, so we
+    # snapshot + restore it manually.
+    import taskq_api.service.runner as runner_module
+
+    saved = set(runner_module._in_flight)
+    runner_module._in_flight.clear()
+    try:
+        report = _run_async(runner_module.drain(0.5))
+    finally:
+        runner_module._in_flight.clear()
+        runner_module._in_flight.update(saved)
+
+    result = {"stragglers": report.stragglers_marked_interrupted}
+    assert result["stragglers"] == 0, (
+        "FR-08: drain() with no in-flight tasks must return "
+        "stragglers_marked_interrupted=0 — the early-return branch is "
+        "the only code path that knows 'idle runner' is not an error"
+    )
+
+
+def test_run_task_persists_result_and_terminal_state(monkeypatch):  # NFR-08 (run_task is the FR-02 entry point used by the API)
+    """[FR-02/FR-08] ``runner.run_task`` transitions ``running`` → ``done`` and persists.
+
+    Covers ``service/runner.py`` lines 423-424 (the ``run_task`` body),
+    which the FR-08 AC-8.1..AC-8.5 tests do not exercise because they
+    go through the admission-controlled ``submit`` entry point. The
+    FR-02 ``POST /v1/tasks/{id}/run`` route, however, dispatches through
+    ``run_task`` — so this branch is the FR-02 happy path.
+    """
+    monkeypatch.setenv("TASKQ_MAX_CONCURRENT", "8")
+    monkeypatch.setenv("TASKQ_TASK_TIMEOUT", "30")
+
+    # Seed a task row so the runner has a real ``task_id`` to update.
+    from taskq_api.repository import task_repo
+
+    task = task_repo.create(name="run_task-coverage", command="echo hi")
+
+    pids_before = _child_pids()
+
+    # ``run_task`` is documented as ``-> None``; the canonical outcome is
+    # the row's persisted state, not a return value. We poll the row
+    # briefly so the assertion targets the post-await state, not a
+    # mid-flight read.
+    _run_async(runner.run_task(task.id, "echo hi"))
+
+    orphan_pids = sorted(_child_pids() - pids_before)
+    row = task_repo.get_by_id(task.id)
+
+    result = {
+        "status": getattr(row, "status", None),
+        "orphan_pids": orphan_pids,
+    }
+    assert result["status"] == "done", (
+        "FR-08: run_task must transition the repository row to "
+        f"state='done'; got {result['status']!r}"
+    )
+    assert len(result["orphan_pids"]) == 0, (
+        "FR-08: run_task leaked child PIDs "
+        f"{result['orphan_pids']} — the subprocess must be awaited "
+        "to completion so the OS reaps it"
+    )
+
+
+def test_healthz_returns_ok_unconditionally():  # NFR-12 (liveness probe always reachable)
+    """[FR-09] ``GET /healthz`` returns 200 + ``{"status": "ok"}`` without auth or DB.
+
+    Covers ``app.py`` line 90 — the ``return {"status": "ok"}`` body of
+    the ``healthz`` handler. The FR-08 catalog does not include a
+    healthz probe; this test pins the liveness path so an accidental
+    regression (e.g. wiring an auth dependency) is caught.
+    """
+    import httpx
+
+    async def _run():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.get("/healthz")
+
+    response = _run_async(_run())
+    result = {
+        "status": response.status_code,
+        "body": response.json(),
+    }
+    assert result["status"] == 200, (
+        f"FR-08: /healthz must return 200 (liveness); got {result['status']}"
+    )
+    assert result["body"] == {"status": "ok"}, (
+        f"FR-08: /healthz body must be exactly {{'status': 'ok'}}; got {result['body']!r}"
+    )
+
+
+def test_readyz_returns_200_when_db_is_reachable():  # NFR-07 (DB readiness probe)
+    """[FR-09] ``GET /readyz`` returns 200 + ``{"status": "ready"}`` when the DB is reachable.
+
+    Covers ``app.py`` lines 110-114 — the happy path of the
+    ``try: engine.connect()`` block. The autouse ``_isolated_db``
+    fixture gives every test a fresh SQLite file, so ``SELECT 1`` must
+    succeed and the probe must report ready.
+    """
+    import httpx
+
+    async def _run():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.get("/readyz")
+
+    response = _run_async(_run())
+    result = {
+        "status": response.status_code,
+        "body": response.json(),
+    }
+    assert result["status"] == 200, (
+        f"FR-08: /readyz must return 200 when DB is reachable; got {result['status']}"
+    )
+    assert result["body"] == {"status": "ready"}, (
+        f"FR-08: /readyz body must be exactly {{'status': 'ready'}}; got {result['body']!r}"
+    )
+
+
+def test_readyz_returns_503_when_migration_marker_exists(tmp_path, monkeypatch):  # NFR-07 (DB readiness probe)
+    """[FR-07/FR-09] ``GET /readyz`` returns 503 when the migration-failure marker is present.
+
+    Covers ``app.py`` lines 104-109 — the ``if os.path.exists(marker)``
+    branch of the readiness probe. The marker file is what the FR-07
+    AC-7.5 contract writes under ``TASKQ_HOME`` when a migration aborts;
+    the readiness probe must reflect that without touching the DB.
+    """
+    marker = tmp_path / ".migration_failure.json"
+    marker.write_text("{}")
+    monkeypatch.setenv("TASKQ_HOME", str(tmp_path))
+
+    import httpx
+
+    async def _run():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.get("/readyz")
+
+    response = _run_async(_run())
+    result = {
+        "status": response.status_code,
+        "content_type": response.headers.get("content-type", ""),
+    }
+    assert result["status"] == 503, (
+        "FR-08: /readyz must return 503 when the migration-failure "
+        f"marker is present; got {result['status']}"
+    )
+    assert "problem+json" in result["content_type"], (
+        "FR-08: /readyz 503 must carry problem+json content-type"
+    )
+
+
+def test_readyz_returns_503_when_db_engine_throws(monkeypatch):  # NFR-07 (best-effort readiness)
+    """[FR-09] ``GET /readyz`` returns 503 when the DB engine raises.
+
+    Covers ``app.py`` lines 115-116 — the ``except Exception`` branch
+    of the readiness probe. The branch is what makes the probe
+    best-effort: any DB failure (closed connection, missing schema, etc.)
+    surfaces as 503 + problem+json rather than 500.
+    """
+    from taskq_api.repository import session as session_module
+
+    def _boom():
+        raise RuntimeError("simulated DB outage")
+
+    monkeypatch.setattr(session_module, "get_engine", _boom)
+
+    import httpx
+
+    async def _run():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.get("/readyz")
+
+    response = _run_async(_run())
+    result = {
+        "status": response.status_code,
+        "content_type": response.headers.get("content-type", ""),
+    }
+    assert result["status"] == 503, (
+        f"FR-08: /readyz must return 503 when the DB engine raises; got {result['status']}"
+    )
+    assert "problem+json" in result["content_type"], (
+        "FR-08: /readyz 503 must carry problem+json content-type"
+    )
+
+
+def test_lifespan_shutdown_invokes_runner_drain():  # NFR-08 (graceful shutdown; FR-08 AC-8.3)
+    """[FR-08] The FastAPI lifespan shutdown invokes ``runner.drain``.
+
+    Covers ``app.py`` lines 71-74 — the ``finally`` block of the
+    ``lifespan`` async context manager that calls ``runner.drain`` once
+    the app stops. The branch is what makes a SIGTERM during a
+    long-running task leave no orphan child (AC-8.3); this test asserts
+    ``runner.drain`` is bound to it by spying on the call.
+    """
+    from unittest.mock import AsyncMock, patch
+
+    drain_mock = AsyncMock(return_value=runner.DrainReport(stragglers_marked_interrupted=0))
+
+    with patch.object(runner, "drain", drain_mock):
+
+        async def _exercise_lifespan():
+            async with app.router.lifespan_context(app):
+                # Body inside the lifespan — the app is "running" here.
+                pass
+            # The finally block has now executed; ``drain`` must have
+            # been awaited with the configured drain_timeout.
+            return drain_mock.await_count
+
+        await_count = _run_async(_exercise_lifespan())
+
+    result = {"await_count": await_count}
+    assert result["await_count"] >= 1, (
+        "FR-08: lifespan shutdown must await runner.drain so the "
+        "graceful-drain contract (AC-8.3) holds — drain was called "
+        f"{result['await_count']}x; expected >= 1"
+    )
+
+
+def test_validation_handler_returns_422_problem_json(monkeypatch):  # NFR-04 (422 envelope)
+    """[FR-10] ``RequestValidationError`` surfaces as 422 + problem+json via the handler.
+
+    Covers ``app.py`` lines 156-167 — the
+    ``_validation_handler`` body that drops the raw validation errors
+    and emits a clean problem+json envelope. The branch is what keeps
+    SQL/paths out of the detail (FR-10 AC-10.2).
+    """
+    # Bind a write-scope key so the request reaches the validation step.
+    from taskq_api.api import deps
+    from taskq_api.service import auth as auth_module
+
+    def _resolve(plaintext: str):
+        if plaintext == "write_key":
+            return ("key-write", "write")
+        return None
+
+    monkeypatch.setattr(auth_module, "resolve_api_key", _resolve)
+    monkeypatch.setattr(deps.auth, "resolve_api_key", _resolve)
+
+    import httpx
+
+    async def _run():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            # Empty body fails TaskCreate validation → 422.
+            return await ac.post(
+                "/v1/tasks",
+                json={"name": "", "command": "echo"},
+                headers={"X-API-Key": "write_key"},
+            )
+
+    response = _run_async(_run())
+    result = {
+        "status": response.status_code,
+        "content_type": response.headers.get("content-type", ""),
+        "body": response.json(),
+    }
+    assert result["status"] == 422, (
+        f"FR-08: validation handler must return 422; got {result['status']}"
+    )
+    assert "problem+json" in result["content_type"], (
+        "FR-08: validation handler must carry problem+json content-type"
+    )
+    assert result["body"].get("status") == 422, (
+        "FR-08: validation problem body must carry status=422"
+    )
+    assert result["body"].get("type") == "/errors/invalid-body", (
+        "FR-08: validation problem body must carry type=/errors/invalid-body"
+    )
+
+
+def test_problem_handler_for_403_omits_resource_id_from_body(monkeypatch):  # NFR-02 (NP-02 — 403 body must not leak id)
+    """[FR-04/FR-10] A 403 problem body must not carry the requested resource id.
+
+    Covers ``app.py`` lines 124-152 — the ``if exc.status == 403``
+    branch of ``_problem_handler`` that rewrites the body to keep it
+    path-independent. The rewrite drops ``instance`` and
+    ``correlation_id`` (both contain ``id``) and replaces the default
+    title so the failing body for an existing id and a missing id are
+    byte-identical (AC-4.2).
+    """
+    from taskq_api.api import deps
+    from taskq_api.service import auth as auth_module
+
+    def _resolve(plaintext: str):
+        if plaintext == "write_key":
+            return ("key-write", "write")
+        return None
+
+    monkeypatch.setattr(auth_module, "resolve_api_key", _resolve)
+    monkeypatch.setattr(deps.auth, "resolve_api_key", _resolve)
+
+    import httpx
+
+    async def _run():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            # DELETE requires admin; write_key is rejected with 403.
+            return await ac.delete(
+                "/v1/tasks/1",
+                headers={"X-API-Key": "write_key"},
+            )
+
+    response = _run_async(_run())
+    body = response.json()
+    body_text = response.text
+    result = {
+        "status": response.status_code,
+        "body_text": body_text,
+        "body": body,
+    }
+    assert result["status"] == 403, (
+        f"FR-08: insufficient scope must return 403; got {result['status']}"
+    )
+    # The 403 body has the rewritten shape (FR-04 AC-4.2):
+    #   * no ``instance`` (would carry the request path with the id)
+    #   * no ``correlation_id`` (key name contains "id")
+    #   * no ``type`` (URI /errors/forbidden contains "id")
+    assert "instance" not in result["body"], (
+        "FR-08: 403 body must not carry 'instance' — the request path "
+        "contains the resource id and would leak existence"
+    )
+    assert "correlation_id" not in result["body"], (
+        "FR-08: 403 body must not carry 'correlation_id' — the key name "
+        "contains 'id' and breaks the body-indistinguishability invariant"
+    )
+    assert "type" not in result["body"], (
+        "FR-08: 403 body must not carry 'type' — the URI /errors/forbidden "
+        "contains 'id' and would leak the scope denial type"
+    )
+    assert result["body"].get("title") == "Access denied", (
+        "FR-08: 403 body must carry the synonym 'Access denied' "
+        "(the default 'Forbidden' contains 'id')"
+    )
+    assert "1" not in body_text, (
+        "FR-08: 403 body must not contain the resource id value "
+        "(FR-04 AC-4.2 — body indistinguishable across existing/missing ids)"
+    )
+
+
+def test_problem_json_response_extra_headers_propagate_through_handler(monkeypatch):  # NFR-02 (NP-03 — Retry-After on 429)
+    """[FR-05/FR-10] A 429 problem response carries ``Retry-After`` via the extra_headers branch.
+
+    Covers ``app.py`` lines 45-49 — the ``headers.update(extra_headers or {})``
+    branch of ``_problem_json_response`` that joins the per-request
+    headers (``X-Correlation-Id``) with the headers the ``Problem``
+    exception carries (``Retry-After`` on 429). The 429 path is the
+    realistic producer of ``extra_headers``; everything else uses the
+    empty default.
+    """
+    from taskq_api.api import deps
+    from taskq_api.service import auth as auth_module
+
+    def _resolve(plaintext: str):
+        if plaintext == "read_key":
+            return ("key-read", "read")
+        return None
+
+    monkeypatch.setattr(auth_module, "resolve_api_key", _resolve)
+    monkeypatch.setattr(deps.auth, "resolve_api_key", _resolve)
+
+    # Drain the bucket first so the next request is rejected with 429.
+    monkeypatch.setenv("TASKQ_RATE_BURST", "1")
+    monkeypatch.setenv("TASKQ_RATE_PER_SEC", "0.01")
+
+    import httpx
+
+    async def _run():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            # First call: admitted (drains the 1-token bucket).
+            await ac.get("/v1/tasks/1", headers={"X-API-Key": "read_key"})
+            # Second call: bucket empty → 429 + Retry-After.
+            return await ac.get("/v1/tasks/1", headers={"X-API-Key": "read_key"})
+
+    response = _run_async(_run())
+    result = {
+        "status": response.status_code,
+        "retry_after": response.headers.get("Retry-After", ""),
+        "x_correlation_id": response.headers.get("X-Correlation-Id", ""),
+        "content_type": response.headers.get("content-type", ""),
+    }
+    assert result["status"] == 429, (
+        f"FR-08: bucket exhaustion must produce 429; got {result['status']}"
+    )
+    assert result["retry_after"], (
+        "FR-08: 429 response must carry Retry-After header — "
+        "_problem_json_response must propagate the extra_headers "
+        "branch (line 48) alongside X-Correlation-Id"
+    )
+    assert result["x_correlation_id"], (
+        "FR-08: 429 response must carry X-Correlation-Id — the "
+        "always-on header built by _problem_json_response (line 45)"
+    )
+    assert "problem+json" in result["content_type"], (
+        "FR-08: 429 response must carry problem+json content-type"
+    )
+
+
+def test_drain_handles_pending_task_with_missing_task_id_defensively():  # NFR-08 (drain is safe against in-flight registry races)
+    """[FR-08] Drain atomically skips a pending task whose id was cleared from the registry.
+
+    Covers ``service/runner.py`` line 407 — the ``continue`` branch of
+    the post-cancellation loop that fires when ``snapshot_task_ids`` is
+    missing an entry for one of the pending tasks. The branch is the
+    defensive guard against a registry race between the snapshot and
+    the second ``asyncio.wait`` (a task that was still inflight at
+    snapshot but whose done-callback fired before the cancellation
+    loop inspects it). We exercise the branch by directly seeding the
+    in-flight set with a long-running task whose id is missing from
+    the snapshot map — the synchronous equivalent of the race.
+    """
+    import taskq_api.service.runner as runner_module
+
+    async def _exercise():
+        # Snapshot and clear the module-level registries so this test
+        # does not interfere with siblings.
+        saved_inflight = set(runner_module._in_flight)
+        saved_task_ids = dict(runner_module._task_ids)
+        runner_module._in_flight.clear()
+        runner_module._task_ids.clear()
+
+        try:
+            async def _slow_task() -> None:
+                # A genuinely long-running task — it must be in the
+                # ``pending`` set when ``asyncio.wait`` returns so the
+                # cancellation loop is entered.
+                await asyncio.sleep(60)
+
+            pending_task = asyncio.ensure_future(_slow_task())
+            # Force the in-flight entry to exist without a task_id
+            # entry — the snapshot then misses it and the defensive
+            # ``continue`` branch fires when drain cancels the task.
+            runner_module._in_flight.add(pending_task)
+            runner_module._task_ids.pop(pending_task, None)
+
+            return await runner_module.drain(0.05)
+        finally:
+            runner_module._in_flight.clear()
+            runner_module._task_ids.clear()
+            runner_module._in_flight.update(saved_inflight)
+            runner_module._task_ids.update(saved_task_ids)
+
+    report = _run_async(_exercise())
+    result = {"stragglers": report.stragglers_marked_interrupted}
+    # The defensive ``continue`` is what keeps this call from raising —
+    # a missing entry skips the ``update_status`` call and the count
+    # stays zero. The contract is "drain does not crash on a stale
+    # in-flight entry".
+    assert result["stragglers"] == 0, (
+        "FR-08: drain must skip pending tasks whose id was cleared "
+        "from the registry (defensive continue branch) — the count "
+        f"of marked-interrupted tasks is {result['stragglers']}"
+    )
