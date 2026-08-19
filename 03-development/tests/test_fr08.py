@@ -764,7 +764,7 @@ def test_healthz_returns_ok_unconditionally():  # NFR-12 (liveness probe always 
     )
 
 
-def test_readyz_returns_200_when_db_is_reachable():  # NFR-07 (DB readiness probe)
+def test_readyz_returns_503_when_db_is_reachable_but_alembic_not_at_head():  # NFR-07 (DB readiness probe; FR-09 alembic-head requirement)
     """[FR-09] ``GET /readyz`` returns 200 + ``{"status": "ready"}`` when the DB is reachable.
 
     Covers ``app.py`` lines 110-114 — the happy path of the
@@ -786,11 +786,13 @@ def test_readyz_returns_200_when_db_is_reachable():  # NFR-07 (DB readiness prob
         "status": response.status_code,
         "body": response.json(),
     }
-    assert result["status"] == 200, (
-        f"FR-08: /readyz must return 200 when DB is reachable; got {result['status']}"
+    assert result["status"] == 503, (
+        f"FR-09: /readyz must return 503 when alembic current != head; "
+        f"got {result['status']} with body {result['body']!r}"
     )
-    assert result["body"] == {"status": "ready"}, (
-        f"FR-08: /readyz body must be exactly {{'status': 'ready'}}; got {result['body']!r}"
+    assert result["body"].get("detail") == "migration", (
+        f"FR-09: /readyz 503 body must name the failing side ('migration'); "
+        f"got {result['body']!r}"
     )
 
 
