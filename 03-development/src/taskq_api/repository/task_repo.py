@@ -11,10 +11,10 @@ import binascii
 import json
 from typing import Any, Optional
 
-from sqlalchemy import Engine, func, select
-from sqlalchemy.orm import Session, selectinload, sessionmaker
+from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
-from taskq_api.models.orm import Task, TaskResult
+from taskq_api.models.orm import Task
 from taskq_api.repository import session as session_module
 from taskq_api.repository.session import session_scope
 
