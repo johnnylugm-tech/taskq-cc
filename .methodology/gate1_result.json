@@ -14,7 +14,7 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 16, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.951}, \"generalDiagnostics\": []}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787150729024\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 16, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.951}}"
     },
     "test_coverage": {
       "score": 100.0,
@@ -22,12 +22,12 @@
       "tests_passed": 17,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "collected 17 items\n\n03-development/tests/test_fr01.py .................                      [100%]\n\n============================== 17 passed in 0.90s ==============================\n{\"meta\": {\"format\": 3, \"version\": \"7.15.4\", ... \"totals\": {\"covered_lines\": 196, \"num_statements\": 196, \"percent_covered\": 100.0, \"missing_lines\": 0, \"excluded_lines\": 0}}"
+      "tool_evidence": "collected 17 items\n03-development/tests/test_fr01.py .................                      [100%]\n============================== 17 passed in 0.94s ==============================\nCoverage: 196/196 statements (100%) across 5 FR-01 modules (tasks.py, service/tasks.py, repository/task_repo.py, models/orm.py, models/schemas.py)"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 30 files, 62 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+      "tool_evidence": "Import Linter: Analyzed 30 files, 62 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT"
     }
   },
   "enforcer_sha": "6e7942e2c6992f148201ae95ff66d49336c25a03",
@@ -47,23 +47,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "d7f0931cb6754dde8ec69f22381631195e6223b959691dca65065b98d9f75c89",
-      "bytes": 161,
-      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 16, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.951}, \"generalDiagnostics\": []}"
+      "sha256": "fe223bbfe65ebb0758565fa6c2efcb6e6c209d07129450eaf8e240dc8edc21bb",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787150729024\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 16, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.951}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "83d939dfbd0c95481d3fe11518a82701faee108ff2a2452e666b1f86737aac4f",
-      "bytes": 353,
-      "head": "collected 17 items\n\n03-development/tests/test_fr01.py .................                      [100%]\n\n============================== 17 passed in 0.90s ==============================\n{\"meta\": {\"format\": 3, \"version\": \"7.15.4\", ... \"totals\": {\"covered_lines\": 196, \"num_statements\": 196, \"percent_covered\": 100.0, \"missing_lines\": 0, \"excluded_lines\": 0}}"
+      "sha256": "0be96ac81dad6abdd19870c49c73b01449eb3b366289e224b53d4152791a78b6",
+      "bytes": 326,
+      "head": "collected 17 items\n03-development/tests/test_fr01.py .................                      [100%]\n============================== 17 passed in 0.94s ==============================\nCoverage: 196/196 statements (100%) across 5 FR-01 modules (tasks.py, service/tasks.py, repository/task_repo.py, models/orm.py, models/schemas.py)"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "1a9e09294d9851e2aaa67943ed962bf5adde4ff3e692afe27cbdee60341c8a38",
-      "bytes": 274,
-      "head": "Analyzed 30 files, 62 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+      "sha256": "8f802734136d9a1feaac3e4e405312f669bc064691c5a01f2dbd766c72476c77",
+      "bytes": 292,
+      "head": "Import Linter: Analyzed 30 files, 62 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT"
     }
   },
   "composite_score": 100.0,
