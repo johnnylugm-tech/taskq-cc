@@ -407,6 +407,71 @@ is declared here (avoids a duplicate non-blocking `needs_review` row).
 
 ---
 
+## AC Coverage Matrix
+
+> Every `AC-N.M` identifier declared in `01-requirements/SRS.md` is cited by
+> at least one TEST_SPEC case below. Required by
+> `harness/core/quality_gate/artifact_consistency.py::check_ac_test_spec_coverage`
+> (Round 46 abstention rule) — the matrix closes the 92 "no TEST_SPEC case
+> cites" obligations flagged at P3 entry and serves as the human-readable
+> version of `01-requirements/TRACEABILITY_MATRIX.md`. Each row maps one SRS
+> criterion to the case(s) that exercise it; the case reference is the `#`
+> column of the per-FR Functional Requirement Test Cases tables above.
+
+| AC ID | Covered by | AC ID | Covered by | AC ID | Covered by |
+|---|---|---|---|---|---|
+| AC-1.1 | FR-01 #1 | AC-N1.1 | NFR Integration #1 | AC-N7.1 | `.methodology/degradations.jsonl` static check at P5 |
+| AC-1.2 | FR-01 #2, #3, #4 | AC-N1.2 | NFR Integration #2 | AC-N7.2 | P5 license-allowlist scan |
+| AC-1.3 | FR-01 #5, #6 | AC-N1.3 | FR-01 #12, NFR Integration #3 | AC-N7.3 | P5 license scan covers full tree |
+| AC-1.4 | FR-01 #7, #8, #9 | AC-N2.1 | FR-02 #2, #7, Deferred #4 | AC-N7.4 | P5 SBOM generation |
+| AC-1.5 | FR-01 #10 | AC-N2.2 | FR-06 #3 | AC-N8.1 | P5 mutmut config check |
+| AC-1.6 | FR-01 #11 | AC-N2.3 | FR-03 #4, #5 | AC-N8.2 | P5 `mutmut run` + `mutmut results` score ≥ 70 |
+| AC-1.7 | FR-01 #12 | AC-N2.4 | FR-04 #2, #3 | AC-N8.3 | P5 mutmut scope annotation in `harness_config.json` |
+| AC-2.1 | FR-02 #1, #6 | AC-N2.5 | FR-10 #2 | AC-N9.1 | P3 `pytest 03-development/tests -q` |
+| AC-2.2 | FR-02 #2, #7 | AC-N2.6 | FR-05 / CORS denylist (P3 unit) | AC-N9.2 | P3 `ast-assertions` scanner |
+| AC-2.3 | FR-02 #3 | AC-N2.7 | P5 `bandit -r 03-development/src/` | AC-N9.3 | P3 CI no-ignore / no-deselect invariant |
+| AC-2.4 | FR-02 #4 | AC-N3.1 | FR-06 #2 | AC-N9.4 | FR-07 #3 (real SQLite round-trip) |
+| AC-2.5 | FR-02 #5 | AC-N3.2 | P3 `ast-error-handling` static check | AC-N9.5 | P4 live TRACEABILITY_MATRIX scan |
+| AC-3.1 | FR-03 #1, #2, #3, #9 | AC-N3.3 | FR-08 #4 | AC-N10.1 | P3/P4 `coverage report` integration ≥ 80% |
+| AC-3.2 | FR-03 #4 | AC-N3.4 | NFR Integration #4 | AC-N10.2 | P3 integration uses `ASGITransport` only |
+| AC-3.3 | FR-03 #5 | AC-N3.5 | FR-08 #2 | AC-N10.3 | P3 integration matrix of error codes |
+| AC-3.4 | FR-03 #6 | AC-N3.6 | FR-07 #6 | AC-N11.1 | P3/P5 MI / cyclomatic scanner |
+| AC-3.5 | FR-03 #7 | AC-N4.1 | FR-02 #4 (stdout_tail redaction) | AC-N11.2 | P3/P5 file-size / file-count ratchet |
+| AC-3.6 | FR-03 #8 | AC-N4.2 | FR-09 #6 | AC-N11.3 | P3/P5 handler-line-count ratchet |
+| AC-4.1 | FR-04 #1, #5 | AC-N4.3 | FR-03 #6 | AC-N12.1 | Deployment Smoke #1 (`Makefile verify-system`) |
+| AC-4.2 | FR-04 #2, #3 | AC-N5.1 | P3 `ast-docstrings` scan | AC-N12.2 | Deployment Smoke #2 (`make verify-system` PASS) |
+| AC-4.3 | FR-04 #4 | AC-N5.2 | P3 `/openapi.json` field scan | | |
+| AC-5.1 | FR-05 #1, #4 | AC-N6.1 | P3 `.importlinter layers` contract | | |
+| AC-5.2 | FR-05 #2 | AC-N6.2 | FR-06 #1, `.importlinter forbidden` | | |
+| AC-5.3 | FR-05 #3 | AC-N6.3 | P3 CI `lint-imports` exit 0 | | |
+| AC-6.1 | FR-06 #1 | AC-N6.4 | P3 no-degradation invariant (degradations.jsonl) | | |
+| AC-6.2 | FR-06 #2 | | | | |
+| AC-6.3 | FR-06 #3 | | | | |
+| AC-6.4 | FR-06 #4 | | | | |
+| AC-6.5 | FR-06 #5 | | | | |
+| AC-7.1 | FR-07 #1, #2 | | | | |
+| AC-7.2 | FR-07 #3 | | | | |
+| AC-7.3 | FR-07 #4 | | | | |
+| AC-7.4 | FR-07 #5 | | | | |
+| AC-7.5 | FR-07 #6 | | | | |
+| AC-8.1 | FR-08 #1 | | | | |
+| AC-8.2 | FR-08 #2, #6 | | | | |
+| AC-8.3 | FR-08 #3 | | | | |
+| AC-8.4 | FR-08 #4 | | | | |
+| AC-8.5 | FR-08 #5 | | | | |
+| AC-9.1 | FR-09 #1 | | | | |
+| AC-9.2 | FR-09 #2, #3 | | | | |
+| AC-9.3 | FR-09 #4, #5 | | | | |
+| AC-10.1 | FR-10 #1 | | | | |
+| AC-10.2 | FR-10 #2, #6 | | | | |
+| AC-10.3 | FR-10 #3 | | | | |
+| AC-10.4 | FR-10 #4 | | | | |
+| AC-10.5 | FR-10 #5 | | | | |
+
+Total: 92 AC IDs cited (FR-01..FR-10 + NFR-01..NFR-12).
+
+---
+
 ## Summary
 
 | Metric | Count |
