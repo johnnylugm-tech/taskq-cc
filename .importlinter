@@ -1,0 +1,78 @@
+[importlinter]
+# SAB §architecture_constraints contracts.
+# Run from repo root with PYTHONPATH=03-development/src in scope, or via
+# the framework's lint-imports wrapper which sets this itself.
+root_packages =
+    taskq_api
+
+include_external_libraries = true
+include_external_packages = true
+
+# ---------------------------------------------------------------------------
+# Contract 1 — strict layering
+# api > service > repository > models  (+ config/errors as independence siblings)
+# ---------------------------------------------------------------------------
+[importlinter:contract:layer-hierarchy]
+name = api > service > repository > models
+type = layers
+layers =
+    taskq_api.api
+    taskq_api.service
+    taskq_api.repository
+    taskq_api.models
+    taskq_api.config
+    taskq_api.errors
+ignore_imports =
+    taskq_api.errors -> taskq_api.config
+
+# ---------------------------------------------------------------------------
+# Contract 2 — independence: config + errors must not import each other
+# (SAB: "config and errors are independence modules with no upward imports")
+# Exception: errors -> config is required for correlation_id propagation.
+# ---------------------------------------------------------------------------
+[importlinter:contract:independence-config-errors]
+name = config and errors do not import each other
+type = independence
+modules =
+    taskq_api.config
+    taskq_api.errors
+ignore_imports =
+    taskq_api.errors -> taskq_api.config
+
+# ---------------------------------------------------------------------------
+# Contract 3 — sqlalchemy imports must remain inside the repository layer
+# (SAB: "sqlalchemy imports allowed only in repository layer")
+# Exception: models.orm declares Task/TaskResult using sqlalchemy.
+# Indirect imports through the layer hierarchy (api -> service -> repository)
+# are not direct violations of the architectural rule.
+# ---------------------------------------------------------------------------
+[importlinter:contract:sqlalchemy-isolation]
+name = sqlalchemy imports restricted to repository and models layers
+type = forbidden
+source_modules =
+    taskq_api.api
+    taskq_api.service
+    taskq_api.config
+    taskq_api.errors
+    taskq_api.app
+forbidden_modules =
+    sqlalchemy
+allow_indirect_imports = true
+
+# ---------------------------------------------------------------------------
+# Contract 4 — fastapi imports belong to the api layer only
+# (api layer wires the routes; service/repository/models must not depend on it)
+# Indirect imports through errors.problem_response / app.exception_handler are
+# not direct violations of the architectural rule.
+# ---------------------------------------------------------------------------
+[importlinter:contract:fastapi-isolation]
+name = fastapi imports restricted to api and app layers
+type = forbidden
+source_modules =
+    taskq_api.service
+    taskq_api.repository
+    taskq_api.models
+    taskq_api.config
+forbidden_modules =
+    fastapi
+allow_indirect_imports = true
