@@ -578,3 +578,404 @@ def test_sec_t06_no_shell_true_in_source():  # NFR-02 (shell injection preventio
         f"SEC-T-06: shell=True appears {grep_hits}x under {_SRC_ROOT} — "
         "subprocess must always be invoked with an argv list"
     )
+
+
+# ---------------------------------------------------------------------------
+# Coverage-gap tests — exercise branches that the TEST_SPEC cases above
+# do not reach. These are NOT part of the spec-coverage catalog; they exist
+# solely to drive line coverage over the four FR-02 measured modules
+# (``api.tasks``, ``service.runner``, ``repository.task_repo``,
+# ``models.orm``). Each test name targets one or more specific uncovered
+# lines identified by ``coverage report --include=... -m``.
+# ---------------------------------------------------------------------------
+
+
+def test_coverage_get_runs_unknown_task_returns_404_problem_json():  # NFR-02 (no-existence leak — runs of unknown id must surface as 404), NFR-05 (OpenAPI metadata on /v1/tasks/{id}/runs)
+    """GET /v1/tasks/{unknown_id}/runs must return 404 + problem+json.
+
+    Drives ``api.tasks:list_runs_endpoint`` into its else-branch
+    (``raise _not_found_problem()``) at line 162 by way of
+    ``task_repo.get_by_id`` returning ``None`` for a missing row.
+    """
+    from httpx import ASGITransport, AsyncClient
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.get(
+                "/v1/tasks/99999/runs",
+                headers=_auth_headers("read_key"),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code == 404
+    assert "problem+json" in response.headers.get("content-type", "")
+
+
+def test_coverage_update_status_nonexistent_task_returns_false():  # NFR-06 (runner no-op on missing row — no spurious 500), NFR-10 (runner failure must not corrupt DB)
+    """``task_repo.update_status`` on a missing row must return ``False``.
+
+    Drives ``repository.task_repo.update_status`` into its ``task is None``
+    branch (line 164-165), proving the runner can transition a task row
+    that has been deleted mid-flight without exploding.
+    """
+    from taskq_api.repository import task_repo as task_repo_module
+
+    updated = task_repo_module.update_status(task_id=99999, status="running")
+    assert updated is False, (
+        "FR-02 coverage: update_status on a missing task_id must be a no-op "
+        "and return False, not raise"
+    )
+
+
+def test_coverage_get_task_unknown_id_returns_404_problem_json():  # NFR-02 (no-existence leak), NFR-05 (OpenAPI metadata on /v1/tasks/{id})
+    """GET /v1/tasks/{unknown_id} must return 404 + problem+json.
+
+    Drives ``api.tasks:get_task_endpoint`` into its else-branch
+    (``raise _not_found_problem()``) at line 82.
+    """
+    from httpx import ASGITransport, AsyncClient
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.get(
+                "/v1/tasks/99999",
+                headers=_auth_headers("read_key"),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code == 404
+    assert "problem+json" in response.headers.get("content-type", "")
+
+
+def test_coverage_list_tasks_over_limit_returns_422_problem_json():  # NFR-02 (input validation — limit bound), NFR-04 (422 envelope shape)
+    """GET /v1/tasks?limit=201 must return 422 + problem+json.
+
+    Drives ``api.tasks:list_tasks_endpoint`` into its ``effective_limit >
+    _MAX_LIMIT`` branch (lines 98-106), covering the
+    ``make_problem(..., status=422, ...)`` raise.
+    """
+    from httpx import ASGITransport, AsyncClient
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.get(
+                "/v1/tasks",
+                params={"limit": 201},
+                headers=_auth_headers("read_key"),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code == 422
+    assert "problem+json" in response.headers.get("content-type", "")
+
+
+def test_coverage_delete_nonexistent_task_returns_404_problem_json():  # NFR-02 (no-existence leak), NFR-05 (OpenAPI metadata)
+    """DELETE /v1/tasks/{unknown_id} must return 404 + problem+json.
+
+    Drives ``api.tasks:delete_task_endpoint`` into its
+    ``raise _not_found_problem()`` branch (lines 119-121) by way of
+    ``task_repo.delete`` returning ``False``.
+    """
+    from httpx import ASGITransport, AsyncClient
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.delete(
+                "/v1/tasks/99999",
+                headers=_auth_headers("admin_key"),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code == 404
+    assert "problem+json" in response.headers.get("content-type", "")
+
+
+def test_coverage_encode_decode_cursor_roundtrip_and_decode_invalid():  # NFR-01 (cursor opaque-token round-trip), NFR-06 (repository owns SQL)
+    """``_encode_cursor`` / ``_decode_cursor`` round-trip + invalid-input fallback.
+
+    Drives ``repository.task_repo._encode_cursor`` (lines 39-40) plus the
+    happy-path and ``except`` branches of ``_decode_cursor`` (lines 49-57).
+    """
+    import base64 as _json_base64
+
+    from taskq_api.repository import task_repo as task_repo_module
+
+    # Round-trip: encode then decode the same id.
+    encoded = task_repo_module._encode_cursor(42)
+    decoded = task_repo_module._decode_cursor(encoded)
+    assert decoded == 42, (
+        "FR-02 coverage: _encode_cursor/_decode_cursor round-trip must "
+        f"recover the original id, got {decoded}"
+    )
+
+    # None on empty input.
+    assert task_repo_module._decode_cursor(None) is None
+    assert task_repo_module._decode_cursor("") is None
+
+    # None on garbage (not valid base64-url).
+    assert task_repo_module._decode_cursor("!!!not-base64!!!") is None
+
+    # None on garbage that IS valid base64 but not JSON.
+    valid_b64_not_json = _json_base64.urlsafe_b64encode(b"not-json").decode()
+    assert task_repo_module._decode_cursor(valid_b64_not_json) is None
+
+    # None on JSON without the required 'last_id' key.
+    valid_b64_no_key = _json_base64.urlsafe_b64encode(b'{"other": 1}').decode()
+    assert task_repo_module._decode_cursor(valid_b64_no_key) is None
+
+    # None on JSON whose 'last_id' is not an int (ValueError branch).
+    valid_b64_bad_type = _json_base64.urlsafe_b64encode(
+        b'{"last_id": "not-an-int"}'
+    ).decode()
+    assert task_repo_module._decode_cursor(valid_b64_bad_type) is None
+
+
+def test_coverage_create_duplicate_name_raises_duplicate_task_error():  # NFR-04 (SQLAlchemy-free domain exception in service layer), NFR-06 (layering — repository owns SQL)
+    """``task_repo.create`` must raise ``DuplicateTaskError`` on duplicate name.
+
+    Drives the ``except IntegrityError as exc: raise DuplicateTaskError(name)
+    from exc`` branch (lines 91-92), proving the service layer can catch
+    a SQLAlchemy-free domain exception.
+    """
+    from taskq_api.repository import task_repo as task_repo_module
+
+    # First insert succeeds.
+    task_repo_module.create(name="dup-coverage", command="echo a")
+    # Second insert with the same name must raise DuplicateTaskError.
+    raised = False
+    try:
+        task_repo_module.create(name="dup-coverage", command="echo b")
+    except task_repo_module.DuplicateTaskError as exc:
+        raised = True
+        assert exc.args[0] == "dup-coverage", (
+            "FR-02 coverage: DuplicateTaskError must carry the offending name"
+        )
+    assert raised, (
+        "FR-02 coverage: task_repo.create must raise DuplicateTaskError on "
+        "duplicate name, not silently succeed"
+    )
+
+
+def test_coverage_list_paginated_status_filter_cursor_and_next_cursor():  # NFR-01 (cursor pagination, status filter), NFR-06 (repository owns SQL), NFR-09 (zero-skip — every branch asserts)
+    """``task_repo.list_paginated`` must branch on every filter combination.
+
+    Drives lines 117-140: ``status is not None`` filter, ``last_id is not
+    None`` cursor, and ``len(rows) > limit`` next_cursor emission.
+    """
+    from taskq_api.repository import task_repo as task_repo_module
+
+    # Seed three rows: two pending, one done.
+    for i in range(3):
+        status = "done" if i == 2 else "pending"
+        task_repo_module.create(name=f"page-{i}", command="echo x", status=status)
+
+    # 1. status filter branch (lines 127-128): only pending rows returned.
+    pending_rows, _ = task_repo_module.list_paginated(
+        limit=50, cursor=None, status="pending"
+    )
+    assert all(row.status == "pending" for row in pending_rows), (
+        "FR-02 coverage: status filter must return only matching rows"
+    )
+
+    # 2. cursor branch (line 130): encode a cursor for the first id, then
+    #    request the page strictly greater than that id.
+    first_id = pending_rows[0].id
+    cursor = task_repo_module._encode_cursor(first_id)
+    page_after, _ = task_repo_module.list_paginated(
+        limit=50, cursor=cursor, status=None
+    )
+    assert all(row.id > first_id for row in page_after), (
+        f"FR-02 coverage: cursor pagination must skip rows with id <= {first_id}"
+    )
+
+    # 3. next_cursor branch (lines 136-139): when rows > limit, return the
+    #    first ``limit`` rows plus a non-None next_cursor pointing at the
+    #    tail row's id.
+    for i in range(3, 8):
+        task_repo_module.create(name=f"more-{i}", command="echo x")
+    page_rows, next_cursor = task_repo_module.list_paginated(
+        limit=2, cursor=None, status=None
+    )
+    assert len(page_rows) == 2, (
+        "FR-02 coverage: page must be capped at the requested limit"
+    )
+    assert next_cursor is not None, (
+        "FR-02 coverage: list_paginated must emit next_cursor when more rows "
+        "are available"
+    )
+    tail_id = task_repo_module._decode_cursor(next_cursor)
+    assert tail_id == page_rows[-1].id, (
+        "FR-02 coverage: next_cursor must encode the tail row's id"
+    )
+
+
+def test_coverage_delete_nonexistent_task_returns_false():  # NFR-04 (no-existence leak), NFR-06 (repository owns SQL)
+    """``task_repo.delete`` on a missing row must return ``False``.
+
+    Drives ``repository.task_repo.delete`` into its ``task is None``
+    branch (lines 150-152).
+    """
+    from taskq_api.repository import task_repo as task_repo_module
+
+    deleted = task_repo_module.delete(task_id=99999)
+    assert deleted is False, (
+        "FR-02 coverage: delete on a missing task_id must return False, not raise"
+    )
+
+
+def test_coverage_record_result_appends_row_with_all_columns():  # NFR-05 (observability fields recorded), NFR-06 (repository owns SQL)
+    """``task_repo.record_result`` must persist every declared FR-02 column.
+
+    Drives the FR-02 result-row append path explicitly, proving that
+    ``exit_code``, ``stdout_tail``, ``stderr_tail``, ``duration_ms``, and
+    ``finished_at`` are all stored (not silently dropped).
+    """
+    from datetime import datetime, timezone
+
+    from taskq_api.repository import task_repo as task_repo_module
+
+    task = task_repo_module.create(name="rec-coverage", command="echo hi")
+    started_at = datetime.now(timezone.utc)
+    finished_at = datetime.now(timezone.utc)
+    row = task_repo_module.record_result(
+        task_id=task.id,
+        started_at=started_at,
+        exit_code=0,
+        stdout_tail="hi\n",
+        stderr_tail="",
+        duration_ms=5,
+        finished_at=finished_at,
+    )
+    assert row.exit_code == 0
+    assert row.stdout_tail == "hi\n"
+    assert row.stderr_tail == ""
+    assert row.duration_ms == 5
+    assert row.started_at == started_at
+    assert row.finished_at == finished_at
+
+
+def test_coverage_list_runs_returns_rows_newest_first():  # NFR-01 (ordered query), NFR-06 (repository owns SQL)
+    """``task_repo.list_runs`` must return rows ordered by ``started_at`` DESC.
+
+    Drives the explicit ``list_runs`` repository path (lines 199-216) with
+    multiple appended rows so the DESC order assertion is meaningful.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from taskq_api.repository import task_repo as task_repo_module
+
+    task = task_repo_module.create(name="runs-coverage", command="echo x")
+    # Append three rows with strictly increasing started_at so the
+    # newest-first ordering is deterministic.
+    base = datetime.now(timezone.utc)
+    for i in range(3):
+        task_repo_module.record_result(
+            task_id=task.id,
+            started_at=base + timedelta(seconds=i),
+            exit_code=0,
+            stdout_tail=f"row-{i}\n",
+            stderr_tail="",
+            duration_ms=1,
+            finished_at=base + timedelta(seconds=i),
+        )
+    rows = task_repo_module.list_runs(task_id=task.id)
+    assert len(rows) == 3
+    assert rows[0].started_at > rows[1].started_at > rows[2].started_at, (
+        f"FR-02 coverage: list_runs must be newest-first; got "
+        f"{[r.started_at for r in rows]}"
+    )
+
+
+def test_coverage_get_by_id_existing_returns_row():  # NFR-06 (repository owns SQL), NFR-10 (round-trip)
+    """``task_repo.get_by_id`` for an existing row returns the row.
+
+    Drives the happy-path ``select(Task).where(Task.id == task_id)`` branch
+    (lines 95-103) explicitly through the repository.
+    """
+    from taskq_api.repository import task_repo as task_repo_module
+
+    task = task_repo_module.create(name="get-coverage", command="echo z")
+    fetched = task_repo_module.get_by_id(task_id=task.id)
+    assert fetched is not None
+    assert fetched.id == task.id
+    assert fetched.name == "get-coverage"
+    assert fetched.command == "echo z"
+
+    # And missing row returns None.
+    assert task_repo_module.get_by_id(task_id=99999) is None
+
+
+def test_coverage_list_tasks_within_limit_returns_200():  # NFR-05 (OpenAPI metadata), NFR-06 (list_tasks handler returns 200 on success)
+    """GET /v1/tasks with a valid limit must return 200 + items.
+
+    Drives ``api.tasks:list_tasks_endpoint`` past the ``raise`` branch on
+    line 100-104 into the success-path ``return service.list_tasks(...)``
+    statement on lines 105-109.
+    """
+    from httpx import ASGITransport, AsyncClient
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.get(
+                "/v1/tasks",
+                params={"limit": 50},
+                headers=_auth_headers("read_key"),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code == 200
+
+
+def test_coverage_delete_existing_task_returns_204_and_repo_returns_true():  # NFR-03 (transaction boundary), NFR-06 (repository owns SQL)
+    """DELETE /v1/tasks/{existing_id} returns 204; ``task_repo.delete`` returns True.
+
+    Drives ``api.tasks:delete_task_endpoint`` into its ``return None`` on
+    line 121 (the 204 success path) and ``repository.task_repo.delete``
+    into its success-path statements on lines 152-154
+    (``session.delete``; ``session.flush``; ``return True``).
+    """
+    from httpx import ASGITransport, AsyncClient
+
+    from taskq_api.repository import task_repo as task_repo_module
+
+    # Seed a row, then call the repository delete directly so lines 152-154
+    # are exercised on their own (the HTTP path runs the service layer).
+    task = task_repo_module.create(name="del-existing-coverage", command="echo bye")
+    deleted_via_repo = task_repo_module.delete(task_id=task.id)
+    assert deleted_via_repo is True, (
+        "FR-02 coverage: task_repo.delete on an existing row must return True"
+    )
+
+    # And the HTTP endpoint returns 204 for an existing task.
+    task2 = task_repo_module.create(name="del-http-coverage", command="echo bye")
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.delete(
+                f"/v1/tasks/{task2.id}",
+                headers=_auth_headers("admin_key"),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code == 204, (
+        "FR-02 coverage: DELETE /v1/tasks/{existing_id} must return 204 "
+        f"(success path on line 121), got {response.status_code}"
+    )
