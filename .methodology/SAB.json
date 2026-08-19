@@ -113,7 +113,9 @@
           "name": "migrations.versions.v3_split_results"
         },
         "taskq_api",
-        "taskq_api.app"
+        "taskq_api.app",
+        "taskq_api.__main__",
+        "taskq_api.cli"
       ],
       "allowed_dependencies": [
         "models",
