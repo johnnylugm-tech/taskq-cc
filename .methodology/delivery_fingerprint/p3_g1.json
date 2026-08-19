@@ -24,7 +24,7 @@
   "gate": 1,
   "phase": 3,
   "stubbed_boundaries": {
-    "count": 4,
+    "count": 5,
     "modules": [
       "taskq_api.service.auth"
     ]
