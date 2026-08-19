@@ -25,7 +25,10 @@ def require_api_key(
     Citations: SPEC.md §3 FR-03; FR-10 problem+json contract.
     """
     resolved = auth.resolve_api_key(x_api_key or "")
-    if resolved is None:
+    # ``resolve_api_key`` returns ``None`` for an empty header and the
+    # ``("", "")`` sentinel tuple when no row matches the candidate
+    # digest — both are "missing or invalid" from the route's view.
+    if resolved is None or resolved == ("", ""):
         raise make_problem(
             status=401,
             title="Unauthorized",

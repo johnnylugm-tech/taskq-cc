@@ -1,7 +1,7 @@
-"""[FR-01/FR-02] SQLAlchemy ORM models.
+"""[FR-01/FR-02/FR-03] SQLAlchemy ORM models.
 
-Citations: SPEC.md §3 FR-01 (tasks) + FR-02 (task_results v3 multi-row);
-SAD.md §2.2 L1 orm.
+Citations: SPEC.md §3 FR-01 (tasks) + FR-02 (task_results v3 multi-row)
++ FR-03 (api_keys); SAD.md §2.2 L1 orm.
 """
 
 from __future__ import annotations
@@ -74,4 +74,25 @@ class TaskResult(Base):
     task: Mapped[Task] = relationship("Task", back_populates="result")
 
 
-__all__ = ["Base", "Task", "TaskResult"]
+class ApiKey(Base):
+    """FR-03 API key row — only the SHA-256 digest of the plaintext is stored.
+
+    ``key_hash`` is the 64-character lowercase hex of
+    ``hashlib.sha256(plaintext.encode()).hexdigest()``. The plaintext
+    itself is NEVER persisted (AC-3.2). A row whose ``revoked_at`` is
+    non-null is treated as invalid (AC-3.5).
+
+    Citations: SPEC.md §3 FR-03 + NFR-02; SAD.md §2.2 L1 orm.ApiKey.
+    """
+
+    __tablename__ = "api_keys"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    key_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    scope: Mapped[str] = mapped_column(String(32), nullable=False)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+__all__ = ["Base", "Task", "TaskResult", "ApiKey"]

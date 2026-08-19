@@ -1,9 +1,10 @@
-"""[FR-01] FastAPI application factory.
+"""[FR-01/FR-03] FastAPI application factory.
 
-Wires the routers and problem+json exception handler. Other routes
-(``/healthz``, ``/readyz``, ``/v1/metrics``) ship in later FRs.
+Wires the routers, the RFC 7807 problem+json exception handlers, and
+the FR-03 exempt health endpoints (``/healthz`` and ``/readyz``).
 
-Citations: SPEC.md §3 FR-09 + FR-10; SAD.md §2.2 L0 app.
+Citations: SPEC.md §3 FR-03 (FR-09 exemption) + FR-10 (problem+json);
+SAD.md §2.2 L0 app.
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ from fastapi.responses import JSONResponse
 
 from taskq_api.api.tasks import router as tasks_router
 from taskq_api.errors import Problem, correlation_id_for
+from taskq_api.repository import session as session_module
 
 
 def _problem_json_response(payload: dict, status: int, correlation_id: str) -> JSONResponse:
@@ -32,6 +34,32 @@ def create_app() -> FastAPI:
         description="FR-01 task CRUD API.",
     )
     app.include_router(tasks_router)
+
+    @app.get("/healthz")
+    def healthz():
+        """FR-09 — liveness probe; always 200, no auth, no DB dependency.
+
+        Citations: SPEC.md §3 FR-09; AC-3.6 exempt from X-API-Key.
+        """
+        return {"status": "ok"}
+
+    @app.get("/readyz")
+    def readyz():
+        """FR-09 — readiness probe; 200 if the DB engine responds, else 503.
+
+        Citations: SPEC.md §3 FR-09; AC-3.6 exempt from X-API-Key.
+        """
+        try:
+            engine = session_module.get_engine()
+            with engine.connect() as conn:
+                conn.exec_driver_sql("SELECT 1")
+            return {"status": "ready"}
+        except Exception:  # noqa: BLE001 — readiness is best-effort
+            return JSONResponse(
+                status_code=503,
+                content={"status": "not-ready"},
+                media_type="application/problem+json",
+            )
 
     @app.exception_handler(Problem)
     async def _problem_handler(request: Request, exc: Problem):  # noqa: ANN202
