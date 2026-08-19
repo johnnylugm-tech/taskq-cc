@@ -8,11 +8,10 @@ from __future__ import annotations
 
 from typing import Optional
 
-from sqlalchemy.exc import IntegrityError
-
 from taskq_api.errors import make_problem
 from taskq_api.models.orm import Task
 from taskq_api.repository import task_repo
+from taskq_api.repository.task_repo import DuplicateTaskError
 
 
 def _to_task_read(task: Task) -> dict:
@@ -31,10 +30,13 @@ def create_task(name: str, command: str) -> dict:
 
     Citations: SPEC.md §3 FR-01 AC-1.1 / AC-1.2.
     Raises ``Problem(409)`` when the name already exists (AC-1.2 duplicate).
+    The repository raises ``DuplicateTaskError`` (a SQLAlchemy-free domain
+    exception) so this service layer never imports sqlalchemy directly
+    (SAB §architecture_constraints).
     """
     try:
         task = task_repo.create(name=name, command=command, status="pending")
-    except IntegrityError as exc:
+    except DuplicateTaskError as exc:
         raise make_problem(
             status=409,
             title="Duplicate name",

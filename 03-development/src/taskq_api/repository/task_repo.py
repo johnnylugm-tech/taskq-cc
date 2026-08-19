@@ -12,11 +12,24 @@ import json
 from typing import Any, Optional
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from taskq_api.models.orm import Task
 from taskq_api.repository import session as session_module
 from taskq_api.repository.session import session_scope
+
+
+class DuplicateTaskError(Exception):
+    """Domain exception raised when a unique constraint on ``Task.name`` is violated.
+
+    Defined inside the repository layer so the service layer can catch a
+    SQLAlchemy-free exception type. Catching ``sqlalchemy.exc.IntegrityError``
+    in the service would violate the SAB's "sqlalchemy allowed only in
+    repository layer" constraint.
+
+    Citations: SPEC.md §3 FR-01 AC-1.2; SAD.md §2.2 L2 task_repo.
+    """
 
 
 def _encode_cursor(last_id: int) -> str:
@@ -49,13 +62,22 @@ def create(name: str, command: str, status: str = "pending") -> Task:
     visible to listeners attached to ``session.get_engine()`` — that
     keeps the *list_paginated* SQL count assertion (FR-01 AC-1.7)
     independent of how many rows were inserted by callers.
+
+    Raises ``DuplicateTaskError`` (a SQLAlchemy-free domain exception) when
+    the unique constraint on ``Task.name`` is violated, so the service
+    layer can handle the duplicate case without importing sqlalchemy.
+
+    Citations: SPEC.md §3 FR-01 AC-1.1 / AC-1.2.
     """
-    with session_module.insert_scope() as session:
-        task = Task(name=name, command=command, status=status)
-        session.add(task)
-        session.flush()
-        # expunge so callers can use the instance after the session closes
-        session.expunge(task)
+    try:
+        with session_module.insert_scope() as session:
+            task = Task(name=name, command=command, status=status)
+            session.add(task)
+            session.flush()
+            # expunge so callers can use the instance after the session closes
+            session.expunge(task)
+    except IntegrityError as exc:
+        raise DuplicateTaskError(name) from exc
     return task
 
 
@@ -138,4 +160,12 @@ class TaskRepo:
 task_repo = TaskRepo()
 
 
-__all__ = ["create", "get_by_id", "list_paginated", "delete", "TaskRepo", "task_repo"]
+__all__ = [
+    "create",
+    "get_by_id",
+    "list_paginated",
+    "delete",
+    "DuplicateTaskError",
+    "TaskRepo",
+    "task_repo",
+]
