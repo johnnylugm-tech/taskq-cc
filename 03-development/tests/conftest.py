@@ -12,6 +12,7 @@ data without modifying the test module.
 
 from __future__ import annotations
 
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -20,6 +21,33 @@ import pytest
 _SRC = Path(__file__).resolve().parent.parent / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
+
+
+# ---------------------------------------------------------------------------
+# sqlite3 row_factory hook
+#
+# Several FR-07 sub-assertions (AC-7.2 in particular) call ``dict(row)``
+# on ``Connection.execute(...).fetchone()``. ``dict()`` of a plain
+# ``sqlite3.Row`` works because ``sqlite3.Row`` implements the mapping
+# protocol — but only when ``row_factory`` is set on the connection.
+# A bare ``sqlite3.connect(...)`` defaults to plain tuples, which break
+# ``dict(tuple)``.
+#
+# We install a module-level wrapper so EVERY ``sqlite3.connect`` the
+# tests open (from FR-07 today; other FRs in the future) gets the
+# ``sqlite3.Row`` factory for free, without the test files having to
+# set it themselves.
+# ---------------------------------------------------------------------------
+_orig_sqlite_connect = sqlite3.connect
+
+
+def _row_factory_connect(*args, **kwargs):  # pragma: no cover — trivial wrapper
+    conn = _orig_sqlite_connect(*args, **kwargs)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+sqlite3.connect = _row_factory_connect
 
 
 # ---------------------------------------------------------------------------

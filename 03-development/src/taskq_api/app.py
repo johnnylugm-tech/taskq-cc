@@ -9,6 +9,8 @@ SAD.md §2.2 L0 app.
 
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -16,6 +18,13 @@ from fastapi.responses import JSONResponse
 from taskq_api.api.tasks import router as tasks_router
 from taskq_api.errors import Problem, correlation_id_for
 from taskq_api.repository import session as session_module
+
+
+# [FR-07] The migrations ``env.py`` writes this marker file under
+# ``TASKQ_HOME`` whenever ``TASKQ_MIGRATION_FORCE_FAIL=1`` aborted an
+# upgrade. The readiness probe checks for it so the failure surfaces
+# as a 503 — the AC-7.5 contract.
+_MIGRATION_FAILURE_MARKER = ".migration_failure.json"
 
 
 def _problem_json_response(
@@ -58,6 +67,18 @@ def create_app() -> FastAPI:
 
         Citations: SPEC.md §3 FR-09; AC-3.6 exempt from X-API-Key.
         """
+        # [FR-07] A migration that aborted (e.g. ``TASKQ_MIGRATION_FORCE_FAIL=1``
+        # in ``migrations.env``) leaves a marker file under ``TASKQ_HOME``.
+        # Surface that as a 503 — the readiness probe must reflect the
+        # DB's degraded state. Citations: SPEC.md §3 FR-07 AC-7.5 + NFR-03.
+        home = os.environ.get("TASKQ_HOME", ".")
+        marker = os.path.join(home, _MIGRATION_FAILURE_MARKER)
+        if os.path.exists(marker):
+            return JSONResponse(
+                status_code=503,
+                content={"status": "not-ready", "reason": "migration_failed"},
+                media_type="application/problem+json",
+            )
         try:
             engine = session_module.get_engine()
             with engine.connect() as conn:
