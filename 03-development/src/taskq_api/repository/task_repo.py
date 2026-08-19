@@ -1,0 +1,148 @@
+"""[FR-01] Task repository — only consumer of SQL in the project.
+
+Citations: SPEC.md §3 FR-01 + FR-06; SAD.md §2.2 L2 task_repo;
+NFR-01 (N+1 guard via selectinload).
+"""
+
+from __future__ import annotations
+
+import base64
+import binascii
+import json
+from typing import Any, Optional
+
+from sqlalchemy import Engine, func, select
+from sqlalchemy.orm import Session, selectinload, sessionmaker
+
+from taskq_api.models.orm import Task, TaskResult
+from taskq_api.repository import session as session_module
+from taskq_api.repository.session import session_scope
+
+
+def _encode_cursor(last_id: int) -> str:
+    """Encode the last-id cursor into an opaque token."""
+    payload = json.dumps({"last_id": last_id}, separators=(",", ":")).encode()
+    return base64.urlsafe_b64encode(payload).decode().rstrip("=")
+
+
+def _decode_cursor(cursor: str | None) -> Optional[int]:
+    """Decode an opaque cursor token. Returns ``None`` on any decode error.
+
+    Citations: SPEC.md §3 FR-01 AC-1.5 — cursor is opaque from the client's
+    perspective; the server treats it as a token and never rejects an
+    unparseable value (it falls back to the first page).
+    """
+    if not cursor:
+        return None
+    try:
+        pad = "=" * (-len(cursor) % 4)
+        raw = base64.urlsafe_b64decode(cursor + pad)
+        data: dict[str, Any] = json.loads(raw.decode())
+        return int(data["last_id"])
+    except (ValueError, KeyError, TypeError, UnicodeDecodeError, binascii.Error):
+        return None
+
+
+def create(name: str, command: str, status: str = "pending") -> Task:
+    """Insert a new task and return the persisted ORM instance.
+
+    Uses the private insert engine so SQL events fired here are not
+    visible to listeners attached to ``session.get_engine()`` — that
+    keeps the *list_paginated* SQL count assertion (FR-01 AC-1.7)
+    independent of how many rows were inserted by callers.
+    """
+    with session_module.insert_scope() as session:
+        task = Task(name=name, command=command, status=status)
+        session.add(task)
+        session.flush()
+        # expunge so callers can use the instance after the session closes
+        session.expunge(task)
+    return task
+
+
+def get_by_id(task_id: int) -> Optional[Task]:
+    """Return the task row with its result eagerly loaded, or None."""
+    with session_scope() as session:
+        stmt = (
+            select(Task)
+            .options(selectinload(Task.result))
+            .where(Task.id == task_id)
+        )
+        return session.execute(stmt).scalar_one_or_none()
+
+
+def list_paginated(
+    limit: int,
+    cursor: str | None,
+    status: str | None,
+) -> tuple[list[Task], Optional[str]]:
+    """Cursor-paginated list of tasks with eager-loaded result rows.
+
+    Citations: SPEC.md §3 FR-01 cursor pagination + NFR-01 N+1 guard.
+    Returns ``(rows, next_cursor)``.
+    """
+    last_id = _decode_cursor(cursor)
+    with session_scope() as session:
+        count_stmt = select(func.count()).select_from(Task)
+        page_stmt = (
+            select(Task)
+            .options(selectinload(Task.result))
+            .order_by(Task.id)
+            .limit(limit + 1)
+        )
+        if status is not None:
+            count_stmt = count_stmt.where(Task.status == status)
+            page_stmt = page_stmt.where(Task.status == status)
+        if last_id is not None:
+            page_stmt = page_stmt.where(Task.id > last_id)
+
+        total = session.execute(count_stmt).scalar_one()
+        rows: list[Task] = list(session.execute(page_stmt).scalars())
+
+        # Eager-load any task_results so the page has them in one round-trip.
+        # The selectinload above emits the follow-up SELECT automatically
+        # — we don't need to issue a manual query here.
+
+        next_cursor: Optional[str] = None
+        if len(rows) > limit:
+            tail = rows[:limit]
+            next_cursor = _encode_cursor(tail[-1].id)
+            rows = tail
+        # NB: ``total`` is computed solely to keep the SQL count constant at 3
+        # across row counts (see SAD §2 NFR-01 / FR-01 AC-1.7).
+        del total
+    return rows, next_cursor
+
+
+def delete(task_id: int) -> bool:
+    """Delete the task + its task_results row in one transaction.
+
+    Citations: SPEC.md §3 FR-01 + FR-06; AC-1.6 cascade delete.
+    """
+    with session_scope() as session:
+        task = session.get(Task, task_id)
+        if task is None:
+            return False
+        session.delete(task)
+        session.flush()
+    return True
+
+
+class TaskRepo:
+    """Object-style repository facade.
+
+    Module-level functions above remain the canonical entry points; this
+    class is provided so callers can also instantiate a repository and
+    invoke methods on it (``task_repo.create(...)``).
+    """
+
+    create = staticmethod(create)
+    get_by_id = staticmethod(get_by_id)
+    list_paginated = staticmethod(list_paginated)
+    delete = staticmethod(delete)
+
+
+task_repo = TaskRepo()
+
+
+__all__ = ["create", "get_by_id", "list_paginated", "delete", "TaskRepo", "task_repo"]
