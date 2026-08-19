@@ -62,6 +62,7 @@ import os
 import re
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -662,4 +663,358 @@ def test_sec_t03_invalid_or_revoked_key_returns_401():  # NFR-01 (NP-01 — auth
     assert "problem+json" in result["content_type"], (
         "SEC-T-03: 401 body must be application/problem+json; "
         f"got {result['content_type']!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Coverage-fix tests — in-process unit tests for source lines that the
+# HTTP-level subprocess tests cannot reach. These are added to bring the
+# Gate 1 test_coverage dimension above 80% on the four FR-03 source files
+# the gate traces:
+#   03-development/src/taskq_api/api/deps.py
+#   03-development/src/taskq_api/service/auth.py
+#   03-development/src/taskq_api/repository/key_repo.py
+#   03-development/src/taskq_api/models/orm.py
+#
+# The HTTP-driven tests above only hit the 401/error path of
+# ``require_api_key`` and never reach the success path or the downstream
+# ``enforce_scope`` dependency. The unit tests below fill those gaps so
+# every line in the FR-03 modules is exercised at least once.
+# ---------------------------------------------------------------------------
+
+
+def test_ac_3_1_v1_endpoint_with_valid_api_key_returns_non_401():
+    """Coverage-fix — the success path of ``deps.require_api_key`` (line 36).
+
+    The HTTP-level tests above only exercise the 401 branch (no key,
+    invalid key, revoked key). The success path
+    ``return resolved`` (deps.py:36) is never taken. To hit it, we must
+    route a request through a ``/v1/*`` endpoint with a VALID X-API-Key
+    whose sha256 digest matches an active ``api_keys`` row.
+
+    The response itself is not the focus of this test — it may be 200
+    (the task exists), 404 (no task with that id), or any other non-401
+    status. The assertion is purely "the auth dependency did NOT raise
+    401", which is the proxy for ``return resolved`` being executed.
+    """
+    from sqlalchemy import create_engine, text
+
+    from httpx import ASGITransport, AsyncClient
+
+    plaintext = "valid_key_success"
+    candidate_hash = hashlib.sha256(plaintext.encode()).hexdigest()
+
+    db_url = os.environ["TASKQ_DB_URL"]
+    engine = create_engine(db_url)
+    from taskq_api.models.orm import Base
+
+    Base.metadata.create_all(engine)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS api_keys ("
+                "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                "  key_hash VARCHAR(64) NOT NULL UNIQUE,"
+                "  scope VARCHAR(32) NOT NULL,"
+                "  revoked_at TIMESTAMP NULL"
+                ")"
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO api_keys (key_hash, scope, revoked_at) "
+                "VALUES (:h, :s, NULL)"
+            ),
+            {"h": candidate_hash, "s": "read"},
+        )
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.get(
+                "/v1/tasks/1",
+                headers=_auth_headers(plaintext),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code != 401, (
+        "COVERAGE-FIX FR-03: a valid active read-scope key must clear "
+        "require_api_key and reach the route handler; "
+        f"got 401: {response.text!r}"
+    )
+    # The auth dependency chain (require_api_key + enforce_scope) was
+    # exercised successfully when the status is not 401. A 404 here means
+    # the task does not exist, which is fine — the auth gate passed.
+    assert response.status_code in (200, 404), (
+        "COVERAGE-FIX FR-03: route handler should be reached after auth; "
+        f"got status {response.status_code}: {response.text!r}"
+    )
+
+
+def test_enforce_scope_with_insufficient_scope_raises_403_problem():
+    """Coverage-fix — ``deps.enforce_scope`` 403 path (deps.py:47-55).
+
+    Calls ``enforce_scope`` directly (skipping the ``Depends`` DI layer)
+    so we can force the ``has_scope`` check to return False without
+    needing an end-to-end route. The 403 Problem must carry the
+    ``/errors/forbidden`` type URI and the "Insufficient scope." detail.
+    """
+    from taskq_api.api import deps as deps_module
+    from taskq_api.errors import Problem
+
+    # (key_id, "read") scope is below the required "admin" — must 403.
+    with pytest.raises(Problem) as exc_info:
+        deps_module.enforce_scope(
+            api_key=("key_id_xyz", "read"),
+            required="admin",
+        )
+    problem = exc_info.value
+    assert problem.status == 403
+    assert problem.title == "Forbidden"
+    assert problem.detail == "Insufficient scope."
+    assert problem.type_uri == "/errors/forbidden"
+
+
+def test_enforce_scope_with_sufficient_scope_returns_api_key():
+    """Coverage-fix — ``deps.enforce_scope`` success path (deps.py:47, 55).
+
+    Same direct call as the 403 test but with a scope that satisfies
+    ``required``; ``has_scope`` returns True and the api_key tuple is
+    returned unchanged.
+    """
+    from taskq_api.api import deps as deps_module
+
+    result = deps_module.enforce_scope(
+        api_key=("key_id_abc", "admin"),
+        required="write",
+    )
+    assert result == ("key_id_abc", "admin"), (
+        "COVERAGE-FIX FR-03: enforce_scope must return the api_key tuple "
+        f"unchanged when scope is sufficient; got {result!r}"
+    )
+
+
+def test_orm_utcnow_helper_returns_aware_datetime():
+    """Coverage-fix — ``orm._utcnow`` (line 17).
+
+    The helper is referenced as a ``default=_utcnow`` on Task / TaskResult
+    / ApiKey mapped columns, but its body is never executed by the
+    existing tests (which only INSERT pre-built rows). Calling it
+    directly populates the missing-statement counter.
+    """
+    from taskq_api.models import orm as orm_module
+
+    now = orm_module._utcnow()
+    assert isinstance(now, datetime), (
+        f"COVERAGE-FIX FR-03: _utcnow must return a datetime; got {type(now)!r}"
+    )
+    assert now.tzinfo is not None, (
+        "COVERAGE-FIX FR-03: _utcnow must return a timezone-aware datetime "
+        f"(naive-aware mismatch causes FR-09 / FR-07 round-trip bugs); "
+        f"got tzinfo={now.tzinfo!r}"
+    )
+
+
+def test_key_repo_get_active_by_hash_returns_row_tuple_for_active_key():
+    """Coverage-fix — ``key_repo.get_active_by_hash`` row-found path (line 76).
+
+    The existing tests monkey-patch ``get_active_by_hash`` to a stub, so
+    the real implementation's "row found" branch
+    (``return str(row.id), row.scope, row.key_hash``) is never exercised.
+    Insert a row through the real ORM and call the real function.
+    """
+    from taskq_api.repository import session as session_module
+
+    plaintext = "active_lookup_key"
+    candidate_hash = key_repo._hash(plaintext)
+
+    # Use the repo's own insert session so the engine url-cache rebuild
+    # path is exercised exactly like production.
+    with session_module.insert_scope() as session:
+        row = ApiKey(scope="read", key_hash=candidate_hash)
+        session.add(row)
+        session.flush()
+        session.expunge(row)
+        inserted_id = row.id
+
+    result = key_repo.get_active_by_hash(candidate_hash)
+    assert result is not None, (
+        "COVERAGE-FIX FR-03: get_active_by_hash must return a tuple for "
+        "an active row; got None"
+    )
+    key_id, scope, stored_hash = result
+    assert isinstance(key_id, str), (
+        f"COVERAGE-FIX FR-03: key_id must be a str; got {type(key_id)!r}"
+    )
+    assert key_id == str(inserted_id), (
+        f"COVERAGE-FIX FR-03: key_id must equal the inserted row id; "
+        f"got {key_id!r} expected {str(inserted_id)!r}"
+    )
+    assert scope == "read", (
+        f"COVERAGE-FIX FR-03: scope must round-trip; got {scope!r}"
+    )
+    assert stored_hash == candidate_hash, (
+        "COVERAGE-FIX FR-03: stored_hash must equal the sha256 digest; "
+        f"got {stored_hash!r} expected {candidate_hash!r}"
+    )
+
+
+def test_key_repo_get_active_by_hash_returns_none_for_unknown_hash():
+    """Coverage-fix — ``key_repo.get_active_by_hash`` misses-no-row path.
+
+    Companion to the row-found test above; ensures the ``if row is None``
+    branch is exercised when no row matches the candidate hash.
+    """
+    unknown_hash = "f" * 64  # 64 hex chars, no row in the DB
+    assert key_repo.get_active_by_hash(unknown_hash) is None, (
+        "COVERAGE-FIX FR-03: get_active_by_hash must return None for an "
+        "unknown hash; got a row tuple"
+    )
+
+
+def test_key_repo_revoke_marks_active_row_returns_true():
+    """Coverage-fix — ``key_repo.revoke`` happy path (key_repo.py:84-97).
+
+    Insert an active row, call ``revoke(hash)``, verify the row is now
+    marked revoked and the function returns True. The post-revoke lookup
+    via ``get_active_by_hash`` must return None (AC-3.5 invariant).
+    """
+    from taskq_api.repository import session as session_module
+
+    plaintext = "revoke_target_key"
+    target_hash = key_repo._hash(plaintext)
+
+    with session_module.insert_scope() as session:
+        session.add(ApiKey(scope="write", key_hash=target_hash))
+        session.flush()
+
+    # Sanity: the row is active before revoke.
+    assert key_repo.get_active_by_hash(target_hash) is not None
+
+    revoked = key_repo.revoke(target_hash)
+    assert revoked is True, (
+        "COVERAGE-FIX FR-03: revoke must return True for a previously "
+        f"active row; got {revoked!r}"
+    )
+
+    # Post-revoke invariant: the row is no longer "active" because its
+    # revoked_at is now populated.
+    assert key_repo.get_active_by_hash(target_hash) is None, (
+        "COVERAGE-FIX FR-03: a revoked key must be invisible to "
+        "get_active_by_hash (AC-3.5 invariant)"
+    )
+
+
+def test_key_repo_revoke_returns_false_for_unknown_hash():
+    """Coverage-fix — ``key_repo.revoke`` not-found path (key_repo.py:94-95).
+
+    Calling ``revoke`` on a hash that has no row must return False and
+    not raise. The branch ``if row is None: return False`` (line 94-95)
+    is otherwise unreachable through the existing tests.
+    """
+    unknown_hash = "a" * 64
+    assert key_repo.revoke(unknown_hash) is False, (
+        "COVERAGE-FIX FR-03: revoke must return False for an unknown hash; "
+        "got something truthy"
+    )
+
+
+def test_key_repo_revoke_is_idempotent_for_already_revoked_row():
+    """Coverage-fix — ``key_repo.revoke`` idempotent behaviour (line 91-92).
+
+    The SQL ``WHERE revoked_at IS NULL`` filter means a second call on
+    an already-revoked row finds no candidate and returns False. This
+    confirms the same branch as the not-found path is exercised.
+    """
+    from taskq_api.repository import session as session_module
+
+    plaintext = "double_revoke_key"
+    target_hash = key_repo._hash(plaintext)
+
+    with session_module.insert_scope() as session:
+        session.add(ApiKey(scope="read", key_hash=target_hash))
+        session.flush()
+
+    assert key_repo.revoke(target_hash) is True
+    # Second call: row is already revoked, the WHERE clause filters it
+    # out, so the function returns False (idempotent).
+    assert key_repo.revoke(target_hash) is False, (
+        "COVERAGE-FIX FR-03: revoke must be idempotent — a second call "
+        "on an already-revoked row returns False, not raise"
+    )
+
+
+def test_auth_resolve_api_key_hash_mismatch_returns_not_found_sentinel():
+    """Coverage-fix — ``auth.resolve_api_key`` hash-mismatch path (auth.py:95).
+
+    The SQL filter ``key_hash == candidate`` in
+    ``key_repo.get_active_by_hash`` means a row whose stored hash does
+    not equal the candidate would never be returned in production. To
+    exercise the defensive ``return NOT_FOUND`` after a failed
+    ``hmac.compare_digest`` (auth.py:95), we monkeypatch
+    ``get_active_by_hash`` to return a row whose stored hash deliberately
+    differs from the candidate. The stub is named ``_stub_mismatch`` so
+    ``_is_wrong_key_stub_active`` returns False and the no-row sentinel
+    branch is not taken — we must reach the compare_digest path.
+    """
+    def _stub_mismatch(hash_value):  # noqa: ANN001
+        # Return a row whose stored hash differs from the candidate so
+        # hmac.compare_digest(candidate, stored_hash) returns False.
+        return ("id_stub", "read", "0" * 64)
+
+    with patch.object(key_repo, "get_active_by_hash", _stub_mismatch):
+        result = auth.resolve_api_key("some_plaintext")
+
+    assert result == auth.NOT_FOUND, (
+        "COVERAGE-FIX FR-03: a row whose stored hash does not match "
+        "the candidate digest must produce NOT_FOUND sentinel; "
+        f"got {result!r}"
+    )
+
+
+def test_auth_has_scope_hierarchy_all_branches():
+    """Coverage-fix — ``auth.has_scope`` (auth.py:101-104).
+
+    The function is a 4-line lookup table but it is never called by the
+    HTTP tests (they short-circuit on 401 before reaching any route
+    body). Calling it directly with held-vs-required combinations
+    exercises every branch:
+
+      * held == required                                  -> True
+      * held > required (e.g. admin > read)               -> True
+      * held < required (e.g. read < admin)               -> False
+      * held unknown (e.g. "super") / required unknown     -> False (default 0)
+    """
+    assert auth.has_scope("read", "read") is True, (
+        "COVERAGE-FIX FR-03: equal scopes must satisfy the check"
+    )
+    assert auth.has_scope("admin", "read") is True, (
+        "COVERAGE-FIX FR-03: a higher scope must satisfy a lower required"
+    )
+    assert auth.has_scope("write", "read") is True, (
+        "COVERAGE-FIX FR-03: write is higher than read in the hierarchy"
+    )
+    assert auth.has_scope("read", "admin") is False, (
+        "COVERAGE-FIX FR-03: a lower scope must NOT satisfy a higher required"
+    )
+    assert auth.has_scope("read", "write") is False, (
+        "COVERAGE-FIX FR-03: read is below write in the hierarchy"
+    )
+    # Unknown held scope defaults to 0, which is below every known
+    # required scope, so the check correctly returns False.
+    assert auth.has_scope("unknown", "read") is False, (
+        "COVERAGE-FIX FR-03: an unknown held scope must be treated as 0 "
+        "and fail the check"
+    )
+    # Unknown required scope also defaults to 0, which is trivially
+    # satisfied by any positive held scope (defensive default).
+    assert auth.has_scope("read", "unknown") is True, (
+        "COVERAGE-FIX FR-03: an unknown required scope defaults to 0, "
+        "which any held scope >= 0 satisfies"
+    )
+    # Both unknown — both sides 0, 0 >= 0 holds.
+    assert auth.has_scope("unknown", "unknown") is True, (
+        "COVERAGE-FIX FR-03: both-unknown default to 0 and 0 >= 0 holds"
     )
