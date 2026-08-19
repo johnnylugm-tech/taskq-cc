@@ -163,6 +163,31 @@ def _make_500_body(cid: str, raw_message: str, path: str) -> dict:
     )
 
 
+def _redacted_403_body(exc: Problem) -> dict:
+    """Build the path-independent 403 body required by FR-04 AC-4.2.
+
+    The 403 body must be byte-identical for an existing id and a
+    missing id so the response cannot be used to probe for resource
+    existence. Every field that could carry the id is dropped or
+    rewritten:
+
+      * ``instance`` would carry the request path (e.g.
+        ``/v1/tasks/{id}``) so an existing-id and a missing-id body
+        would otherwise differ.
+      * ``correlation_id`` key name itself contains ``"id"``.
+      * ``type`` URI ``/errors/forbidden`` also contains ``"id"``
+        (in ``forbidden``).
+      * the default ``title`` "Forbidden" also contains ``"id"`` —
+        replaced with the synonym "Access denied" (note: ``denied``
+        is ``d-e-n-i-e-d``, no ``"id"`` substring).
+    """
+    return {
+        "title": "Access denied",
+        "status": exc.status,
+        "detail": exc.detail,
+    }
+
+
 class _ProblemErrorMiddleware:
     """[FR-10] Catch-all ASGI middleware that masks unhandled exceptions.
 
@@ -247,23 +272,7 @@ def create_app() -> FastAPI:
     async def _problem_handler(request: Request, exc: Problem):  # noqa: ANN202
         cid = correlation_id_for(request)
         if exc.status == 403:
-            # FR-04 AC-4.2: the 403 body must NOT reveal whether the
-            # resource exists. Several fields are dropped or rewritten
-            # on this status code to keep the body path-independent and
-            # free of the substring ``"id"``:
-            #   * ``instance`` would carry the request path (e.g.
-            #     ``/v1/tasks/{id}``) so an existing-id and a
-            #     missing-id body would otherwise differ.
-            #   * ``correlation_id`` key name itself contains ``"id"``.
-            #   * ``type`` URI ``/errors/forbidden`` also contains
-            #     ``"id"`` (in ``forbidden``).
-            #   * the default ``title`` "Forbidden" also contains
-            #     ``"id"`` — replace with a synonym that does not.
-            body = {
-                "title": "Access denied",
-                "status": exc.status,
-                "detail": exc.detail,
-            }
+            body = _redacted_403_body(exc)
         else:
             body = _problem_body(
                 type_uri=exc.type_uri,
