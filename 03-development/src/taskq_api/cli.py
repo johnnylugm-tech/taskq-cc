@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 from taskq_api.repository import key_repo
 
@@ -48,7 +48,7 @@ def _handle_key_create(args: argparse.Namespace) -> int:
 
 # Dispatch table — kept tiny on purpose. Adding a new subcommand means
 # one parser entry + one handler; ``main`` itself does not change.
-_HANDLERS: dict[tuple[str, str], "callable[[argparse.Namespace], int]"] = {
+_HANDLERS: dict[tuple[str, str], Callable[[argparse.Namespace], int]] = {
     ("key", "create"): _handle_key_create,
 }
 
