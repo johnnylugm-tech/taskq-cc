@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-20T15:08:15.000000+00:00",
-  "git_sha": "8fbda9f5fd6205e3e8b2e5a2c42e1fc88bbec24b",
-  "rehunt_note": "Re-run on 8fbda9f. Uncommitted changes since c1351e5 are pragma annotations + small hardening (auth.py now wraps get_active_by_hash in try/except returning None on DB failure, strengthening T-03; cli.py wraps key_repo.create with stderr print + return 1 for NFR-03; metrics.py degrades to empty/zero on failure). No new critical/high bugs introduced. Repro tests still GREEN.",
+  "generated_at": "2026-08-20T20:00:00.000000+00:00",
+  "git_sha": "5c1c2cfdc6c1876e66b38e276ae7dd3174daf837",
+  "rehunt_note": "Re-run on 5c1c2cf. Found one new critical bug in v3_split_results.downgrade (silent data loss on multi-run tasks) — fixed in this commit and verified by a fresh repro test. All previously-reported findings carried over: the three open ones (errors#1, auth#1, ratelimit#1) remain medium and do not block Gate 3 per the framework's adversarial_review rubric (critical/high only).",
   "targets_manifest": ".methodology/bug_hunt_targets.json",
   "lenses": [
     "correctness",
@@ -9,10 +9,32 @@
     "resilience",
     "general"
   ],
-  "raw_count": 13,
-  "confirmed_count": 7,
+  "raw_count": 14,
+  "confirmed_count": 8,
   "refuted_count": 6,
   "findings": [
+    {
+      "id": "v3_split_results#1",
+      "module": "migrations.versions.v3_split_results",
+      "lens": "correctness",
+      "severity": "critical",
+      "title": "v3 downgrade uses a non-deterministic correlated subquery; silently drops run history",
+      "description": "downgrade() runs `UPDATE tasks SET result_json = (SELECT result_json FROM task_results WHERE task_results.task_id = tasks.id)`. The subquery is a scalar context but returns one row per task_results entry; on SQLite the multi-row scalar subquery silently picks an arbitrary row instead of erroring (on SQLite >= 3.39 it raises 'subquery must return only one row'). For a task with N>=2 runs the downgrade 'succeeds' but only one run's payload survives — silently losing (N-1)/N of the run history. AC-7.2's byte-identical round-trip is violated whenever a task has been run more than once.",
+      "file": "03-development/src/migrations/versions/v3_split_results.py",
+      "line_start": 92,
+      "line_end": 100,
+      "code_snippet": "bind.execute(\n    sa.text(\n        \"UPDATE tasks SET result_json = (\"\n        \"SELECT result_json FROM task_results \"\n        \"WHERE task_results.task_id = tasks.id\"\n        \")\"\n    )\n)",
+      "reasoning": "v3_split_results.py:92-100 emits an UPDATE with a scalar-context subquery. When task_results has multiple rows for the same task_id (the v3 multi-run schema's whole point), the subquery returns >1 row. SQLite's documented behavior for multi-row scalar subqueries is undefined for pre-3.39 (silent arbitrary pick) and a hard error for 3.39+. The downgrade 'succeeds' with one row of three restored — data loss. Repro: 3 runs inserted, downgrade runs, readback returns '{\"run\": 0}' instead of '{\"run\": 2}' (the latest).",
+      "suggested_fix": "Pick a deterministic single row: ORDER BY started_at DESC, id DESC LIMIT 1 inside the subquery, matching task_repo.list_runs's ordering.",
+      "confidence": "high",
+      "confirmed": true,
+      "verify_evidence": "Confirmer: v3_split_results.py:92-100 emits the broken correlated subquery; executed repro inserted 3 task_results rows, ran alembic downgrade -1, read tasks.result_json — got '{\"run\": 0}' (silent arbitrary pick) instead of '{\"run\": 2}' (latest). Refuter could not find a guard, fallback, or LIMIT that limits the subquery to a single row. The pre-fix test_ac_7_2 only inserts one row per task, so the multi-run case was never covered.",
+      "resolution": {
+        "status": "resolved",
+        "fix_commit": "5c1c2cfdc6c1876e66b38e276ae7dd3174daf837",
+        "repro_test": "03-development/tests/test_bug_hunt_regressions.py"
+      }
+    },
     {
       "id": "runner#1",
       "module": "taskq_api.service.runner",

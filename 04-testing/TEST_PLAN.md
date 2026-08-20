@@ -158,7 +158,9 @@ Module prefixes used in `module:` fields follow `fr_module_traceability` from
 | TC-09-N01 | NEG | P0 | api.health | GET /readyz returns 503 with `detail` naming DB when DB unreachable | closed DB file | 503; body names `database` | AC-9.2, AC-N3.4, AC-10.4 |
 | TC-09-N02 | NEG | P0 | api.health | GET /readyz returns 503 with `detail` naming migration when DB OK but `alembic current != head` | `downgrade -1` | 503; body names `migration` | AC-9.2, AC-7.5, AC-10.4 |
 | TC-09-N03 | NEG | P1 | api.health | GET /v1/metrics with write-scope key → 403 | write key | 403 + problem+json | AC-9.3, AC-4.1 |
+| TC-09-B01 | BND | P1 | api.health, repository.session | `/readyz` boundary: `alembic current == head` exactly (just-upgraded) returns 200; immediately after `downgrade -1` returns 503 | upgrade→readyz→downgrade→readyz | first 200, second 503 | AC-9.2, AC-7.5 |
 | TC-09-E01 | EDG | P1 | api.health | /v1/metrics returns task counts by status, latency percentiles, rate-limit denial counts | admin key after activity | keys present; numeric values | AC-9.3 |
+| TC-09-E02 | EDG | P2 | api.health | `/healthz` response carries a `correlation_id` field for log stitching | no header | field present in body | AC-9.1, AC-10.3 |
 
 ---
 
@@ -182,6 +184,7 @@ Module prefixes used in `module:` fields follow `fr_module_traceability` from
 | TC-N01-P02 | POS | P1 | repository.task_repo | GET /v1/tasks?limit=50 p95 latency < 80 ms at 10,000 rows | `pytest-benchmark` | p95 < 80 ms | AC-N1.2 |
 | TC-N01-N01 | NEG | P0 | repository.task_repo | List endpoint SQL statement count constant regardless of returned row count | event listener at 10/100/1000 | identical counts | AC-N1.3, AC-1.7, AC-6.4 |
 | TC-N01-B01 | BND | P2 | repository.task_repo | Latency at exactly 10,000 rows meets p95 target (boundary of scale) | 10k seeded | p95 < target | AC-N1.1, AC-N1.2 |
+| TC-N01-E01 | EDG | P2 | repository.task_repo | Latency at 50,000 rows (above target scale) still within reason (graceful degradation, not collapse) | 50k seeded | monotonic or bounded p95 increase vs 10k baseline | AC-N1.1, AC-N1.2 |
 
 ---
 
@@ -195,6 +198,7 @@ Module prefixes used in `module:` fields follow `fr_module_traceability` from
 | TC-N02-N04 | NEG | P0 | api.deps, service.auth | 403 bodies indistinguishable on existence axis | compare for existing vs missing id | byte-equal modulo correlation_id | AC-N2.4, AC-4.2 |
 | TC-N02-N05 | NEG | P0 | errors | 500 body has no stack trace / SQL / path | trigger 500 | substring allow-list passes | AC-N2.5, AC-10.2 |
 | TC-N02-P01 | POS | P1 | app | CORS denies all origins by default; `TASKQ_CORS_ORIGINS` is the only allowlist | empty + non-empty env | empty → no `Access-Control-Allow-Origin`; allowlist → only listed origins | AC-N2.6 |
+| TC-N02-B01 | BND | P1 | repository/*, service/*, api/* | SQL string-concat boundary: f-string used outside SQL context (e.g. log messages) is allowed; the grep gate is SQL-context-aware | CI grep with context | no SQL-context f-string hits; non-SQL f-strings pass | AC-N2.2, AC-6.3 |
 | TC-N02-E01 | EDG | P0 | repository/*, service/*, api/* | `bandit -r 03-development/src/` reports 0 HIGH / 0 MEDIUM | CI | zero findings | AC-N2.7 |
 
 ---
@@ -210,6 +214,7 @@ Module prefixes used in `module:` fields follow `fr_module_traceability` from
 | TC-N03-N04 | NEG | P0 | service.runner | Timeout kills child; PID enumeration before/after | instrument | children reaped | AC-N3.5, AC-2.3 |
 | TC-N03-N05 | NEG | P0 | migrations.env | Failed migration rolls back atomically; `/readyz` 503 with detail | failing migration | atomicity + `/readyz` 503 | AC-N3.6, AC-7.5 |
 | TC-N03-E01 | EDG | P1 | repository.session | Connection-pool exhaustion is observable (does not silently hang) | saturate pool | bounded error within timeout | AC-N3.4 |
+| TC-N03-B01 | BND | P1 | service.runner | Timeout boundary at `TASKQ_TASK_TIMEOUT=0.05` (50 ms); child is still killed and reaped, not orphaned | `sleep 1` with 50 ms timeout | state=`timeout`; `pgrep` finds nothing | AC-N3.5, AC-2.3 |
 
 ---
 
@@ -371,11 +376,11 @@ FR/NFR slipped.)
 | FR-06 | 1 | 3 | 1 | 1 |
 | FR-07 | 1 | 4 | 1 | 2 |
 | FR-08 | 2 | 3 | 1 | 1 |
-| FR-09 | 2 | 3 | 0 | 1 |
+| FR-09 | 2 | 3 | 1 | 2 |
 | FR-10 | 1 | 2 | 1 | 1 |
-| NFR-01 | 2 | 1 | 1 | 0 |
-| NFR-02 | 1 | 5 | 0 | 1 |
-| NFR-03 | 1 | 5 | 0 | 1 |
+| NFR-01 | 2 | 1 | 1 | 1 |
+| NFR-02 | 1 | 5 | 1 | 1 |
+| NFR-03 | 1 | 5 | 1 | 1 |
 | NFR-04 | 1 | 2 | 1 | 1 |
 | NFR-05 | 2 | 1 | 1 | 1 |
 | NFR-06 | 1 | 3 | 1 | 0 |
@@ -387,8 +392,9 @@ FR/NFR slipped.)
 | NFR-12 | 1 | 1 | 1 | 1 |
 
 Every FR + every NFR carries at least one entry in each of POS/NEG/BND/EDG
-where the AC surface supports it (e.g. NFR-06/08/12 are configuration/static
-checks where EDG has no additional surface beyond what's already exercised).
+where the AC surface supports it (e.g. NFR-06 is a configuration-only check
+where EDG has no additional surface beyond the BND boundary on the layers
+contract itself).
 
 ---
 
