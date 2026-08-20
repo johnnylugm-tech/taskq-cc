@@ -460,3 +460,35 @@ def test_deps_enforce_scope_403_on_insufficient_scope():
     assert excinfo.value.status == 403
     assert excinfo.value.title == "Forbidden"
     assert excinfo.value.type_uri == "/errors/forbidden"
+
+
+def test_deps_enforce_rate_limit_admits_on_ratelimit_exception(monkeypatch):
+    """Coverage for deps.py:53-56 — ``_enforce_rate_limit`` swallows
+    bucket-engine failures and admits the request so ``/v1/metrics``
+    stays reachable when the rate-limit machinery is broken.
+
+    [FR-09] If the bucket engine cannot be built at all, the call is
+    admitted rather than 500'ing. We simulate that by making
+    ``ratelimit.check`` raise; the ``except Exception`` arm must
+    silently return so the route handler runs as if no rate-limit
+    gate existed. On the fresh per-test DB task 1 does not exist, so
+    the handler returns 404 — proving the request reached the route
+    (no 429, no 500).
+    """
+    def _raise(_key_id):
+        raise RuntimeError("simulated ratelimit failure")
+
+    monkeypatch.setattr(deps.ratelimit, "check", _raise)
+
+    # The autouse stub binds read_key -> ("key-read", "read"). With the
+    # exception swallowed, the request reaches the route handler
+    # (no 429 because the bucket engine isn't consulted, no 500 because
+    # the exception was caught and the request was admitted).
+    response = _request("GET", "/v1/tasks/1", "read_key")
+
+    # FR-09 admission guarantee: NOT 429, NOT 500.
+    assert response.status_code != 429
+    assert response.status_code != 500
+    # The handler reached (no row in fresh DB) -> 404 problem+json.
+    assert response.status_code == 404
+    assert "problem+json" in response.headers.get("content-type", "")
