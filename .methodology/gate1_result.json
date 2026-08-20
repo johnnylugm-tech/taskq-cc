@@ -30,6 +30,49 @@
       "tool_evidence": "Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT. Analyzed 51 files, 130 dependencies. (exit 0)"
     }
   },
+  "enforcer_sha": "0efae09329744213ea821c48c3c8d5d755e90ac0",
+  "enforcer_surface": {
+    "core/quality_gate": "5021f0333ad5b068994f587ed08b37193cb8ee59",
+    "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
+    "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
+  },
+  "evidence_digest": {
+    "mutation_testing::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "135fd63a9df71b8e6d47e274d06e464745e23005a839e669229c9198b9113244",
+      "bytes": 386,
+      "head": "[mutmut]\n# Mutation test scope — per SAB NFR-08.\n# Note: uses mutmut 2.x syntax (not 3.x); pin: pip install \"mutmut==2.5.1\"\npaths_to_mutate=03-development/src/taskq_api/repository,03-development/src/taskq_api/service\npaths_to_exclude=__init__.py,config.py\ntests_dir=03-development/tests\nrunner=/Users/johnny/projects/taskq-cc/.venv/bin/python -m pytest --tb=no -q -p no:cacheprovider"
+    },
+    "test_coverage::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "135fd63a9df71b8e6d47e274d06e464745e23005a839e669229c9198b9113244",
+      "bytes": 386,
+      "head": "[mutmut]\n# Mutation test scope — per SAB NFR-08.\n# Note: uses mutmut 2.x syntax (not 3.x); pin: pip install \"mutmut==2.5.1\"\npaths_to_mutate=03-development/src/taskq_api/repository,03-development/src/taskq_api/service\npaths_to_exclude=__init__.py,config.py\ntests_dir=03-development/tests\nrunner=/Users/johnny/projects/taskq-cc/.venv/bin/python -m pytest --tb=no -q -p no:cacheprovider"
+    },
+    "linting": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "c0680348f101d6664ca0ba56a3408de98d5c7a2cfe8d53e124dc6e643e9b170b",
+      "bytes": 97,
+      "head": "All checks passed! (ruff exit 0 on 03-development/src/ with --extend-ignore RUF001,RUF002,RUF003)"
+    },
+    "test_coverage": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "5149ded62c2689ebbbcdc31b2332a6b6da521c48c7f3120686f9d8ca73b403ce",
+      "bytes": 533,
+      "head": "67 passed in 7.11s — 03-development/tests/test_fr09.py (18) + test_fr06.py (23) + test_fr08.py (17) + test_fr10.py (9). 100% coverage on FR-09 modules: api/health.py=100%, app.py=100%, config.py=100%, repository/session.py=100%. All 4 required tests present: test_ac_9_1_healthz_returns_200_status_ok_no_api_key_required, test_ac_9_2_readyz_db_unreachable_returns_503_with_db_detail, test_ac_9_3_metrics_admin_returns_counts_latency_denial_non_admin_403, test_sec_t08_db_url_absent_from_logs_and_metrics. SPEC COVERAGE: 6/6 (100%)."
+    },
+    "architecture_constraints": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "f5ffaf18f94948d2f8256c3c322201aee5fc7637c17618aad49e4b75563c7a5e",
+      "bytes": 288,
+      "head": "Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT. Analyzed 51 files, 130 dependencies. (exit 0)"
+    }
+  },
   "composite_score": 99.9175,
   "verdict": "PASS",
   "passed": true,
