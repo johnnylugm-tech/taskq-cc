@@ -1,1 +1,35 @@
-99
+Name                                                         Stmts   Miss  Cover
+--------------------------------------------------------------------------------
+03-development/src/migrations/__init__.py                        0      0   100%
+03-development/src/migrations/env.py                            51      0   100%
+03-development/src/migrations/versions/__init__.py               0      0   100%
+03-development/src/migrations/versions/v1_initial.py            13      0   100%
+03-development/src/migrations/versions/v2_tags.py               15      0   100%
+03-development/src/migrations/versions/v3_split_results.py      17      0   100%
+03-development/src/taskq_api/__init__.py                         0      0   100%
+03-development/src/taskq_api/__main__.py                         5      0   100%
+03-development/src/taskq_api/api/__init__.py                     4      0   100%
+03-development/src/taskq_api/api/deps.py                        33      0   100%
+03-development/src/taskq_api/api/health.py                      67      0   100%
+03-development/src/taskq_api/api/tasks.py                       62      2    97%
+03-development/src/taskq_api/app.py                             80      0   100%
+03-development/src/taskq_api/cli.py                             28      3    89%
+03-development/src/taskq_api/config.py                          37      0   100%
+03-development/src/taskq_api/errors.py                          20      0   100%
+03-development/src/taskq_api/models/__init__.py                  3      0   100%
+03-development/src/taskq_api/models/orm.py                      39      0   100%
+03-development/src/taskq_api/models/schemas.py                  35      0   100%
+03-development/src/taskq_api/repository/__init__.py              4      0   100%
+03-development/src/taskq_api/repository/key_repo.py             43      0   100%
+03-development/src/taskq_api/repository/metrics.py              30      0   100%
+03-development/src/taskq_api/repository/rate_repo.py            63      0   100%
+03-development/src/taskq_api/repository/session.py              72      0   100%
+03-development/src/taskq_api/repository/task_repo.py            83      0   100%
+03-development/src/taskq_api/service/__init__.py                 3      0   100%
+03-development/src/taskq_api/service/auth.py                    29      0   100%
+03-development/src/taskq_api/service/ratelimit.py                8      0   100%
+03-development/src/taskq_api/service/run_state.py               45      0   100%
+03-development/src/taskq_api/service/runner.py                  91      0   100%
+03-development/src/taskq_api/service/tasks.py                   25      0   100%
+--------------------------------------------------------------------------------
+TOTAL                                                         1005      5    99%

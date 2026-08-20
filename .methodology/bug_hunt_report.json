@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-20T20:00:00.000000+00:00",
-  "git_sha": "5c1c2cfdc6c1876e66b38e276ae7dd3174daf837",
-  "rehunt_note": "Re-run on 5c1c2cf. Found one new critical bug in v3_split_results.downgrade (silent data loss on multi-run tasks) — fixed in this commit and verified by a fresh repro test. All previously-reported findings carried over: the three open ones (errors#1, auth#1, ratelimit#1) remain medium and do not block Gate 3 per the framework's adversarial_review rubric (critical/high only).",
+  "generated_at": "2026-08-21T06:00:00.000000+00:00",
+  "git_sha": "ded68d09aacf82f530a9cb6c2cbe74aecdc71abd",
+  "rehunt_note": "Re-hunt on ded68d0. The runner module was refactored to extract pure state primitives (STATE_*, ExecResult, RunOutcome, DrainReport, _AdmissionGate) into service/run_state.py; behaviour is preserved (regression tests for runner#1 / runner#2 / health#1 / v3_split_results#1 all pass). app.py also received a more aggressive _sanitize_detail that replaces the previous 3-substring denylist with three regex classes (stack-trace marker, SQL fragment, POSIX absolute path) and pipes benign survivors through config.redact; this RESOLVES the previously-open errors#1 (T-05 mitigation) — test_ac_n2_5_500_error_body_no_stack_sql_or_paths now passes against the working-tree source. auth#1, ratelimit#1 (medium) and tasks#1 (low) remain open and do not block Gate 3 per the framework's adversarial_review rubric (critical/high only). All 8 threat-model entries re-verified: T-05 now blocks its declared vector (errors#1 resolved); the other 7 remain verified-effective.",
   "targets_manifest": ".methodology/bug_hunt_targets.json",
   "lenses": [
     "correctness",
@@ -118,11 +118,12 @@
       "confirmed": true,
       "verify_evidence": "Confirmer: app.py:64 + app.py:85-88; executed sanitizer returned the path unchanged.",
       "resolution": {
-        "status": "open"
+        "status": "resolved",
+        "repro_test": "03-development/tests/test_nfr_spec_coverage.py"
       },
       "attack_vector": "T-05 information_disclosure — unhandled exception leaks stack trace / SQL / file paths via detail field",
       "attempted_exploit": "Drive _sanitize_detail with a Linux-style absolute path in the exception message (FileNotFoundError on /home/deploy/secrets/taskq.db).",
-      "mitigation_effective": false
+      "mitigation_effective": true
     },
     {
       "id": "auth#1",
