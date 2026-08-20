@@ -38,9 +38,6 @@
         {
           "name": "taskq_api.service.ratelimit"
         },
-        {
-          "name": "taskq_api.service.utils"
-        },
         "taskq_api.service"
       ],
       "allowed_dependencies": [
