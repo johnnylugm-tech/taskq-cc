@@ -249,7 +249,7 @@ Module prefixes used in `module:` fields follow `fr_module_traceability` from
 
 ---
 
-## 17. NFR-07 — 依�與授權合規
+## 17. NFR-07 — 依賴與授權合規
 
 | TC ID | Category | Priority | Module | Description | Input | Expected Output | Linked AC |
 |-------|----------|----------|--------|-------------|-------|-----------------|-----------|
@@ -297,6 +297,7 @@ Module prefixes used in `module:` fields follow `fr_module_traceability` from
 | TC-N10-N02 | NEG | P0 | tests/integration/* | Integration suite covers each error code (401, 403, 404, 409, 422, 429, 503) + migration round-trip + rate-limit trigger/recovery + graceful drain | enumeration | each present | AC-N10.3 |
 | TC-N10-B01 | BND | P1 | tests/integration/* | Integration coverage at exactly 80% (boundary) | `pytest-cov-integration` | passes | AC-N10.1 |
 | TC-N10-E01 | EDG | P1 | tests/integration/test_cli_entry | CLI entry integration test exists for `key create` | run | covered | AC-N10.3 |
+| TC-N10-P02 | POS | P1 | tests/integration/* | Integration test for `key create` CLI entry-point | run CLI via subprocess | stdout contains plaintext; sink scan clean | AC-N10.3, AC-3.4 |
 
 ---
 
@@ -381,7 +382,7 @@ FR/NFR slipped.)
 | NFR-07 | 2 | 2 | 1 | 1 |
 | NFR-08 | 1 | 2 | 1 | 1 |
 | NFR-09 | 3 | 2 | 1 | 1 |
-| NFR-10 | 1 | 2 | 1 | 1 |
+| NFR-10 | 2 | 2 | 1 | 1 |
 | NFR-11 | 1 | 2 | 1 | 1 |
 | NFR-12 | 1 | 1 | 1 | 1 |
 
