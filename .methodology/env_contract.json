@@ -1,29 +1,27 @@
 {
-  "classified_at": "2026-08-20T03:28:46Z",
+  "classified_at": "2026-08-20T10:50:13Z",
   "cli_tools": [
     "alembic",
     "bandit",
-    "coverage",
+    "docker",
     "fastapi",
-    "git",
-    "gitleaks",
     "httpx",
     "importlinter",
     "lint-imports",
-    "make",
     "mutmut",
+    "pip",
     "pip-licenses",
-    "piplicenses",
+    "psql",
     "pydantic",
     "pytest",
     "pytest_asyncio",
     "pytest_benchmark",
     "pytest_cov",
+    "python3",
     "python3.11",
     "radon",
     "sqlalchemy",
     "sqlite3",
-    "starlette",
     "uvicorn"
   ],
   "enforcer_sha": "0efae09329744213ea821c48c3c8d5d755e90ac0",
@@ -34,6 +32,7 @@
       "TASKQ_DB_POOL_SIZE",
       "TASKQ_DB_URL",
       "TASKQ_DRAIN_TIMEOUT",
+      "TASKQ_HOME",
       "TASKQ_HOST",
       "TASKQ_LOG_FORMAT",
       "TASKQ_LOG_LEVEL",
@@ -49,14 +48,13 @@
     "docker_compose_services": [],
     "required": [
       {
-        "checked_via": "python3 sqlite3.connect(tmpfile) -> CREATE TABLE + INSERT + SELECT count = 1; then SQLAlchemy create_engine('sqlite:///<file>', pool_pre_ping=True).connect() -> SELECT 1 = 1",
-        "fix": "No service to start — SQLite is embedded. If the file DB is unwritable: check write permissions on the project dir and TMPDIR.",
+        "checked_via": "python3 sqlite3 roundtrip (CREATE/INSERT/SELECT) on a tempfile sqlite file",
         "name": "sqlite",
         "reachable": true,
-        "type": "SQLite 3.50.4 (file-backed; dev/test DB per SRS 2.1, and the real-file requirement of NFR-09 / AC-N9.4)"
+        "type": "SQLite 3.51 (stdlib + CLI)"
       }
     ]
   },
   "schema_version": 1,
-  "source_sha256": "f32688fa6c30b4f6c527fab159703b9a9ccc6004e6afba0fcf94c0abbd94eacc"
+  "source_sha256": "0c78e4230961b442da486ab1927a9eddb074e581874317c94186ebca4bea91a3"
 }

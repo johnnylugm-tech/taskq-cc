@@ -1,10 +1,10 @@
 # Harness-executed: pytest-cov
 # returncode: 0
-# agent_score: 98.5 | threshold: 80.0
+# agent_score: 100.0 | threshold: 80.0
 
-........................................................................ [ 36%]
-........................................................................ [ 72%]
-........................................................                 [100%]
+........................................................................ [ 35%]
+........................................................................ [ 70%]
+...........................................................              [100%]
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/fastapi/testclient.py:1
   /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
@@ -27,13 +27,13 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/migrations/versions/v2_tags.py               15      0   100%
 03-development/src/migrations/versions/v3_split_results.py      17      0   100%
 03-development/src/taskq_api/__init__.py                         0      0   100%
-03-development/src/taskq_api/__main__.py                         3      0   100%
+03-development/src/taskq_api/__main__.py                         5      0   100%
 03-development/src/taskq_api/api/__init__.py                     4      0   100%
 03-development/src/taskq_api/api/deps.py                        33      0   100%
 03-development/src/taskq_api/api/health.py                      67      0   100%
-03-development/src/taskq_api/api/tasks.py                       56      0   100%
+03-development/src/taskq_api/api/tasks.py                       59      0   100%
 03-development/src/taskq_api/app.py                             76      0   100%
-03-development/src/taskq_api/cli.py                             25      0   100%
+03-development/src/taskq_api/cli.py                             24      0   100%
 03-development/src/taskq_api/config.py                          31      0   100%
 03-development/src/taskq_api/errors.py                          20      0   100%
 03-development/src/taskq_api/models/__init__.py                  3      0   100%
@@ -50,6 +50,13 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/ratelimit.py                8      0   100%
 03-development/src/taskq_api/service/runner.py                 125      0   100%
 03-development/src/taskq_api/service/tasks.py                   25      0   100%
+03-development/tests/conftest.py                                33      1    97%   70
+03-development/tests/test_fr01.py                              211      5    98%   395, 594-595, 685-686
+03-development/tests/test_fr02.py                              316     10    97%   161, 198, 332, 335, 613-614, 677-678, 701-702
+03-development/tests/test_fr03.py                              298     25    92%   141-145, 202, 205-210, 267-268, 275-276, 473-478, 552-561, 655-663
+03-development/tests/test_fr05.py                              168     20    88%   158-165, 170-179, 217, 259-260, 284-298
+03-development/tests/test_fr06.py                              300      5    98%   99, 106, 214, 219, 260
+03-development/tests/test_fr08.py                              298     21    93%   109, 470-477, 914, 969, 988-1018, 1040, 1062-1080
 ------------------------------------------------------------------------------------------
-TOTAL                                                          961      0   100%
-200 passed, 12 warnings in 12.86s
+TOTAL                                                         2589     87    97%
+203 passed, 12 warnings in 13.82s
