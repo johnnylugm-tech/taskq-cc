@@ -64,10 +64,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
     handler = _HANDLERS.get((args.command, args.key_command))
     if handler is None:
-        parser.error(f"unhandled command: {args.command!r}")  # pragma: no cover
-        return 2  # pragma: no cover
+        parser.error(f"unhandled command: {args.command!r}")
+        return 2
     return handler(args)
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":
     raise SystemExit(main())

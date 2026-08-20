@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import uuid
-from typing import Optional, Tuple
+from typing import Optional, Set, Tuple
 
 from fastapi import APIRouter, Depends, Query
 
@@ -20,6 +20,11 @@ from taskq_api.repository import task_repo
 from taskq_api.service import runner, tasks as service
 
 router = APIRouter(prefix="/v1", tags=["tasks"])
+
+
+# Holds strong references to fire-and-forget background tasks so they are
+# not garbage-collected mid-run (py-create-task-unreferenced lint rule).
+_TASKS: "Set[asyncio.Task]" = set()
 
 
 _DEFAULT_LIMIT = 50
@@ -146,7 +151,11 @@ async def run_task_endpoint(
     # Fire-and-forget: the event loop runs the coroutine while the
     # response is in flight; the test polls GET /v1/tasks/{id} for the
     # terminal state, which gives the loop time to drive the runner.
-    asyncio.create_task(runner.run_task(task_id, task.command))
+    # Keep a strong reference so the task is not garbage-collected mid-run
+    # (py-create-task-unreferenced lint rule).
+    _bg_task = asyncio.create_task(runner.run_task(task_id, task.command))
+    _bg_task.add_done_callback(_TASKS.discard)
+    _TASKS.add(_bg_task)
     return {"run_id": run_id}
 
 
