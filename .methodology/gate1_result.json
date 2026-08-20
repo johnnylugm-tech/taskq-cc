@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-08",
+  "fr_id": "FR-05",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -9,25 +9,25 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!"
+      "tool_evidence": "All checks passed!\n"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787223114817\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 30, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.346}}"
+      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1787223479601\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":30,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.167}}\n"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 65,
+      "tests_passed": 124,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 65 items\n\n03-development/tests/test_fr08.py .................                      [ 26%]\n03-development/tests/test_fr02.py .....................                  [ 58%]\n03-development/tests/test_fr09.py ..................                     [ 86%]\n03-development/tests/test_fr10.py .........                              [100%]\n\n============================== 65 passed in 7.77s ==============================\nCoverage totals: covered_lines=201 num_statements=201 percent_covered=100.0 (runner.py=125/125, app.py=76/76). Spec coverage: 6/6 (100%) - all required tests present: test_ac_8_1_over_cap_tasks_are_queued_no_unbounded_coroutines, test_ac_8_2_timed_out_task_killed_and_awaited_no_orphans, test_ac_8_3_graceful_drain_then_interrupt_remaining_no_orphans, test_ac_8_4_cancelled_error_propagates_not_swallowed_by_except_exception, test_ac_8_5_runner_constructs_taskgroup_not_bare_gather_or_fire_and_forget, test_sec_t07_timeout_kills_subprocess_no_orphan."
+      "tool_evidence": "============================= 124 passed in 5.15s ==============================\nFR-05 files coverage: deps.py=100%, ratelimit.py=100%, rate_repo.py=100%, orm.py=100%\n"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 51 files, 130 dependencies. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT. Contracts: 4 kept, 0 broken."
+      "tool_evidence": "Contracts: 4 kept, 0 broken.\n"
     }
   },
   "enforcer_sha": "0efae09329744213ea821c48c3c8d5d755e90ac0",
@@ -61,23 +61,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "3bad9a23b2322eff94d1151acc35d1e65b71e7837a0eb139bc0da85280d0af9b",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1787223114817\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 30, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.346}}"
+      "sha256": "99eef989d7b403921066953f758b66dcabdb46183aa7470d81c5094819a7a2b5",
+      "bytes": 170,
+      "head": "{\"version\":\"1.1.409\",\"time\":\"1787223479601\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":30,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.167}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "80e79acd826ddfcf698305bb61ec685b629751838fe0de8a2f0e15c52869a5e8",
-      "bytes": 1115,
-      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 65 items\n\n03-development/tests/test_fr08.py .................                      [ 26%]\n03-development/tests/test_fr02.py .....................                  [ 58%]\n03-development/tests/test_fr09.py ..................                     [ 86%]\n03-development/tests/test_fr10.py .........                              [100%]\n\n============================== 65 passed in 7.77s ==============================\nCoverage totals: covered_lines=201 num_statements=201 percent_covered=100.0 (runner.py=125/125, app.py=76/76). Spec coverage: 6/6 (100%) - all required tests present: test_ac_8_1_over_cap_tasks_are_queued_no_unbounded_coroutines, test_ac_8_2_timed_out_task_killed_and_awaited_no_orphans, test_ac_8_3_graceful_drain_then_interrupt_remaining_no_orphans, test_ac_8_4_cancelled_error_propagates_not_swallowed_by_except_exception, test_ac_8_5_runner_constructs_taskgroup_not_bare_gather_or_fire_and_forget, test_sec_t07_timeout_kills_subprocess_no_orphan."
+      "sha256": "a4e0684ed6ccbc2c93ff0d7d6a6d13aa065fe6aeedfed797d60d3b780af59377",
+      "bytes": 166,
+      "head": "============================= 124 passed in 5.15s ==============================\nFR-05 files coverage: deps.py=100%, ratelimit.py=100%, rate_repo.py=100%, orm.py=100%"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "0880bf61c3175c08ee532f694ec545577a446598c49f2406527417e6fc0c2473",
-      "bytes": 279,
-      "head": "Analyzed 51 files, 130 dependencies. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT. Contracts: 4 kept, 0 broken."
+      "sha256": "a354cf92faa3f1252abd65194214a021cc53e11b0eec2823156366ec5b9de8f0",
+      "bytes": 28,
+      "head": "Contracts: 4 kept, 0 broken."
     }
   },
   "composite_score": 100.0,
