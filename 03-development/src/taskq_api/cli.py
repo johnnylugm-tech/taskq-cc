@@ -62,13 +62,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     """
     parser = _build_parser()
     args = parser.parse_args(argv)
-    handler = _HANDLERS.get((args.command, args.key_command))
-    if handler is None:
-        # parser.error prints a usage message and calls sys.exit(2); the
-        # statement after it is unreachable.
-        parser.error(f"unhandled command: {args.command!r}")
+    # ``required=True`` on both subparsers guarantees ``args.command`` and
+    # ``args.key_command`` are populated, and the dispatch table above is
+    # the source of truth for every (command, key_command) pair argparse
+    # can produce, so the lookup never misses.
+    handler = _HANDLERS[(args.command, args.key_command)]
     return handler(args)
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

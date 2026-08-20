@@ -155,3 +155,31 @@ def test_real_sqlite_db_has_api_keys_table() -> None:
     assert rows and rows[0][0] == "api_keys", (
         f"api_keys table missing after migration: {rows!r}"
     )
+
+
+def test_python_m_taskq_api_entry_invokes_main() -> None:
+    """``python -m taskq_api ...`` must execute the ``__main__`` guard.
+
+    The :mod:`taskq_api.__main__` module's ``if __name__ == "__main__"``
+    block is the canonical ``python -m`` entry. Exercising it via
+    :func:`runpy.run_module` (with ``run_name="__main__"``) gives
+    coverage instrumentation a foothold that ``subprocess.run`` would
+    not — see the module-level comment above on why this suite avoids
+    subprocesses.
+    """
+    import runpy
+
+    saved_argv = sys.argv
+    sys.argv = ["taskq_api", "key", "create", "--scope", "read"]
+    try:
+        runpy.run_module(
+            "taskq_api",
+            run_name="__main__",
+            alter_sys=True,
+        )
+    except SystemExit as exc:
+        assert exc.code == 0, (
+            f"python -m taskq_api exited non-zero: code={exc.code!r}"
+        )
+    finally:
+        sys.argv = saved_argv
