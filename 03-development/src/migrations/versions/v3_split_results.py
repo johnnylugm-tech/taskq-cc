@@ -87,14 +87,27 @@ def downgrade():  # noqa: ANN001,ANN201  — explicit type annotations would bre
     # 1. Re-add the column on ``tasks`` (nullable; the backfill below
     #    populates it before any non-NULL constraint could fire).
     op.add_column("tasks", sa.Column("result_json", sa.Text(), nullable=True))
-    # 2. Reverse the data split: copy each ``task_results.result_json``
-    #    row back into the matching ``tasks.result_json`` column.
+    # 2. Reverse the data split: copy each task's most-recent
+    #    ``task_results.result_json`` back into the matching
+    #    ``tasks.result_json`` column. The legacy schema only stores
+    #    ONE result per task, so a task with multiple run rows must
+    #    collapse to a single pick — the same order
+    #    ``task_repo.list_runs`` returns (started_at DESC, id DESC).
+    # A naive correlated subquery returns multiple rows under the
+    # multi-run case and silently picks an arbitrary one on SQLite
+    # (a real data-loss bug); ``IN (SELECT MAX(id) ...)`` is
+    # deterministic and dialect-portable.
     bind = op.get_bind()
     bind.execute(
         sa.text(
             "UPDATE tasks SET result_json = ("
             "SELECT result_json FROM task_results "
-            "WHERE task_results.task_id = tasks.id"
+            "WHERE task_results.task_id = tasks.id "
+            "AND task_results.id = ("
+            "SELECT id FROM task_results "
+            "WHERE task_results.task_id = tasks.id "
+            "ORDER BY started_at DESC, id DESC LIMIT 1"
+            ")"
             ")"
         )
     )
