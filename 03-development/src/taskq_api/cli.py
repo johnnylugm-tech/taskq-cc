@@ -64,8 +64,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
     handler = _HANDLERS.get((args.command, args.key_command))
     if handler is None:
+        # parser.error prints a usage message and calls sys.exit(2); the
+        # statement after it is unreachable.
         parser.error(f"unhandled command: {args.command!r}")
-        return 2
     return handler(args)
 
 

@@ -1026,3 +1026,63 @@ def test_main_module_imports_for_python_dash_m():
 
     mod = importlib.import_module("taskq_api.__main__")
     assert hasattr(mod, "main")
+
+
+# -- Coverage-fix: exercise the __main__ guards in cli.py and __main__.py --
+# The lint rule ``py-pragma-no-cover`` removed the previous ``# pragma: no
+# cover`` markers on the ``if __name__ == "__main__":`` guards. These guards
+# are reachable only when the module is the program entry point; the
+# subprocess tests below drive both ``python -m taskq_api`` and
+# ``python taskq_api/cli.py`` through real interpreter invocations so the
+# guards execute under coverage.
+def test_cli_module_runs_via_python_dash_m_subprocess():
+    """``python -m taskq_api --help`` exercises cli.py:72-73 + __main__.py:15-16."""
+    proc = subprocess.run(  # noqa: F821 - subprocess imported at top of file
+        [sys.executable, "-m", "taskq_api", "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**os.environ, "PYTHONPATH": "src"},
+        cwd="/Users/johnny/projects/taskq-cc/03-development",
+    )
+    # --help exits 0; the test only cares that the subprocess ran the
+    # ``if __name__ == "__main__":`` guards.
+    assert proc.returncode == 0, proc.stderr
+    assert "usage:" in proc.stdout.lower()
+
+
+def test_cli_module_runs_via_script_path_subprocess():
+    """``python taskq_api/cli.py --help`` exercises cli.py:72-73 directly."""
+    proc = subprocess.run(
+        [sys.executable, "src/taskq_api/cli.py", "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**os.environ, "PYTHONPATH": "src"},
+        cwd="/Users/johnny/projects/taskq-cc/03-development",
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "usage:" in proc.stdout.lower()
+
+
+def test_cli_main_unhandled_command_calls_parser_error():
+    """cli.py:67 — unhandled command triggers parser.error (exits with code 2).
+
+    ``parser.error`` invokes ``sys.exit(2)``; we wrap ``main()`` in
+    ``SystemExit`` capture so the test can assert on the exit code without
+    propagating the exception.
+    """
+    import pytest
+
+    from taskq_api.cli import _HANDLERS, main
+
+    saved = dict(_HANDLERS)
+    try:
+        # Empty the handler table so every argv is "unhandled".
+        _HANDLERS.clear()
+        with pytest.raises(SystemExit) as exc_info:
+            main(["any-command", "any-key-command"])
+        assert exc_info.value.code == 2
+    finally:
+        _HANDLERS.clear()
+        _HANDLERS.update(saved)
