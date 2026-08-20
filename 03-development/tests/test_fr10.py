@@ -843,3 +843,103 @@ def test_problem_error_middleware_passes_through_non_http_scope():
     assert calls[0]["type"] == "lifespan"
     assert calls[0]["receive"] is _noop_receive
     assert calls[0]["send"] is _noop_send
+
+
+def test_enforce_rate_limit_swallows_bucket_engine_exception(monkeypatch):
+    """deps.py:53-56 — bucket-engine failures are admitted (not 500'd).
+
+    Gate-1 coverage for ``taskq_api.api.deps`` requires the
+    ``except Exception: return`` branch inside :func:`_enforce_rate_limit`
+    to be executed. FR-09 SEC-T-05 + AC-5.3 mandate that a broken
+    bucket engine (e.g. driver not installed, invalid DB path) MUST
+    admit the request so /v1/metrics stays reachable — surfacing a 500
+    here would also leak the URL into logs. We simulate the broken
+    engine by making ``ratelimit.check`` raise and assert the request
+    completes with a 200 instead of a 500.
+    """
+    from taskq_api.api import deps as deps_module_local
+    from taskq_api.service import ratelimit as ratelimit_module_local
+
+    def _raise(*_args, **_kwargs):
+        raise RuntimeError("simulated bucket-engine failure")
+
+    monkeypatch.setattr(ratelimit_module_local, "check", _raise)
+    monkeypatch.setattr(deps_module_local, "ratelimit", ratelimit_module_local)
+
+    # Hit an authenticated /v1/* route — without the swallowed
+    # exception the bucket failure would propagate as a 500.
+    resp = _async_request("GET", "/v1/tasks", api_key="read_key")
+    assert resp.status_code == 200, (
+        f"bucket-engine failure must be admitted (FR-09 SEC-T-05 + AC-5.3); "
+        f"got {resp.status_code} body={resp.text!r}"
+    )
+
+
+def test_require_api_key_standalone_resolves_via_resolve_or_raise():
+    """deps.py:111 — standalone ``require_api_key`` exercises its return branch.
+
+    Gate-1 coverage for ``taskq_api.api.deps`` requires the single
+    ``return _resolve_or_raise(x_api_key)`` statement at line 111 to be
+    executed. Production routes mount :func:`require_api_key_with_scope`
+    instead, so the standalone function is a no-op in the integration
+    sweep. AC-4.3's introspection walks its ``__name__`` so the symbol
+    stays exported (deps.py:106-107 docstring) — this unit-level test
+    drives the body directly.
+    """
+    from taskq_api.api.deps import require_api_key
+
+    # When the key resolves, the function returns the (key_id, scope) tuple.
+    result_ok = require_api_key("read_key")
+    assert result_ok == ("key-read", "read"), (
+        f"require_api_key must return the resolved tuple; got {result_ok!r}"
+    )
+
+    # When the key does not resolve, _resolve_or_raise raises a 401
+    # Problem — also exercises the same ``return`` line because the
+    # call site executes the body regardless of the outcome.
+    from taskq_api.errors import Problem
+
+    with pytest.raises(Problem) as excinfo:
+        require_api_key("bogus_key_does_not_resolve")
+    assert excinfo.value.status == 401
+
+
+def test_lifespan_finally_invokes_runner_drain(monkeypatch):
+    """app.py:255-258 — lifespan shutdown awaits ``runner.drain``.
+
+    Gate-1 coverage for ``taskq_api.app`` requires the
+    ``try / yield / finally: await runner.drain(...)`` block (lines
+    255-258) to be executed end-to-end. FR-08 AC-8.3 + NFR-08 require
+    the drain to fire on shutdown so in-flight subprocesses are given
+    the ``TASKQ_DRAIN_TIMEOUT`` budget to complete. This spy confirms
+    that contract.
+    """
+    from taskq_api.service import runner as runner_module
+
+    drain_calls: list[float] = []
+    original_drain = runner_module.drain
+
+    async def _spy_drain(timeout: float):
+        drain_calls.append(timeout)
+        return await original_drain(timeout)
+
+    async def _exercise_lifespan():
+        monkeypatched_app = create_app()
+        import taskq_api.app as app_module
+
+        original_runner = app_module.runner
+        app_module.runner = runner_module
+        runner_module.drain = _spy_drain  # type: ignore[assignment]
+        try:
+            async with monkeypatched_app.router.lifespan_context(monkeypatched_app):
+                pass  # no in-flight work — drain returns immediately
+        finally:
+            runner_module.drain = original_drain  # type: ignore[assignment]
+            app_module.runner = original_runner
+
+    asyncio.run(_exercise_lifespan())
+
+    assert len(drain_calls) == 1, (
+        f"lifespan finally must invoke runner.drain exactly once; "
+        f"saw {len(drain_calls)} calls"
+    )
