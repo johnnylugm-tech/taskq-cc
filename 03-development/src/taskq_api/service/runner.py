@@ -131,6 +131,16 @@ class _AdmissionGate:
             return True
         return False
 
+    def release(self) -> None:
+        """Give a claimed slot back once its submission has settled.
+
+        Without this the cap would be a *lifetime* budget rather than a
+        concurrency limit: after ``cap`` submissions the gate would refuse
+        every later ``submit`` forever, even with nothing in flight.
+        """
+        if self._remaining < self._cap:
+            self._remaining += 1
+
 
 # Module-level gate + in-flight registry. The gate is recreated when
 # the configured cap changes; the in-flight set survives across calls
@@ -242,6 +252,20 @@ async def _collect_outcome(command: str, timeout: float) -> RunOutcome:
             stderr_tail="",
             duration_ms=int(timeout * 1000),
             final_state=STATE_TIMEOUT,
+        )
+    except (OSError, ValueError) as exc:
+        # The child never spawned at all — a missing binary
+        # (``FileNotFoundError``), a non-executable target
+        # (``PermissionError``), or an empty argv from ``shlex.split``
+        # (``ValueError``/``IndexError`` family). Without this branch the
+        # exception escapes the runner, no ``task_results`` row is
+        # written, and the task is stranded in ``running`` forever.
+        return RunOutcome(
+            exit_code=-1,
+            stdout_tail="",
+            stderr_tail=str(exc),
+            duration_ms=0,
+            final_state=STATE_FAILED,
         )
     return RunOutcome(
         exit_code=result.exit_code,
@@ -357,6 +381,11 @@ async def submit(
         # explicitly so a future refactor that adds a blanket
         # ``except Exception`` cannot silently absorb cancellation.
         raise
+    finally:
+        # Free the slot the moment this submission settles (success,
+        # failure, or cancellation) so the cap stays a *concurrency*
+        # limit rather than a lifetime budget.
+        gate.release()
 
 
 async def drain(timeout: float) -> DrainReport:

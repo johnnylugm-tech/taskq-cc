@@ -49,6 +49,10 @@ _MIGRATION_FAILURE_MARKER = ".migration_failure.json"
 # whenever the token bucket rejects a request. Living in the service
 # layer (rather than in :mod:`api.health`) avoids a circular import
 # between ``api.deps`` and ``api.health``.
+# [FR-09] Import-time snapshot of the rate-limit denial counter, kept
+# only as a legacy exported name. ``ratelimit.record_denial`` rebinds
+# the *service* module global, so this int never changes — the metrics
+# handler therefore reads ``ratelimit_service.denial_count`` live.
 rate_limit_denials = ratelimit_service.denial_count
 
 
@@ -228,7 +232,7 @@ def metrics_route() -> dict[str, Any]:
         "latency_p50": p50,
         "latency_p95": p95,
         "latency_p99": p99,
-        "rate_limit_denials": rate_limit_denials,
+        "rate_limit_denials": ratelimit_service.denial_count,
     }
 
 
