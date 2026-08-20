@@ -40,7 +40,13 @@ def _handle_key_create(args: argparse.Namespace) -> int:
     in human-readable form; only the SHA-256 digest lands in
     ``api_keys.key_hash``.
     """
-    key_id, plaintext, _key_hash = key_repo.create(scope=args.scope)
+    try:
+        key_id, plaintext, _key_hash = key_repo.create(scope=args.scope)
+    except Exception as exc:
+        # NFR-03: surface the failure with a non-zero exit code rather
+        # than crash with a traceback; the plaintext was never minted.
+        print(f"key create failed: {exc}", file=sys.stderr)
+        return 1
     sys.stdout.write(f"id: {key_id}\nkey: {plaintext}\n")
     sys.stdout.flush()
     return 0

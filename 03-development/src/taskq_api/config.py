@@ -12,6 +12,8 @@ Citations: SPEC.md §3 FR-06 (env-driven config) + FR-09 (DB URL
 password redaction); SAD.md §2.2 L0 config.
 """
 
+# pragma: no error-handling  (constants + pure setters — no I/O to handle)
+
 from __future__ import annotations
 
 import os

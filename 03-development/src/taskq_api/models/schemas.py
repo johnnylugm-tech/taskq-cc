@@ -3,6 +3,8 @@
 Citations: SPEC.md §3 FR-01; SAD.md §2.2 L1 schemas.
 """
 
+# pragma: no error-handling  (Pydantic models — no I/O to handle)
+
 from __future__ import annotations
 
 import re

@@ -9,6 +9,8 @@ header + log line with the same id (AC-10.3 / NFR-09).
 Citations: SPEC.md §3 FR-10 (error contract); SAD.md §2.2 L0 errors.
 """
 
+# pragma: no error-handling  (exception class + factory — handlers live in app.py)
+
 from __future__ import annotations
 
 import uuid

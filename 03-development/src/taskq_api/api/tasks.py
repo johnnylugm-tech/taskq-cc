@@ -144,7 +144,13 @@ async def run_task_endpoint(
 
     Citations: SPEC.md §3 FR-02 + NFR-10; SAD.md §2.2 L4 api.tasks.
     """
-    task = task_repo.get_by_id(task_id)
+    try:
+        task = task_repo.get_by_id(task_id)
+    except Exception:
+        # NFR-03: a transient DB error during the existence check must
+        # surface as 500 via the global exception handler, not as a
+        # confusing 404 to the client.
+        raise
     if task is None:
         raise _not_found_problem()
     run_id = uuid.uuid4().hex

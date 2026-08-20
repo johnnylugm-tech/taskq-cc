@@ -84,7 +84,13 @@ def resolve_api_key(plaintext: str) -> Optional[Tuple[str, str]]:
     if not plaintext:
         return None
     candidate = key_repo._hash(plaintext)
-    row = key_repo.get_active_by_hash(candidate)
+    try:
+        row = key_repo.get_active_by_hash(candidate)
+    except Exception:
+        # NFR-03: a DB failure on the lookup must not return an
+        # allow-decision; the dependency translates the absence into
+        # 401 just like the no-row case.
+        return None
     if row is None:
         # Constant-time sentinel compare so the no-row path does not
         # early-return faster than a row-found-with-mismatch path.

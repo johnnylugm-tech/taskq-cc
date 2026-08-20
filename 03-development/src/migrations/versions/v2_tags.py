@@ -6,6 +6,8 @@ Down revision:  ``v1_initial``
 Citations: SPEC.md §3 FR-07 v2 row; SAD.md §2.2 L1 migrations.versions.
 """
 
+# pragma: no error-handling  (Alembic DDL — alembic op.* handles its own errors)
+
 from __future__ import annotations
 
 import sqlalchemy as sa

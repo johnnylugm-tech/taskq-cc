@@ -4,6 +4,8 @@ Citations: SPEC.md §3 FR-01 (tasks) + FR-02 (task_results v3 multi-row)
 + FR-03 (api_keys); SAD.md §2.2 L1 orm.
 """
 
+# pragma: no error-handling  (ORM declarations — no I/O to handle)
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

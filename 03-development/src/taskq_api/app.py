@@ -237,13 +237,15 @@ class _ProblemErrorMiddleware:
 
 
 def create_app() -> FastAPI:
-    # [FR-08] The lifespan wires startup/shutdown around the runner:
-    # on shutdown, ``runner.drain(drain_timeout)`` gives in-flight
-    # subprocesses up to ``TASKQ_DRAIN_TIMEOUT`` to complete, then
-    # cancels stragglers and marks them ``interrupted``. The
-    # ``execute_command`` exception handler kills+waits each child
-    # before the cancellation surfaces, so no orphan PIDs are left
-    # behind on SIGTERM (NFR-08 / AC-8.3).
+    """Build the FastAPI application and wire its exception handlers.
+
+    [FR-08] The lifespan wires startup/shutdown around the runner: on
+    shutdown, ``runner.drain(drain_timeout)`` gives in-flight subprocesses
+    up to ``TASKQ_DRAIN_TIMEOUT`` to complete, then cancels stragglers
+    and marks them ``interrupted``. The ``execute_command`` exception
+    handler kills+waits each child before the cancellation surfaces, so
+    no orphan PIDs are left behind on SIGTERM (NFR-08 / AC-8.3).
+    """
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         # No-op startup — the runner is lazily initialised on first

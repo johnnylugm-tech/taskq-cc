@@ -21,9 +21,15 @@ from taskq_api.repository.session import session_scope
 
 def task_counts_by_status() -> Mapping[str, int]:
     """Return ``{status: row_count}`` for every status with at least one task."""
-    with session_scope() as session:
-        stmt = select(Task.status, func.count(Task.id)).group_by(Task.status)
-        return {row[0]: int(row[1]) for row in session.execute(stmt).all()}
+    try:
+        with session_scope() as session:
+            stmt = select(Task.status, func.count(Task.id)).group_by(Task.status)
+            return {row[0]: int(row[1]) for row in session.execute(stmt).all()}
+    except Exception:
+        # NFR-03: ``/v1/metrics`` must return 200 even when an aggregation
+        # query fails; the surface degrades to an empty mapping rather
+        # than a 5xx that drags down the whole observability surface.
+        return {}
 
 
 def _percentile(sorted_values: list[int], pct: float) -> float:
@@ -50,17 +56,22 @@ def latency_percentiles() -> tuple[float, float, float]:
     duration (i.e. the run reached a terminal state). Sorted in SQL so
     we never have to sort the full set in Python.
     """
-    with session_scope() as session:
-        stmt = (
-            select(TaskResult.duration_ms)
-            .where(TaskResult.duration_ms.is_not(None))
-            .order_by(TaskResult.duration_ms.asc())
-        )
-        values = [
-            int(v)
-            for v in session.execute(stmt).scalars().all()
-            if v is not None
-        ]
+    try:
+        with session_scope() as session:
+            stmt = (
+                select(TaskResult.duration_ms)
+                .where(TaskResult.duration_ms.is_not(None))
+                .order_by(TaskResult.duration_ms.asc())
+            )
+            values = [
+                int(v)
+                for v in session.execute(stmt).scalars().all()
+                if v is not None
+            ]
+    except Exception:
+        # NFR-03: latency surface degrades to zeros rather than a 5xx;
+        # the metric is best-effort, the API contract is "200 + JSON".
+        return (0.0, 0.0, 0.0)
     return (
         _percentile(values, 50.0),
         _percentile(values, 95.0),

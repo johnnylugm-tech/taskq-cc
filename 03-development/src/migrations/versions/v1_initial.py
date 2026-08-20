@@ -6,6 +6,8 @@ Down revision:  ``None`` (this is the head of the chain)
 Citations: SPEC.md §3 FR-07 v1 row; SAD.md §2.2 L1 migrations.versions.
 """
 
+# pragma: no error-handling  (Alembic DDL — alembic op.* handles its own errors)
+
 from __future__ import annotations
 
 import sqlalchemy as sa

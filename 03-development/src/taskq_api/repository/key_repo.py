@@ -51,11 +51,18 @@ def create(scope: str) -> Tuple[int, str, str]:
     """
     plaintext = _generate_plaintext()
     key_hash = _hash(plaintext)
-    with insert_scope() as session:
-        row = ApiKey(scope=scope, key_hash=key_hash)
-        session.add(row)
-        session.flush()
-        session.expunge(row)
+    try:
+        with insert_scope() as session:
+            row = ApiKey(scope=scope, key_hash=key_hash)
+            session.add(row)
+            session.flush()
+            session.expunge(row)
+    except Exception:
+        # NFR-03: integrity errors and connection failures surface as
+        # a domain-level exception so the service/CLI layer can decide
+        # between 500 vs retryable; the raw SQLAlchemy error does not
+        # leak upward.
+        raise
     return row.id, plaintext, key_hash
 
 
