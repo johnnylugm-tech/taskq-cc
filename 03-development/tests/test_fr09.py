@@ -830,3 +830,225 @@ def test_percentile_pct_fifty_returns_median():
     from taskq_api.repository.metrics import _percentile
 
     assert _percentile([10, 20, 30, 40, 50], 50.0) == 30.0
+
+
+# -- Coverage-fix: ``metrics_route`` defensive except branches (health.py:222-229) ----
+def test_coverage_metrics_route_task_counts_exception_returns_empty_dict():
+    """COVERAGE-FIX FR-09: ``metrics_repo.task_counts_by_status()`` raising falls back to ``{}``.
+
+    Exercises the ``except Exception: task_counts = {}`` branch at
+    health.py lines 224-225. The route MUST never 500 because of a
+    metrics aggregation failure — per NFR-03 the surface degrades to an
+    empty mapping.
+    """
+    from taskq_api.api import health as health_module
+    from taskq_api.repository import metrics as metrics_repo
+
+    original_task_counts = metrics_repo.task_counts_by_status
+    metrics_repo.task_counts_by_status = lambda: (_ for _ in ()).throw(
+        RuntimeError("simulated task-counts failure")
+    )
+    health_module.metrics_repo.task_counts_by_status = (
+        metrics_repo.task_counts_by_status
+    )
+    try:
+        response = _request("GET", "/v1/metrics", api_key="admin_key")
+    finally:
+        metrics_repo.task_counts_by_status = original_task_counts
+        health_module.metrics_repo.task_counts_by_status = original_task_counts
+
+    assert response.status_code == 200, (
+        f"/v1/metrics must return 200 even when task_counts query fails; "
+        f"got {response.status_code} with body {response.text!r}"
+    )
+    body = json_module.loads(response.text)
+    assert body["task_counts"] == {}, (
+        f"Failed task_counts must degrade to empty dict; got {body['task_counts']!r}"
+    )
+
+
+def test_coverage_metrics_route_latency_exception_returns_zeros():
+    """COVERAGE-FIX FR-09: ``metrics_repo.latency_percentiles()`` raising falls back to (0, 0, 0).
+
+    Exercises the ``except Exception: p50 = p95 = p99 = 0.0`` branch at
+    health.py lines 228-229.
+    """
+    from taskq_api.api import health as health_module
+    from taskq_api.repository import metrics as metrics_repo
+
+    original_latency = metrics_repo.latency_percentiles
+    metrics_repo.latency_percentiles = lambda: (_ for _ in ()).throw(
+        RuntimeError("simulated latency failure")
+    )
+    health_module.metrics_repo.latency_percentiles = (
+        metrics_repo.latency_percentiles
+    )
+    try:
+        response = _request("GET", "/v1/metrics", api_key="admin_key")
+    finally:
+        metrics_repo.latency_percentiles = original_latency
+        health_module.metrics_repo.latency_percentiles = original_latency
+
+    assert response.status_code == 200, (
+        f"/v1/metrics must return 200 even when latency query fails; "
+        f"got {response.status_code} with body {response.text!r}"
+    )
+    body = json_module.loads(response.text)
+    assert body["latency_p50"] == 0.0
+    assert body["latency_p95"] == 0.0
+    assert body["latency_p99"] == 0.0
+
+
+# -- Coverage-fix: ``_sanitize_detail`` / 500 middleware (app.py:85-88, 155-156, 223-236) ----
+def test_coverage_app_500_middleware_sanitizes_denylist_substring():
+    """COVERAGE-FIX FR-09: an unhandled ``Exception`` flows through the catch-all 500 middleware.
+
+    Triggers a route that raises ``RuntimeError`` whose message contains
+    a denylist substring (``SQL`` + ``/Users``). Exercises:
+
+      * app.py lines 223-236 — the ``except Exception`` branch of the
+        ``_ProblemErrorMiddleware.__call__`` (builds the 500 body,
+        emits the log, sends the response).
+      * app.py line 155 — ``_make_500_body`` calls ``_sanitize_detail``.
+      * app.py lines 85-88 — ``_sanitize_detail`` detects the
+        ``_INTERNAL_DETAIL_DENYLIST`` substring and returns the generic
+        ``"Internal server error."`` sentinel so the body cannot leak
+        the raw message.
+    """
+    from fastapi import APIRouter
+
+    app = create_app()
+
+    # Inject a route that raises an exception with a denylist substring.
+    boom_router = APIRouter()
+
+    @boom_router.get("/__boom_for_coverage")
+    def _boom():
+        raise RuntimeError("connection failed SQL traceback at /Users/secret/path")
+
+    app.include_router(boom_router)
+
+    async def _go() -> httpx.Response:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as client:
+            return await client.get(
+                "/__boom_for_coverage", headers={"X-API-Key": "admin_key"}
+            )
+
+    response = asyncio.run(_go())
+
+    assert response.status_code == 500, (
+        f"Unhandled RuntimeError must surface as 500; "
+        f"got {response.status_code} with body {response.text!r}"
+    )
+    body_text = response.text
+    # The denylist substring must NOT appear in the response body.
+    for needle in ("SQL", "/Users", "Traceback"):
+        assert needle not in body_text, (
+            f"500 body must not contain denylist substring {needle!r}; "
+            f"got body {body_text!r}"
+        )
+    # The generic sentinel MUST appear in its place.
+    assert "Internal server error" in body_text, (
+        f"500 body must carry the sanitised sentinel; got {body_text!r}"
+    )
+
+
+# -- Coverage-fix: ``_ProblemErrorMiddleware`` non-http scope (app.py:218-220) ----
+def test_coverage_app_500_middleware_non_http_scope_passthrough():
+    """COVERAGE-FIX FR-09: ``_ProblemErrorMiddleware`` passes non-http scopes through unchanged.
+
+    Exercises app.py lines 219-220 — the ``if scope["type"] != "http"``
+    branch. The middleware MUST short-circuit lifespan / websocket
+    scopes to the inner app without invoking the 500 masker (those
+    scopes do not carry a ``Request`` object).
+    """
+    from taskq_api.app import _ProblemErrorMiddleware
+
+    inner_calls: list[dict] = []
+
+    async def _fake_app(scope, receive, send):
+        inner_calls.append(scope)
+        # Drain the receive generator so it does not deadlock.
+        async def _noop_receive():
+            return {"type": "lifespan.startup"}
+
+        await send({"type": "lifespan.startup.complete"})
+        # Drive the receive channel so receive() is awaited once.
+        await _noop_receive()
+
+    middleware = _ProblemErrorMiddleware(_fake_app)
+
+    async def _noop_send(message):
+        return None
+
+    async def _noop_receive():
+        return {"type": "lifespan.startup"}
+
+    asyncio.run(
+        middleware(
+            {"type": "lifespan"},
+            _noop_receive,
+            _noop_send,
+        )
+    )
+
+    assert len(inner_calls) == 1, (
+        f"Non-http scope must be forwarded to the inner app exactly once; "
+        f"saw {len(inner_calls)} calls"
+    )
+    assert inner_calls[0]["type"] == "lifespan", (
+        f"Inner app must receive the original non-http scope; "
+        f"got type={inner_calls[0].get('type')!r}"
+    )
+
+
+# -- Coverage-fix: ``_sanitize_detail`` clean-message branch (app.py:88) ----
+def test_coverage_app_500_middleware_preserves_clean_message():
+    """COVERAGE-FIX FR-09: an unhandled ``Exception`` with a clean message keeps the original ``detail``.
+
+    Exercises app.py line 88 — the ``return message`` branch of
+    ``_sanitize_detail`` when the raw exception message does NOT
+    contain any denylist substring. The body MUST echo the raw message
+    so operators can triage the failure (per AC-10.2 / SEC-T-05, only
+    denylist substrings are scrubbed — clean messages pass through).
+    """
+    from fastapi import APIRouter
+
+    app = create_app()
+
+    boom_router = APIRouter()
+
+    safe_message = "operation aborted because the queue was empty"
+
+    @boom_router.get("/__boom_clean_for_coverage")
+    def _boom_clean():
+        raise RuntimeError(safe_message)
+
+    app.include_router(boom_router)
+
+    async def _go() -> httpx.Response:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as client:
+            return await client.get(
+                "/__boom_clean_for_coverage", headers={"X-API-Key": "admin_key"}
+            )
+
+    response = asyncio.run(_go())
+
+    assert response.status_code == 500, (
+        f"Unhandled RuntimeError must surface as 500; "
+        f"got {response.status_code} with body {response.text!r}"
+    )
+    body_text = response.text
+    assert safe_message in body_text, (
+        f"500 body must echo the clean (non-denylist) exception message; "
+        f"got body {body_text!r}"
+    )
+    assert "Internal server error." not in body_text, (
+        f"Clean message must NOT be replaced by the sentinel; got {body_text!r}"
+    )
