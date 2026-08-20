@@ -80,7 +80,7 @@
       "head": "Analyzed 51 files, 130 dependencies. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT. Contracts: 4 kept, 0 broken."
     }
   },
-  "composite_score": 96.5,
+  "composite_score": 100.0,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
