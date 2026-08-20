@@ -62,11 +62,14 @@ import os
 import re
 import subprocess
 import sys
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
+from sqlalchemy import create_engine, text
 
 # ---------------------------------------------------------------------------
 # Standard top-level imports — RED state.
@@ -1035,6 +1038,170 @@ def test_main_module_imports_for_python_dash_m():
 # subprocess tests below drive both ``python -m taskq_api`` and
 # ``python taskq_api/cli.py`` through real interpreter invocations so the
 # guards execute under coverage.
+def test_auth_resolve_api_key_returns_none_when_repo_lookup_raises():
+    """Coverage-fix — ``auth.resolve_api_key`` DB-failure path (auth.py:89-93).
+
+    When ``key_repo.get_active_by_hash`` raises (DB unavailable, integrity
+    error, dropped connection), :func:`resolve_api_key` must return
+    ``None`` rather than leak the exception — the auth dependency turns
+    ``None`` into a 401 just like the no-row case (NFR-03).
+    """
+    def _stub_raising(hash_value):  # noqa: ANN001
+        raise RuntimeError("simulated DB failure")
+
+    with patch.object(key_repo, "get_active_by_hash", _stub_raising):
+        result = auth.resolve_api_key("any_plaintext")
+
+    assert result is None, (
+        "COVERAGE-FIX FR-03: a DB failure during lookup must surface as "
+        f"None (the dep turns None into 401); got {result!r}"
+    )
+
+
+def test_key_repo_create_propagates_integrity_error():
+    """Coverage-fix — ``key_repo.create`` integrity-error path (key_repo.py:60-65).
+
+    The handler ``except Exception: raise`` in :func:`create` is a
+    no-op re-raise that exists to document the NFR-03 boundary in one
+    place. We must exercise it so the missing-statement counter drops
+    to zero on the file. The branch is entered when ``insert_scope``
+    raises (e.g. a duplicate ``key_hash`` under the UNIQUE constraint,
+    or a connection failure); the exception type is preserved and
+    re-raised unchanged.
+    """
+    class _UniqueViolation(RuntimeError):
+        pass
+
+    @contextmanager
+    def _raising_scope():
+        raise _UniqueViolation("simulated UNIQUE violation on api_keys.key_hash")
+        yield  # pragma: no cover — generator marker, never reached
+
+    with patch("taskq_api.repository.key_repo.insert_scope", _raising_scope):
+        with pytest.raises(_UniqueViolation) as exc_info:
+            key_repo.create("read")
+
+    assert "simulated UNIQUE violation" in str(exc_info.value), (
+        "COVERAGE-FIX FR-03: key_repo.create must re-raise the original "
+        f"exception unchanged; got {exc_info.value!r}"
+    )
+
+
+def test_require_api_key_standalone_returns_resolved_tuple_for_valid_key():
+    """Coverage-fix — ``deps.require_api_key`` body (deps.py:111).
+
+    Production routes go through :func:`require_api_key_with_scope`, so
+    the standalone :func:`require_api_key` body (``return
+    _resolve_or_raise(x_api_key)``) is otherwise unreachable. Calling it
+    directly (skipping the FastAPI DI layer by supplying the header
+    value) exercises the line and proves the standalone entry point
+    still works for any future non-scope-gated route.
+    """
+    from taskq_api.api import deps as deps_module
+
+    plaintext = "standalone_valid_key"
+    candidate_hash = hashlib.sha256(plaintext.encode()).hexdigest()
+
+    db_url = os.environ["TASKQ_DB_URL"]
+    engine = create_engine(db_url)
+    from taskq_api.models.orm import Base
+
+    Base.metadata.create_all(engine)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "CREATE TABLE IF NOT EXISTS api_keys ("
+                "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                "  key_hash VARCHAR(64) NOT NULL UNIQUE,"
+                "  scope VARCHAR(32) NOT NULL,"
+                "  revoked_at TIMESTAMP NULL"
+                ")"
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO api_keys (key_hash, scope, revoked_at) "
+                "VALUES (:h, :s, NULL)"
+            ),
+            {"h": candidate_hash, "s": "read"},
+        )
+
+    resolved = deps_module.require_api_key(x_api_key=plaintext)
+    assert isinstance(resolved, tuple) and len(resolved) == 2, (
+        f"COVERAGE-FIX FR-03: require_api_key must return (key_id, scope); "
+        f"got {resolved!r}"
+    )
+    _, scope = resolved
+    assert scope == "read", (
+        f"COVERAGE-FIX FR-03: scope must round-trip through require_api_key; "
+        f"got {scope!r}"
+    )
+
+
+def test_require_api_key_standalone_raises_401_for_missing_header():
+    """Coverage-fix — ``deps.require_api_key`` missing-header branch.
+
+    Companion to the success-path test above: with no X-API-Key, the
+    standalone dep must raise the same 401 problem the closure raises
+    so future routes that call ``require_api_key`` directly inherit the
+    contract.
+    """
+    from taskq_api.api import deps as deps_module
+    from taskq_api.errors import Problem
+
+    with pytest.raises(Problem) as exc_info:
+        deps_module.require_api_key(x_api_key=None)
+    problem = exc_info.value
+    assert problem.status == 401
+    assert problem.title == "Unauthorized"
+    assert problem.detail == "Missing or invalid API key."
+    assert problem.type_uri == "/errors/unauthorized"
+
+
+def test_enforce_rate_limit_admits_when_ratelimit_check_raises():
+    """Coverage-fix — ``deps._enforce_rate_limit`` exception path (deps.py:53-56).
+
+    The dep must admit a request when the bucket engine itself is
+    unavailable (FR-09: 500 on the bucket would mask the metrics
+    endpoint). We monkeypatch ``ratelimit.check`` to raise so the
+    ``except Exception: return`` branch is exercised.
+    """
+    from taskq_api.api import deps as deps_module
+
+    def _raising_check(_key_id):
+        raise RuntimeError("simulated bucket-engine failure")
+
+    with patch("taskq_api.api.deps.ratelimit.check", _raising_check):
+        # Must not raise — admission rather than 500 is the contract.
+        deps_module._enforce_rate_limit("any_key_id")
+
+
+def test_enforce_rate_limit_raises_429_problem_when_bucket_empty():
+    """Coverage-fix — ``deps._enforce_rate_limit`` denial path (deps.py:60-61).
+
+    When :func:`ratelimit.check` returns ``(False, retry_after)`` (bucket
+    empty), the dep must call :func:`record_denial` so ``/v1/metrics``
+    can report the throttling, then raise a 429 problem carrying a
+    ``Retry-After`` header (FR-05 / SPEC §7 row 429).
+    """
+    from taskq_api.api import deps as deps_module
+    from taskq_api.errors import Problem
+
+    def _stub_denied(_key_id):
+        return (False, 1)
+
+    with patch("taskq_api.api.deps.ratelimit.check", _stub_denied):
+        with pytest.raises(Problem) as exc_info:
+            deps_module._enforce_rate_limit("any_key_id")
+
+    problem = exc_info.value
+    assert problem.status == 429
+    assert problem.title == "Too Many Requests"
+    assert problem.detail == "Rate limit exceeded."
+    assert problem.type_uri == "/errors/rate-limit"
+    assert problem.headers == {"Retry-After": "1"}
+
+
 def test_cli_module_runs_via_python_dash_m_subprocess():
     """``python -m taskq_api --help`` exercises cli.py:72-73 + __main__.py:15-16."""
     proc = subprocess.run(  # noqa: F821 - subprocess imported at top of file
