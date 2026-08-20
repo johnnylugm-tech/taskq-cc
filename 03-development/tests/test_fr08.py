@@ -1137,3 +1137,203 @@ def test_drain_handles_pending_task_with_missing_task_id_defensively():  # NFR-0
         "from the registry (defensive continue branch) — the count "
         f"of marked-interrupted tasks is {result['stragglers']}"
     )
+
+
+def test_problem_error_middleware_passes_through_non_http_scope():  # NFR-03 (lifespan + websocket scope untouched by 500 mask)
+    """[FR-10] ``_ProblemErrorMiddleware`` forwards non-http ASGI scopes untouched.
+
+    Covers ``app.py`` lines 100-101 — the ``if scope["type"] != "http"``
+    passthrough branch of ``_ProblemErrorMiddleware.__call__`` that lets
+    ``lifespan`` and ``websocket`` scopes reach the wrapped app without
+    the catch-all ``except Exception`` getting in the way. Without this
+    branch the middleware would wrap every startup/shutdown event in a
+    500 envelope, which would break FastAPI's lifespan protocol.
+
+    We construct a synthetic ``lifespan`` scope, drive the middleware
+    through it, and assert the wrapped app receives the scope verbatim
+    and the middleware does not raise or short-circuit.
+    """
+    from taskq_api.app import _ProblemErrorMiddleware
+
+    sent_messages: list[dict] = []
+
+    async def _inner_app(scope, receive, send):  # noqa: ANN001
+        # Echo the scope type and one empty message so we can prove the
+        # middleware forwarded the scope without raising.
+        await send({"type": "lifespan.startup.complete"})
+
+    received_scopes: list[dict] = []
+
+    async def _wrapped(scope, receive, send):  # noqa: ANN001
+        received_scopes.append(dict(scope))
+
+    middleware = _ProblemErrorMiddleware(_wrapped)
+
+    async def _noop_receive():
+        return {"type": "lifespan.startup"}
+
+    async def _noop_send(message):
+        sent_messages.append(message)
+
+    _run_async(middleware({"type": "lifespan", "asgi": {"version": "3.0"}}, _noop_receive, _noop_send))
+
+    assert received_scopes, (
+        "FR-08: non-http scope must reach the wrapped app — the "
+        "passthrough branch (app.py lines 100-101) was not exercised"
+    )
+    assert received_scopes[0]["type"] == "lifespan", (
+        "FR-08: non-http scope must be forwarded verbatim, preserving "
+        f"the scope type; got {received_scopes[0]['type']!r}"
+    )
+
+
+def test_problem_error_middleware_masks_unhandled_exception_with_sanitised_500():  # NFR-03, NFR-09 (500 envelope + scrub + correlation)
+    """[FR-10] The catch-all middleware converts an unhandled ``Exception`` into a sanitised 500 + problem+json.
+
+    Covers ``app.py`` lines 100-114 (``_ProblemErrorMiddleware.__call__``
+    except-branch) plus 36-37 (``_make_500_body``) plus 65-68
+    (``_sanitize_detail`` needle-in-message branch). The middleware is
+    what satisfies AC-10.2 / SEC-T-05: the response body is
+    ``"Internal server error."`` regardless of what the raw exception
+    contained, and ``X-Correlation-Id`` is re-emitted for log
+    stitching. We assert both branches in a single end-to-end test.
+    """
+    from taskq_api.app import _ProblemErrorMiddleware
+
+    async def _inner_app(scope, receive, send):  # noqa: ANN001
+        # Raise a message containing EVERY denylist substring so the
+        # ``needle in message`` branch in ``_sanitize_detail`` fires.
+        raise RuntimeError(
+            "Traceback (most recent call last):\n"
+            "  File '/Users/secret/path/secret.py'\n"
+            "  SQL: SELECT * FROM users WHERE id=1\n"
+        )
+
+    sent: list[dict] = []
+
+    async def _send(message):
+        sent.append(message)
+
+    async def _receive():
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "method": "GET",
+        "path": "/v1/trigger-500",
+        "headers": [(b"x-correlation-id", b"fr08-cid-500")],
+    }
+
+    middleware = _ProblemErrorMiddleware(_inner_app)
+    _run_async(middleware(scope, _receive, _send))
+
+    body_messages = [m for m in sent if m["type"] == "http.response.body"]
+    start_messages = [m for m in sent if m["type"] == "http.response.start"]
+    assert start_messages, (
+        "FR-08: middleware must emit http.response.start after masking "
+        "the unhandled exception"
+    )
+    assert start_messages[0]["status"] == 500, (
+        f"FR-08: masked response must carry 500 status; got "
+        f"{start_messages[0]['status']}"
+    )
+    # The response header MUST re-emit the correlation id (NFR-09).
+    header_pairs = dict(start_messages[0]["headers"])
+    assert header_pairs.get(b"x-correlation-id") == b"fr08-cid-500", (
+        "FR-08: masked 500 must re-emit X-Correlation-Id from the "
+        "incoming request (NFR-09 stitching)"
+    )
+    assert body_messages, (
+        "FR-08: middleware must emit http.response.body after the 500"
+    )
+    import json as _json
+    body = _json.loads(b"".join(m["body"] for m in body_messages))
+    assert body["status"] == 500, (
+        f"FR-08: 500 body must carry status=500; got {body!r}"
+    )
+    # The denylist-hit branch must scrub the raw message — the body
+    # detail cannot contain Traceback, SQL, /Users, etc.
+    assert body["detail"] == "Internal server error.", (
+        "FR-08: 500 detail must be the sanitised sentinel when raw "
+        f"message contains a denylist needle; got {body['detail']!r}"
+    )
+
+
+def test_collect_outcome_handles_os_error_for_missing_binary():  # NFR-08 (missing-binary failure must persist task_results row)
+    """[FR-08] ``_collect_outcome`` converts ``FileNotFoundError`` into ``STATE_FAILED``.
+
+    Covers ``runner.py`` line 145 — the ``except (OSError, ValueError)``
+    branch of ``_collect_outcome`` that fires when ``execute_command``
+    cannot spawn the child at all (a missing binary raises
+    ``FileNotFoundError`` from ``asyncio.create_subprocess_exec``).
+    Without this branch the exception escapes, no ``task_results`` row
+    is written, and the task is stranded in ``running`` forever
+    (AC-8.2 / NFR-08). We drive the branch with a non-existent binary
+    and assert the returned ``RunOutcome`` is ``STATE_FAILED`` with
+    ``stderr_tail`` carrying the original error message.
+    """
+    import taskq_api.service.runner as runner_module
+
+    async def _exercise():
+        return await runner_module._collect_outcome(
+            "nonexistent_fr08_binary_xyz_does_not_exist", timeout=5.0
+        )
+
+    outcome = _run_async(_exercise())
+    result = {
+        "final_state": outcome.final_state,
+        "exit_code": outcome.exit_code,
+        "stderr_tail": outcome.stderr_tail,
+        "duration_ms": outcome.duration_ms,
+    }
+    assert result["final_state"] == "failed", (
+        "FR-08: missing-binary OSError must surface as STATE_FAILED via "
+        f"the _collect_outcome except-branch (runner.py line 145); got "
+        f"final_state={result['final_state']!r}"
+    )
+    assert result["exit_code"] == -1, (
+        f"FR-08: STATE_FAILED outcome must carry exit_code=-1 sentinel; "
+        f"got {result['exit_code']}"
+    )
+    assert result["stderr_tail"], (
+        "FR-08: STATE_FAILED outcome must carry stderr_tail with the "
+        "original OSError message so operators can debug the missing "
+        "binary"
+    )
+    assert result["duration_ms"] == 0, (
+        "FR-08: STATE_FAILED-from-OSError must carry duration_ms=0 — "
+        "the child never started so there is no execution time to "
+        f"record; got {result['duration_ms']}"
+    )
+
+
+def test_sanitize_detail_returns_message_unchanged_when_no_denylist_needle():  # NFR-02 (SEC-T-05 — non-denied messages pass through)
+    """[FR-10] ``_sanitize_detail`` returns the message verbatim when no needle is present.
+
+    Covers ``app.py`` line 67 — the trailing ``return message`` of
+    ``_sanitize_detail`` that fires when none of the
+    ``_INTERNAL_DETAIL_DENYLIST`` substrings appear in the message.
+    The whole point of the sanitiser is to be transparent for benign
+    messages; this branch proves that contract. We exercise the
+    pure helper directly so the test is a deterministic unit
+    (no ASGI plumbing needed) and the branch is reachable even if
+    the catch-all middleware path is reworked in a future refactor.
+    """
+    from taskq_api.app import _sanitize_detail
+
+    benign = "Everything is fine — no internals leaked."
+    result = _sanitize_detail(benign)
+    assert result == benign, (
+        "FR-08: _sanitize_detail must return benign messages unchanged "
+        f"(app.py line 67); got {result!r}"
+    )
+
+    # And a second message that contains one needle — to prove the
+    # sanitiser fires on the denylist branch too (line 65-66) and the
+    # two branches are mutually exclusive.
+    denied = "Traceback caught at boundary"
+    assert _sanitize_detail(denied) == "Internal server error.", (
+        "FR-08: _sanitize_detail must scrub denylist hits; got "
+        f"{_sanitize_detail(denied)!r}"
+    )
