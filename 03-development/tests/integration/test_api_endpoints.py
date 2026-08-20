@@ -448,7 +448,6 @@ def test_invalid_api_key_returns_401() -> None:
 
 def test_metrics_failure_path_returns_zero_counts() -> None:
     """/v1/metrics with a closed DB must still 200 (covers exception path)."""
-    import pytest
     from unittest.mock import patch
 
     app = create_app()
@@ -551,8 +550,6 @@ def test_metrics_response_outer_failure_returns_500() -> None:
 
     Triggers the catch-all middleware path (covers app.py:223-236).
     """
-    import pytest
-    from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
     # Build a tiny FastAPI app that always raises, then mount our
