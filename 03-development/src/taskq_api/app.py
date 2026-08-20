@@ -1,4 +1,4 @@
-"""[FR-01/FR-03/FR-08/FR-09/FR-10] FastAPI application factory.
+"""[FR-01, FR-03, FR-08, FR-09, FR-10] FastAPI application factory.
 
 Wires the routers, the RFC 7807 problem+json exception handlers, and
 the FR-09 health endpoints (``/healthz``, ``/readyz``,

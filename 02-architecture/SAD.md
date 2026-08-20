@@ -487,7 +487,7 @@ sab:
       to: independence
 
   quality_targets:
-    max_complexity: 10          # per FR-11 (CC <= 10)
+    max_complexity: 10          # per NFR-11 (CC <= 10)
     min_coverage: 100           # per SPEC §8 #2 (TOTAL 100%)
     max_coupling: 0.3           # 4-layer pyramid; forbidden contract raises hard fail
 

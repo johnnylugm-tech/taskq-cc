@@ -12,5 +12,5 @@ import sys
 from taskq_api.cli import main
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

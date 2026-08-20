@@ -386,7 +386,7 @@ def test_ac_3_3_hmac_compare_digest_successful_and_constant_time_for_wrong_key(m
 
     compare_ok = auth.resolve_api_key(candidate_plaintext)
     result = {"compare_ok": compare_ok == ("key_id_x", "read")}
-    assert result["compare_ok"] == True, (  # FR03-compare-digest-true
+    assert result["compare_ok"], (  # FR03-compare-digest-true
         "FR-03 AC-3.3: a candidate key whose sha256 digest matches a row "
         f"in api_keys must resolve to (key_id, scope); got {compare_ok!r}"
     )
@@ -394,7 +394,7 @@ def test_ac_3_3_hmac_compare_digest_successful_and_constant_time_for_wrong_key(m
     # ---- behavioural check: wrong key returns None --------------------
     compare_ok = auth.resolve_api_key("not-the-candidate")
     result = {"compare_ok": compare_ok is None}
-    assert result["compare_ok"] == False, (  # FR03-compare-digest-false
+    assert not result["compare_ok"], (  # FR03-compare-digest-false
         "FR-03 AC-3.3: a candidate key whose sha256 digest matches no "
         f"row in api_keys must resolve to None; got {compare_ok!r}"
     )
@@ -1018,3 +1018,11 @@ def test_auth_has_scope_hierarchy_all_branches():
     assert auth.has_scope("unknown", "unknown") is True, (
         "COVERAGE-FIX FR-03: both-unknown default to 0 and 0 >= 0 holds"
     )
+
+# -- Coverage-fix: import ``taskq_api.__main__`` (lines 8-12) ---------------
+def test_main_module_imports_for_python_dash_m():
+    """COVERAGE-FIX FR-03: ``python -m taskq_api`` discovers the module."""
+    import importlib
+
+    mod = importlib.import_module("taskq_api.__main__")
+    assert hasattr(mod, "main")

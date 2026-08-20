@@ -1,12 +1,16 @@
 {
-  "classified_at": "2026-08-19T07:07:13Z",
+  "classified_at": "2026-08-20T03:28:46Z",
   "cli_tools": [
     "alembic",
     "bandit",
+    "coverage",
     "fastapi",
+    "git",
+    "gitleaks",
     "httpx",
     "importlinter",
     "lint-imports",
+    "make",
     "mutmut",
     "pip-licenses",
     "piplicenses",
@@ -17,11 +21,12 @@
     "pytest_cov",
     "python3.11",
     "radon",
-    "rg",
     "sqlalchemy",
+    "sqlite3",
+    "starlette",
     "uvicorn"
   ],
-  "enforcer_sha": "9fd9a12ba13d4c33f17ec17c104ac5b9a08711ea",
+  "enforcer_sha": "0efae09329744213ea821c48c3c8d5d755e90ac0",
   "env_vars": {
     "dev_opt_in": [],
     "has_default": [
@@ -44,21 +49,14 @@
     "docker_compose_services": [],
     "required": [
       {
-        "checked_via": "python3 -c 'import sqlite3; sqlite3.sqlite_version' (3.50.4)",
-        "fix": "SQLite is bundled with Python stdlib; no separate service. The default TASKQ_DB_URL=sqlite:///./taskq.db is a file path.",
+        "checked_via": "python3 sqlite3.connect(tmpfile) -> CREATE TABLE + INSERT + SELECT count = 1; then SQLAlchemy create_engine('sqlite:///<file>', pool_pre_ping=True).connect() -> SELECT 1 = 1",
+        "fix": "No service to start — SQLite is embedded. If the file DB is unwritable: check write permissions on the project dir and TMPDIR.",
         "name": "sqlite",
         "reachable": true,
-        "type": "SQLite (file-based, stdlib)"
-      },
-      {
-        "checked_via": "pg_isready -h 127.0.0.1 -p 5432 -t 1 -> '127.0.0.1:5432 - accepting connections'",
-        "fix": "PostgreSQL is reachable but optional — project uses SQLite by default. Switch to PostgreSQL by exporting TASKQ_DB_URL=postgresql://... and re-running migrations.",
-        "name": "postgres",
-        "reachable": true,
-        "type": "PostgreSQL (optional; SQLite is the dev/test default per SPEC §2.1)"
+        "type": "SQLite 3.50.4 (file-backed; dev/test DB per SRS 2.1, and the real-file requirement of NFR-09 / AC-N9.4)"
       }
     ]
   },
   "schema_version": 1,
-  "source_sha256": "e456f7e942c3692a0ed35445b083f75bfc8b40b93b9180e888acdb9520b3b5d7"
+  "source_sha256": "f32688fa6c30b4f6c527fab159703b9a9ccc6004e6afba0fcf94c0abbd94eacc"
 }

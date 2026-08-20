@@ -1,11 +1,15 @@
 # Harness-executed: pytest-cov
 # returncode: 0
-# agent_score: 100.0 | threshold: 80.0
+# agent_score: 98.5 | threshold: 80.0
 
-........................................................................ [ 43%]
-........................................................................ [ 86%]
-......................                                                   [100%]
+........................................................................ [ 36%]
+........................................................................ [ 72%]
+........................................................                 [100%]
 =============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
 03-development/tests/test_fr07.py: 11 warnings
   /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
     util.warn_deprecated(
@@ -23,13 +27,13 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/migrations/versions/v2_tags.py               15      0   100%
 03-development/src/migrations/versions/v3_split_results.py      17      0   100%
 03-development/src/taskq_api/__init__.py                         0      0   100%
-03-development/src/taskq_api/__main__.py                         5      5     0%   8-16
+03-development/src/taskq_api/__main__.py                         3      0   100%
 03-development/src/taskq_api/api/__init__.py                     4      0   100%
 03-development/src/taskq_api/api/deps.py                        33      0   100%
 03-development/src/taskq_api/api/health.py                      67      0   100%
 03-development/src/taskq_api/api/tasks.py                       56      0   100%
 03-development/src/taskq_api/app.py                             76      0   100%
-03-development/src/taskq_api/cli.py                             29      3    90%   67-68, 73
+03-development/src/taskq_api/cli.py                             25      0   100%
 03-development/src/taskq_api/config.py                          31      0   100%
 03-development/src/taskq_api/errors.py                          20      0   100%
 03-development/src/taskq_api/models/__init__.py                  3      0   100%
@@ -37,7 +41,7 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/models/schemas.py                  35      0   100%
 03-development/src/taskq_api/repository/__init__.py              4      0   100%
 03-development/src/taskq_api/repository/key_repo.py             40      0   100%
-03-development/src/taskq_api/repository/metrics.py              24      6    75%   38-43
+03-development/src/taskq_api/repository/metrics.py              24      0   100%
 03-development/src/taskq_api/repository/rate_repo.py            63      0   100%
 03-development/src/taskq_api/repository/session.py              72      0   100%
 03-development/src/taskq_api/repository/task_repo.py            83      0   100%
@@ -47,5 +51,5 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/runner.py                 125      0   100%
 03-development/src/taskq_api/service/tasks.py                   25      0   100%
 ------------------------------------------------------------------------------------------
-TOTAL                                                          967     14    99%
-166 passed, 11 warnings in 12.37s
+TOTAL                                                          961      0   100%
+200 passed, 12 warnings in 12.86s

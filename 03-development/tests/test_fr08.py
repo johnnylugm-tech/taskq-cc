@@ -63,12 +63,8 @@ from __future__ import annotations
 
 import ast
 import asyncio
-import inspect
 import os
-import re
 import subprocess
-import sys
-import time
 from pathlib import Path
 from typing import Any
 
@@ -186,7 +182,6 @@ def test_ac_8_1_over_cap_tasks_are_queued_no_unbounded_coroutines(  # NFR-03 (no
     live_count = 0
     peak_live = 0
     total_calls = 0
-    call_lock = asyncio.Lock() if False else None  # plain int math; subprocess is sync-bound at the entry
 
     def _track_peak() -> None:
         nonlocal peak_live
@@ -214,7 +209,7 @@ def test_ac_8_1_over_cap_tasks_are_queued_no_unbounded_coroutines(  # NFR-03 (no
         # can call many times in quick succession. The GREEN agent
         # implements this entry point; until then, AttributeError.
         coros = [
-            runner.submit(task_id=i, command=f"sleep 1")  # GREEN TODO: runner.submit
+            runner.submit(task_id=i, command="sleep 1")  # GREEN TODO: runner.submit
             for i in range(task_count)
         ]
         # Wait for all of them — queued ones will run after the cap

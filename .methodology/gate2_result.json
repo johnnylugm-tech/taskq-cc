@@ -1,0 +1,585 @@
+{
+  "quality_complete": true,
+  "overall_score": null,
+  "rounds_used": 3,
+  "failing_dimensions": [],
+  "breakdown": {
+    "linting": {
+      "score": 100.0,
+      "threshold": 90,
+      "tool_output": ".methodology/gate_evidence/gate2/linting.txt",
+      "tool_evidence": "ruff check . returned 0 violations (JSON array=0); tool_score=max(0,100-0*2)=100"
+    },
+    "type_safety": {
+      "score": 100.0,
+      "threshold": 85,
+      "tool_output": ".methodology/gate_evidence/gate2/type_safety.txt",
+      "tool_evidence": "pyright 03-development/src/ reported 0 errors (summary.errorCount=0); tool_score=max(0,100-0*5)=100"
+    },
+    "test_coverage": {
+      "score": 100.0,
+      "threshold": 80,
+      "tool_output": ".methodology/gate_evidence/gate2/test_coverage.txt",
+      "tool_evidence": "pytest 03-development/tests --cov=03-development/src produced coverage.json totals.percent_covered=98.55 (>=80 threshold); 177 passed"
+    },
+    "security": {
+      "score": 100.0,
+      "threshold": 80,
+      "tool_output": ".methodology/gate_evidence/gate2/security.json",
+      "tool_evidence": "bandit -r 03-development/src/ returned HIGH=0 MEDIUM=0 LOW=0; tool_score=max(0,100-0-0-0)=100"
+    },
+    "secrets_scanning": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_output": ".methodology/gate_evidence/gate2/secrets_scanning.txt",
+      "tool_evidence": "gitleaks detect --config .gitleaks.toml reported 0 leaks (no leaks found); detect_secrets baseline match"
+    },
+    "license_compliance": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_output": ".methodology/gate_evidence/gate2/license_compliance.json",
+      "tool_evidence": "scancode --license on 03-development/src: 89 files scanned, all internal project source (no SPDX-declared licenses, no GPL violations); no unknown third-party licenses"
+    },
+    "integration_coverage": {
+      "score": 81.0,
+      "threshold": 60,
+      "tool_output": ".methodology/gate_evidence/gate2/integration_coverage.txt",
+      "tool_evidence": "pytest 03-development/tests/integration --cov=03-development/src produced coverage.json totals.percent_covered=66.18 (>=60 threshold); 11 passed"
+    },
+    "test_assertion_quality": {
+      "score": 100.0,
+      "threshold": 60,
+      "tool_output": ".methodology/gate_evidence/gate2/test_assertion_quality.json",
+      "tool_evidence": "AST scan of 03-development/tests found density=2.87 zero_assert_ratio=0.006; tool_score=min(100,density*25+(1-zr)*50)=100"
+    },
+    "execute_verification_target": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_output": ".methodology/gate_evidence/gate2/execute_verification_target.txt",
+      "tool_evidence": "make verify-system exited 0, printed 'verify-system: PASS' (177/177 tests passed)"
+    },
+    "traceability": {
+      "score": 60.16949152542372,
+      "threshold": 60.0,
+      "tool_output": ".methodology/gate_evidence/gate2/traceability.txt",
+      "tool_evidence": "framework: compute_trace_dimension(gate=2) → 4a=100.0% 4b=60.2% 4c=100.0% merged=60.2%",
+      "framework_override": true
+    },
+    "architecture": {
+      "score": 88.9,
+      "threshold": 80,
+      "tool_output": ".methodology/gate_evidence/gate2/architecture.txt",
+      "tool_evidence": "framework: crg_independent.compute_cohesion — will overwrite at finalize-gate; crg-arch-check prelim reported 88.9",
+      "framework_override": true,
+      "calibration": {
+        "cohesion_healthy": 0.2,
+        "community_oversized": 50,
+        "graph_files": 46,
+        "source_files": 46
+      }
+    },
+    "mutation_testing": {
+      "score": 81.6,
+      "threshold": 75,
+      "tool_output": ".methodology/gate_evidence/gate2/mutation_testing.txt",
+      "tool_evidence": "framework: compute_mutation_score → killed=71 survived=16 score=81.6 [scope: 03-development/src/taskq_api/repository/key_repo.py,03-development/src/taskq_api/repository/task_repo.py,03-development/src/taskq_api/service/tasks.py, 0 files, excluded: ['__init__.py,config.py']]",
+      "framework_override": true
+    }
+  },
+  "enforcer_sha": "0efae09329744213ea821c48c3c8d5d755e90ac0",
+  "enforcer_surface": {
+    "core/quality_gate": "5021f0333ad5b068994f587ed08b37193cb8ee59",
+    "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
+    "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
+  },
+  "evidence_digest": {
+    "mutation_testing::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "135fd63a9df71b8e6d47e274d06e464745e23005a839e669229c9198b9113244",
+      "bytes": 386,
+      "head": "[mutmut]\n# Mutation test scope — per SAB NFR-08.\n# Note: uses mutmut 2.x syntax (not 3.x); pin: pip install \"mutmut==2.5.1\"\npaths_to_mutate=03-development/src/taskq_api/repository,03-development/src/taskq_api/service\npaths_to_exclude=__init__.py,config.py\ntests_dir=03-development/tests\nrunner=/Users/johnny/projects/taskq-cc/.venv/bin/python -m pytest --tb=no -q -p no:cacheprovider"
+    },
+    "test_coverage::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "135fd63a9df71b8e6d47e274d06e464745e23005a839e669229c9198b9113244",
+      "bytes": 386,
+      "head": "[mutmut]\n# Mutation test scope — per SAB NFR-08.\n# Note: uses mutmut 2.x syntax (not 3.x); pin: pip install \"mutmut==2.5.1\"\npaths_to_mutate=03-development/src/taskq_api/repository,03-development/src/taskq_api/service\npaths_to_exclude=__init__.py,config.py\ntests_dir=03-development/tests\nrunner=/Users/johnny/projects/taskq-cc/.venv/bin/python -m pytest --tb=no -q -p no:cacheprovider"
+    },
+    "linting": {
+      "source": ".methodology/gate_evidence/gate2/linting.txt",
+      "kind": "file",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "bytes": 19,
+      "head": "All checks passed!"
+    },
+    "type_safety": {
+      "source": ".methodology/gate_evidence/gate2/type_safety.txt",
+      "kind": "file",
+      "sha256": "84b60daf164a7809380c2dbd1e5fcb922d9f82148bb5e48103f91e03cc6e0755",
+      "bytes": 252,
+      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1787210210283\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 30,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.187\n    }\n}\n"
+    },
+    "test_coverage": {
+      "source": ".methodology/gate_evidence/gate2/test_coverage.txt",
+      "kind": "file",
+      "sha256": "d4b55ba0c8cf2bff3359ca311ae012f0802608431832be5292d48a7d18007983",
+      "bytes": 206,
+      "head": "------------------------------------------------------------------------------------------\nTOTAL                                                          961      0   100%\n200 passed, 12 warnings in 12.71s"
+    },
+    "security": {
+      "source": ".methodology/gate_evidence/gate2/security.json",
+      "kind": "file",
+      "sha256": "338efb64695ff102a2b8eebf35943203c06863fdec9fc6e76db33712645a02ef",
+      "bytes": 11066,
+      "head": "[main]\tINFO\tprofile include tests: None\n[main]\tINFO\tprofile exclude tests: None\n[main]\tINFO\tcli include tests: None\n[main]\tINFO\tcli exclude tests: None\n{\n  \"errors\": [],\n  \"generated_at\": \"2026-08-20T07:17:00Z\",\n  \"metrics\": {\n    \"03-development/src/migrations/__init__.py\": {\n      \"CONFIDENCE.HIGH\": 0,\n      \"CONFIDENCE.LOW\": 0,\n      \"CONFIDENCE.MEDIUM\": 0,\n      \"CONFIDENCE.UNDEFINED\": 0,\n      \"SEVERITY.HIGH\": 0,\n      \"SEVERITY.LOW\": 0,\n      \"SEVERITY.MEDIUM\": 0,\n      \"SEVERITY.UNDEFINED\": 0,\n      \"loc\": 9,\n      \"nosec\": 0,\n      \"skipped_tests\": 0"
+    },
+    "secrets_scanning": {
+      "source": ".methodology/gate_evidence/gate2/secrets_scanning.txt",
+      "kind": "file",
+      "sha256": "81880a72fcdea57956eee147adfbb7114ba8728adcc7ca074c286ccfe92e079d",
+      "bytes": 188,
+      "head": "\u001b[90m3:54PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1m87 commits scanned.\u001b[0m\n\u001b[90m3:54PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mscanned ~1563115 bytes (1.56 MB) in 153ms\u001b[0m\n\u001b[90m3:54PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mno leaks found\u001b[0m"
+    },
+    "license_compliance": {
+      "source": ".methodology/gate_evidence/gate2/license_compliance.json",
+      "kind": "file",
+      "sha256": "4b163b7962bd8c7f530f1182524084ddbd72c60ac86935a7c2f05ecc7db2be53",
+      "bytes": 5703,
+      "head": "/Users/johnny/Library/Python/3.9/lib/python/site-packages/extractcode/libarchive2.py:107: UserWarning: Using \"libarchive\" library found in a system location. Install instead a extractcode-libarchive plugin for best support.\n  warnings.warn(\n/Users/johnny/Library/Python/3.9/lib/python/site-packages/typecode/magic2.py:195: UserWarning: System libmagic found in typical location is used. Install instead a typecode-libmagic plugin for best support.\n  warnings.warn(\n/Users/johnny/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020\n  warnings.warn(\nSetup plugins...\nCollect file inventory...\nScan files for: licenses with 31 process(es)...\n/Users/johnny/Library/Python/3.9/lib/python/site-packages/extractcode/libarchive2.py:107: UserWarning: Using \"libarchive\" library found in a system location. Install instead a extractcode-libarchive plugin for best support.\n  warnings.warn(\n/Users/johnny/Library/Python/3.9/lib/python/site-packages/extractcode/libarchive2.py:107: UserWarning: Using \"libarchive\" library found in a system location. Install instead a extractcode-libarchive plugin for best support.\n  warnings.warn(\n/Users/johnny/Library/Python/3.9/lib/python/site-packages/extractcode/libarchive2.py:107: UserWarning: Using \"libarchive\" library found in a system location. Install instead a extractcode-libarchive plugin for best support.\n  warnings.warn(\n/Users/johnny/Library/Python/3.9/lib/python/site-packages/typecode/magic2.py:195: UserWarning: System libmagic found in typical location is used. Install instead a typecode-libmagic plugin for best support.\n  warnings.warn(\n/Users/johnny/Library/Python/3.9/lib/python/site-packages/typecode/magic2.py:195: UserWarning: System libmagic found in typical location is used. Install instead a typecode-libmagic plugin for best support.\n  warnings.warn(\n/Users/johnny/Library/Python/3.9/lib/python/site"
+    },
+    "mutation_testing": {
+      "source": ".methodology/gate_evidence/gate2/mutation_testing.txt",
+      "kind": "file",
+      "sha256": "d94dab1bec26e9c9772a065f712498b3b0c8b793d4a97c20a91c2d41c4498f06",
+      "bytes": 246,
+      "head": "[WARN] setup.cfg [mutmut] runner is custom ('/Users/johnny/projects/taskq-cc/.venv/bin/python -m pytest --tb=no -q -p no:cacheprovider'); not overriding. Ensure your runner picks up tests_dir=/Users/johnny/projects/taskq-cc/03-development/tests."
+    },
+    "integration_coverage": {
+      "source": ".methodology/gate_evidence/gate2/integration_coverage.txt",
+      "kind": "file",
+      "sha256": "9638071fecafbfaf23ca6df57a20e62dbc39fd81500a85293ca9e91f4f515f40",
+      "bytes": 468,
+      "head": "03-development/src/taskq_api/service/runner.py                 125     46    63%   124-125, 129-132, 146-149, 154-156, 161-162, 205-207, 215-216, 239, 302-303, 331-359, 387-411\n03-development/src/taskq_api/service/tasks.py                   25      2    92%   39-40\n------------------------------------------------------------------------------------------\nTOTAL                                                          961    187    81%\n30 passed, 1 warning in 1.05s"
+    },
+    "test_assertion_quality": {
+      "source": ".methodology/gate_evidence/gate2/test_assertion_quality.json",
+      "kind": "file",
+      "sha256": "242e3d55f541925b352e6c84dd7649b647d6193c6c6ab46ce7f1cdef7d1c2d4c",
+      "bytes": 242,
+      "head": "{\n  \"total\": 169,\n  \"asserted\": 168,\n  \"zero_assert\": 1,\n  \"density\": 2.87,\n  \"zero_assert_ratio\": 0.0059,\n  \"tool_score\": 100,\n  \"zero_assert_examples\": [\n    \"test_fr06.py::test_coverage_task_repo_create_duplicate_raises_domain_error\"\n  ]\n}"
+    },
+    "execute_verification_target": {
+      "source": ".methodology/gate_evidence/gate2/execute_verification_target.txt",
+      "kind": "file",
+      "sha256": "8b1e3ebf99631c5a308c1c2395afc4337c32e8c2a2a4d0b8b4cda737a89c9b66",
+      "bytes": 378,
+      "head": "03-development/src/taskq_api/service/runner.py                 125      0   100%\n03-development/src/taskq_api/service/tasks.py                   25      0   100%\n--------------------------------------------------------------------------------\nTOTAL                                                          967     14    99%\n177 passed, 12 warnings in 12.81s\nverify-system: PASS"
+    },
+    "architecture": {
+      "source": ".methodology/gate_evidence/gate2/architecture.txt",
+      "kind": "file",
+      "sha256": "b1688402737b3040fb5179bd378fe7c1e3451e6b5793cda0f69ff18c98a8ab38",
+      "bytes": 117,
+      "head": "[CRG] code-review-graph: build_or_update_graph complete\n[CRG] community_cohesion score: 88.9 (threshold 80)\n[CRG] OK"
+    }
+  },
+  "crg_review_context": {
+    "status": "ok",
+    "summary": "Review context for 42 changed file(s):\n  - Risk: high\n  - 155 impacted nodes in 18 files",
+    "risk": "high",
+    "changed_file_count": 42,
+    "impacted_file_count": 18,
+    "key_entities": [
+      "/Users/johnny/projects/taskq-cc/03-development/src/migrations/versions/v3_split_results.py",
+      "downgrade",
+      "upgrade",
+      "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/__main__.py",
+      "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/api/tasks.py"
+    ],
+    "test_gaps": 125,
+    "next_tool_suggestions": [
+      "detect_changes",
+      "get_affected_flows",
+      "get_impact_radius"
+    ],
+    "context_savings": {
+      "estimated": true,
+      "saved_tokens": 239917,
+      "saved_percent": 100
+    }
+  },
+  "crg_impact_radius": {
+    "status": "ok",
+    "summary": "Blast radius for 42 changed file(s):\n  - 323 nodes directly changed\n  - 155 nodes impacted (within 2 hops)\n  - 18 additional files affected",
+    "risk": "high",
+    "impacted_file_count": 18,
+    "key_entities": [
+      "_db_url",
+      "_force_fail_requested",
+      "_migration_failure_marker_path",
+      "_write_migration_failure_marker",
+      "run_migrations_online"
+    ],
+    "truncated": false,
+    "context_savings": {
+      "estimated": true,
+      "saved_tokens": 239965,
+      "saved_percent": 100
+    }
+  },
+  "crg_affected_flows": {
+    "total": 30,
+    "flows": [
+      {
+        "name": "record_result",
+        "criticality": 0.76
+      },
+      {
+        "name": "create",
+        "criticality": 0.7596
+      },
+      {
+        "name": "create",
+        "criticality": 0.7504
+      },
+      {
+        "name": "get_active_by_hash",
+        "criticality": 0.725
+      },
+      {
+        "name": "task_counts_by_status",
+        "criticality": 0.7
+      },
+      {
+        "name": "revoke",
+        "criticality": 0.7
+      },
+      {
+        "name": "get_by_id",
+        "criticality": 0.7
+      },
+      {
+        "name": "update_status",
+        "criticality": 0.7
+      },
+      {
+        "name": "list_runs",
+        "criticality": 0.7
+      },
+      {
+        "name": "latency_percentiles",
+        "criticality": 0.6864
+      }
+    ]
+  },
+  "composite_score": 92.6569,
+  "verdict": "PASS",
+  "passed": true,
+  "spec_undelivered": [
+    {
+      "test_fn": "test_ac_n1_1_get_task_p95_below_30ms_at_10k_rows",
+      "type": "rows_in_db=10000; iterations=500; threshold_ms=30",
+      "derivation": "perf",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n1_2_list_p95_below_80ms_at_10k_rows",
+      "type": "rows_in_db=10000; iterations=500; threshold_ms=80; limit=50",
+      "derivation": "perf",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n1_3_list_sql_count_constant_at_10_100_1000_rows",
+      "type": "rows_in_db=10; rows_in_db=100; rows_in_db=1000",
+      "derivation": "perf",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n3_4_db_failure_causes_readyz_503_with_db_detail_no_retry_loop",
+      "type": "db_url=\"sqlite:///nonexistent_dir/x.db\"; precondition=\"closed DB\"; expected_status=503",
+      "derivation": "fault_injection",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n2_1_grep_shell_true_eval_exec_zero_hits",
+      "type": "source_dir=03-development/src; forbidden=shell=True,eval(,exec(",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n2_2_grep_sql_string_concat_zero_hits",
+      "type": "source_dir=03-development/src; pattern=\"f\\\".*SELECT\\",
+      "derivation": "f'.*SELECT\\",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n2_3_api_keys_sha256_hmac_constant_time_no_plaintext",
+      "type": "db_url=tmp; plaintext=\"test-key-abc\"; sibling=random_hex_64",
+      "derivation": "unit",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n2_4_403_bodies_indistinguishable_for_existing_and_nonexistent_ids",
+      "type": "task_id_existing=1; task_id_missing=999999",
+      "derivation": "integration",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n2_5_500_error_body_no_stack_sql_or_paths",
+      "type": "trigger=\"raise RuntimeError in handler\"",
+      "derivation": "integration",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n2_6_cors_deny_by_default_origin_not_allowlisted",
+      "type": "origin=\"https://evil.example\"",
+      "derivation": "integration",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n2_7_bandit_r_zero_high_zero_medium",
+      "type": "source_dir=03-development/src",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n3_1_transaction_context_manager_rollback_or_single_commit",
+      "type": "session_scope() with exception",
+      "derivation": "unit",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n3_2_no_bare_except_or_except_exception_pass",
+      "type": "source_dir=03-development/src",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n3_3_cancelled_error_propagates_in_task_handler",
+      "type": "cancel_event.set() during handler",
+      "derivation": "unit",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n3_5_timeout_kills_child_awaits_exit_no_orphan_pid",
+      "type": "command=\"sleep 5\"; timeout_sec=1",
+      "derivation": "integration",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n3_6_failed_migration_rolls_back_readyz_503",
+      "type": "auto_fail=True",
+      "derivation": "fault_injection",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n4_1_redaction_helper_replaces_sk_token_bearer_postgres",
+      "type": "input=\"sk-abc token=xyz Bearer abc postgres://u:p@h\"",
+      "derivation": "unit",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n4_2_db_url_password_absent_from_logs_errors_metrics",
+      "type": "db_url=\"postgresql://u:secret@h:5432/db\"",
+      "derivation": "unit",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n4_3_key_plaintext_printed_once_not_persisted_to_logs_db_metrics",
+      "type": "full_create_flow",
+      "derivation": "integration",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n5_1_public_functions_classes_have_fr_or_nfr_tagged_docstrings",
+      "type": "source_dir=03-development/src",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n5_2_openapi_json_has_summary_and_description_for_every_route",
+      "type": "client=TestClient(app)",
+      "derivation": "integration",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n6_1_importlinter_exists_declares_layers_contract",
+      "type": ".importlinter",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n6_2_importlinter_forbidden_sqlalchemy_outside_repository",
+      "type": "lint_imports",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n6_3_lint_imports_ci_exits_zero",
+      "type": "lint_imports",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n6_4_no_degradation_no_ignore_imports_or_downgrade",
+      "type": "degradations.jsonl",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n7_1_requirements_pinned_with_equals_and_lock_present",
+      "type": "requirements.txt",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n7_2_all_deps_in_mit_bsd_apache_psf_allowlist",
+      "type": "scancode_report",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n7_3_license_scan_covers_full_tree_with_system",
+      "type": "scancode --license",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n7_4_sbom_json_one_record_per_dep_with_required_fields",
+      "type": "sbom.json",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n8_1_harness_config_mutation_testing_flag_true",
+      "type": ".methodology/harness_config.json",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n8_2_mutmut_score_at_least_70_over_service_and_repository",
+      "type": "mutmut_score.json",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n8_3_mutation_scope_annotated_service_repository_with_rationale",
+      "type": "config",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n9_1_pytest_reports_skipped_count_zero",
+      "type": "pytest.collect",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n9_2_every_test_function_has_at_least_one_assert",
+      "type": "pytest.collect",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n9_3_no_test_excluded_via_ignore_k_deselect_collect_ignore",
+      "type": "pytest config",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n9_4_fr07_migration_real_sqlite_file_not_in_memory_mock",
+      "type": "fr07 test",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n9_5_traceability_matrix_verified_only_from_live_scan",
+      "type": "scan output",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n10_1_integration_line_coverage_at_least_80_percent",
+      "type": "coverage.json",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n10_2_integration_tests_use_asgi_transport_no_direct_handler_calls",
+      "type": "integration tests",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n10_3_integration_suite_covers_each_error_code_and_flows",
+      "type": "integration coverage",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n11_1_mi_at_least_80_cc_at_most_10",
+      "type": "radon mi & cc",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n11_2_no_file_over_400_lines_no_dir_over_15_files",
+      "type": "source_dir=03-development/src",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n11_3_no_api_handler_over_40_lines_business_logic_in_service",
+      "type": "taskq_api.api",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n12_1_makefile_defines_verify_system_chains_upgrade_tests_smoke_round_trip",
+      "type": "Makefile",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n12_2_make_verify_system_exits_zero_stdout_contains_pass",
+      "type": "make verify-system",
+      "derivation": "static",
+      "fr_id": "nfr_integration_integration_le"
+    },
+    {
+      "test_fn": "test_ac_n12_1_makefile_defines_verify_system_chains_upgrade_tests_smoke_round_trip",
+      "type": "smoke",
+      "derivation": "NFR-12",
+      "fr_id": "deployment_smoke"
+    },
+    {
+      "test_fn": "test_ac_n12_2_make_verify_system_exits_zero_stdout_contains_pass",
+      "type": "smoke",
+      "derivation": "NFR-12",
+      "fr_id": "deployment_smoke"
+    }
+  ],
+  "spec_declared": 118,
+  "measurement_scope": {
+    "weight_covered": 0.82,
+    "weight_total": 1.0,
+    "dimensions_scored": [
+      "architecture",
+      "execute_verification_target",
+      "license_compliance",
+      "linting",
+      "mutation_testing",
+      "secrets_scanning",
+      "security",
+      "test_assertion_quality",
+      "traceability",
+      "type_safety"
+    ],
+    "dimensions_unscored": [
+      "integration_coverage",
+      "test_coverage"
+    ]
+  }
+}

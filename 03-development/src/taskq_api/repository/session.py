@@ -1,4 +1,4 @@
-"""[FR-01/FR-06] SQLAlchemy engines + the transactional session boundary.
+"""[FR-01, FR-06] SQLAlchemy engines + the transactional session boundary.
 
 Two policies live here, once each, so no repository module can drift
 from them:

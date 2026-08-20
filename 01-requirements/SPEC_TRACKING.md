@@ -52,12 +52,12 @@
 
 | Check | Expected | Actual | Status |
 |-------|----------|--------|--------|
-| FR coverage in tracking matrix | 10 (FR-01..FR-10) | 10 | OK |
-| NFR coverage in tracking matrix | 12 (NFR-01..NFR-12) | 12 | OK |
-| FR/NFR headings in SRS.md match SPEC.md | 22 / 22 | 22 / 22 | OK |
-| Every FR/NFR carries a `Status` cell | 22 / 22 | 22 / 22 | OK (all DRAFT pre-implementation; machine-refreshed by `build_traceability` at `advance-phase`) |
-| Every FR/NFR carries an AC cross-reference | 22 / 22 | 22 / 22 | OK |
-| Decision Framework references SPEC §8 acceptance commands | 22 / 22 | 22 / 22 | OK |
+| FR coverage in tracking matrix | 10 (FR-01..FR-10) | 10 | Done |
+| NFR coverage in tracking matrix | 12 (NFR-01..NFR-12) | 12 | Done |
+| FR/NFR headings in SRS.md match SPEC.md | 22 / 22 | 22 / 22 | Done |
+| Every FR/NFR carries a `Status` cell | 22 / 22 | 22 / 22 | Done (all DRAFT pre-implementation; machine-refreshed by `build_traceability` at `advance-phase`) |
+| Every FR/NFR carries an AC cross-reference | 22 / 22 | 22 / 22 | Done |
+| Decision Framework references SPEC §8 acceptance commands | 22 / 22 | 22 / 22 | Done |
 
 ## Update log
 

@@ -371,14 +371,55 @@ is declared here (avoids a duplicate non-blocking `needs_review` row).
 > declared `Sub-assertions`. All other NFRs (Unit/Static) are isolated in
 > the Deferred-to-Downstream table below.
 
-| # | NFR | Test Function | Inputs | Sub-assertions |
-|---|---|---|---|---|
-| 1 | NP-06 (latency SLA) | `test_ac_n1_1_get_task_p95_below_30ms_at_10k_rows` | rows_in_db=10000; iterations=500; threshold_ms=30 | `result["p95_ms"] < threshold_ms` |
-| 2 | NP-06 (latency SLA) | `test_ac_n1_2_list_p95_below_80ms_at_10k_rows` | rows_in_db=10000; iterations=500; threshold_ms=80; limit=50 | `result["p95_ms"] < threshold_ms` |
-| 3 | NP-12 (pagination) | `test_ac_n1_3_list_sql_count_constant_at_10_100_1000_rows` | rows_in_db=10; rows_in_db=100; rows_in_db=1000 | `len(events_at_10) == len(events_at_100) == len(events_at_1000)` |
-| 4 | NP-07 (DB fault) | `test_ac_n3_4_db_failure_causes_readyz_503_with_db_detail_no_retry_loop` | db_url="sqlite:///nonexistent_dir/x.db"; precondition="closed DB"; expected_status=503 | `result["status"] == 503`; `result["retry_count"] < 2` |
-| 5 | NP-13 (concurrency) | `test_ac_5_1_burst_over_capacity_returns_429_with_retry_after` | concurrent_workers=20; capacity=10; precondition="row-level lock contention" | `result["admitted_count"] == capacity`; `result["rejected_count"] == concurrent_workers - capacity` |
-| 6 | NP-15 (timeout) | `test_ac_8_2_timed_out_task_killed_and_awaited_no_orphans` | command="sleep 30"; timeout_sec=1; state_mode="isolate_per_test"; subprocess_mode="out_of_process"; shared_TASKQ_HOME=false | `result["final_state"] == "timeout"`; `len(result["orphan_pids"]) == 0` |
+| # | Test Function | Inputs | Type | Derivation | NFR |
+|---|---|---|---|---|---|
+| 1 | `test_ac_n1_1_get_task_p95_below_30ms_at_10k_rows` | rows_in_db=10000; iterations=500; threshold_ms=30 | perf | NP-06 | NP-06 |
+| 2 | `test_ac_n1_2_list_p95_below_80ms_at_10k_rows` | rows_in_db=10000; iterations=500; threshold_ms=80; limit=50 | perf | NP-06 | NP-06 |
+| 3 | `test_ac_n1_3_list_sql_count_constant_at_10_100_1000_rows` | rows_in_db=10; rows_in_db=100; rows_in_db=1000 | perf | NP-12 | NP-12 |
+| 4 | `test_ac_n3_4_db_failure_causes_readyz_503_with_db_detail_no_retry_loop` | db_url="sqlite:///nonexistent_dir/x.db"; precondition="closed DB"; expected_status=503 | fault_injection | NP-07 | NP-07 |
+| 5 | `test_ac_5_1_burst_over_capacity_returns_429_with_retry_after` | concurrent_workers=20; capacity=10; precondition="row-level lock contention" | fault_injection | NP-13 | NP-13 |
+| 6 | `test_ac_8_2_timed_out_task_killed_and_awaited_no_orphans` | command="sleep 30"; timeout_sec=1; state_mode="isolate_per_test"; subprocess_mode="out_of_process"; shared_TASKQ_HOME=false | fault_injection | NP-15 | NP-15 |
+| 7 | `test_ac_n2_1_grep_shell_true_eval_exec_zero_hits` | source_dir=03-development/src; forbidden=shell=True,eval(,exec( | static | NP-02 | NP-02 |
+| 8 | `test_ac_n2_2_grep_sql_string_concat_zero_hits` | source_dir=03-development/src; pattern="f\".*SELECT\|f'.*SELECT\| +SELECT.*+\|" | static | NP-02 | NP-02 |
+| 9 | `test_ac_n2_3_api_keys_sha256_hmac_constant_time_no_plaintext` | db_url=tmp; plaintext="test-key-abc"; sibling=random_hex_64 | unit | NP-02 | NP-02 |
+| 10 | `test_ac_n2_4_403_bodies_indistinguishable_for_existing_and_nonexistent_ids` | task_id_existing=1; task_id_missing=999999 | integration | NP-02 | NP-02 |
+| 11 | `test_ac_n2_5_500_error_body_no_stack_sql_or_paths` | trigger="raise RuntimeError in handler" | integration | NP-02 | NP-02 |
+| 12 | `test_ac_n2_6_cors_deny_by_default_origin_not_allowlisted` | origin="https://evil.example" | integration | NP-02 | NP-02 |
+| 13 | `test_ac_n2_7_bandit_r_zero_high_zero_medium` | source_dir=03-development/src | static | NP-02 | NP-02 |
+| 14 | `test_ac_n3_1_transaction_context_manager_rollback_or_single_commit` | session_scope() with exception | unit | NP-03 | NP-03 |
+| 15 | `test_ac_n3_2_no_bare_except_or_except_exception_pass` | source_dir=03-development/src | static | NP-03 | NP-03 |
+| 16 | `test_ac_n3_3_cancelled_error_propagates_in_task_handler` | cancel_event.set() during handler | unit | NP-03 | NP-03 |
+| 17 | `test_ac_n3_5_timeout_kills_child_awaits_exit_no_orphan_pid` | command="sleep 5"; timeout_sec=1 | integration | NP-03 | NP-03 |
+| 18 | `test_ac_n3_6_failed_migration_rolls_back_readyz_503` | auto_fail=True | fault_injection | NP-03 | NP-03 |
+| 19 | `test_ac_n4_1_redaction_helper_replaces_sk_token_bearer_postgres` | input="sk-abc token=xyz Bearer abc postgres://u:p@h" | unit | NP-04 | NP-04 |
+| 20 | `test_ac_n4_2_db_url_password_absent_from_logs_errors_metrics` | db_url="postgresql://u:secret@h:5432/db" | unit | NP-04 | NP-04 |
+| 21 | `test_ac_n4_3_key_plaintext_printed_once_not_persisted_to_logs_db_metrics` | full_create_flow | integration | NP-04 | NP-04 |
+| 22 | `test_ac_n5_1_public_functions_classes_have_fr_or_nfr_tagged_docstrings` | source_dir=03-development/src | static | NP-05 | NP-05 |
+| 23 | `test_ac_n5_2_openapi_json_has_summary_and_description_for_every_route` | client=TestClient(app) | integration | NP-05 | NP-05 |
+| 24 | `test_ac_n6_1_importlinter_exists_declares_layers_contract` | .importlinter | static | NP-06 | NP-06 |
+| 25 | `test_ac_n6_2_importlinter_forbidden_sqlalchemy_outside_repository` | lint_imports | static | NP-06 | NP-06 |
+| 26 | `test_ac_n6_3_lint_imports_ci_exits_zero` | lint_imports | static | NP-06 | NP-06 |
+| 27 | `test_ac_n6_4_no_degradation_no_ignore_imports_or_downgrade` | degradations.jsonl | static | NP-06 | NP-06 |
+| 28 | `test_ac_n7_1_requirements_pinned_with_equals_and_lock_present` | requirements.txt | static | NP-07 | NP-07 |
+| 29 | `test_ac_n7_2_all_deps_in_mit_bsd_apache_psf_allowlist` | scancode_report | static | NP-07 | NP-07 |
+| 30 | `test_ac_n7_3_license_scan_covers_full_tree_with_system` | scancode --license | static | NP-07 | NP-07 |
+| 31 | `test_ac_n7_4_sbom_json_one_record_per_dep_with_required_fields` | sbom.json | static | NP-07 | NP-07 |
+| 32 | `test_ac_n8_1_harness_config_mutation_testing_flag_true` | .methodology/harness_config.json | static | NP-08 | NP-08 |
+| 33 | `test_ac_n8_2_mutmut_score_at_least_70_over_service_and_repository` | mutmut_score.json | static | NP-08 | NP-08 |
+| 34 | `test_ac_n8_3_mutation_scope_annotated_service_repository_with_rationale` | config | static | NP-08 | NP-08 |
+| 35 | `test_ac_n9_1_pytest_reports_skipped_count_zero` | pytest.collect | static | NP-09 | NP-09 |
+| 36 | `test_ac_n9_2_every_test_function_has_at_least_one_assert` | pytest.collect | static | NP-09 | NP-09 |
+| 37 | `test_ac_n9_3_no_test_excluded_via_ignore_k_deselect_collect_ignore` | pytest config | static | NP-09 | NP-09 |
+| 38 | `test_ac_n9_4_fr07_migration_real_sqlite_file_not_in_memory_mock` | fr07 test | static | NP-09 | NP-09 |
+| 39 | `test_ac_n9_5_traceability_matrix_verified_only_from_live_scan` | scan output | static | NP-09 | NP-09 |
+| 40 | `test_ac_n10_1_integration_line_coverage_at_least_80_percent` | coverage.json | static | NP-10 | NP-10 |
+| 41 | `test_ac_n10_2_integration_tests_use_asgi_transport_no_direct_handler_calls` | integration tests | static | NP-10 | NP-10 |
+| 42 | `test_ac_n10_3_integration_suite_covers_each_error_code_and_flows` | integration coverage | static | NP-10 | NP-10 |
+| 43 | `test_ac_n11_1_mi_at_least_80_cc_at_most_10` | radon mi & cc | static | NP-11 | NP-11 |
+| 44 | `test_ac_n11_2_no_file_over_400_lines_no_dir_over_15_files` | source_dir=03-development/src | static | NP-11 | NP-11 |
+| 45 | `test_ac_n11_3_no_api_handler_over_40_lines_business_logic_in_service` | taskq_api.api | static | NP-11 | NP-11 |
+| 46 | `test_ac_n12_1_makefile_defines_verify_system_chains_upgrade_tests_smoke_round_trip` | Makefile | static | NP-12 | NP-12 |
+| 47 | `test_ac_n12_2_make_verify_system_exits_zero_stdout_contains_pass` | make verify-system | static | NP-12 | NP-12 |
 
 ### Deferred to Downstream Phases (Unit / Static — verified by P3 unit-only suites)
 

@@ -1,4 +1,4 @@
-"""[FR-03/FR-06] API key repository — only the SHA-256 digest is ever persisted.
+"""[FR-03, FR-06] API key repository — only the SHA-256 digest is ever persisted.
 
 The plaintext is minted here and returned to the caller once; only the
 hex digest lands in ``api_keys.key_hash``. The repository never logs or

@@ -1,4 +1,4 @@
-"""[FR-01/FR-02] HTTP routes for the task resource.
+"""[FR-01, FR-02] HTTP routes for the task resource.
 
 Citations: SPEC.md §3 FR-01 + FR-02; SAD.md §2.2 L4 api.tasks.
 """

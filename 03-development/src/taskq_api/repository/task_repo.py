@@ -1,4 +1,4 @@
-"""[FR-01/FR-02/FR-06] Task repository — only consumer of SQL in the project.
+"""[FR-01, FR-02, FR-06] Task repository — only consumer of SQL in the project.
 
 Eager-loads ``Task.result`` via ``selectinload`` on every read path so
 listing 1000 tasks does not become 1000 result-table queries (FR-06

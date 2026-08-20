@@ -71,7 +71,7 @@ import logging
 import os
 import sqlite3
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import httpx
 import pytest
@@ -113,8 +113,6 @@ def _stub_auth(monkeypatch):
     is missing, not because of bad auth state. Without this stub the
     auth dependency would hit the key repository / DB.
     """
-    from taskq_api.api import deps
-
     def _resolve(plaintext: str):
         if plaintext == "read_key":
             return ("key-read", "read")
@@ -470,7 +468,6 @@ def test_ac_10_2_500_detail_has_no_stack_sql_or_paths(monkeypatch):  # NFR-02 (n
     )
 
     detail_blob = json_module.dumps(body) + "\n" + raw_text
-    denylist = ("Traceback", "SQL", "/Users", "File ")
     result["traceback_in_detail"] = detail_blob.count("Traceback")
     result["sql_in_detail"] = detail_blob.count("SQL")
     result["absolute_path_in_detail"] = detail_blob.count("/Users")

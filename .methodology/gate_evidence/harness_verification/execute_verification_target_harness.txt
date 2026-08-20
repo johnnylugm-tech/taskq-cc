@@ -1,0 +1,10 @@
+# Harness-executed: system-verification
+# returncode: 0
+# agent_score: 100.0 | threshold: 100.0
+
+03-development/src/taskq_api/service/runner.py                 125      0   100%
+03-development/src/taskq_api/service/tasks.py                   25      0   100%
+--------------------------------------------------------------------------------
+TOTAL                                                          961      0   100%
+200 passed, 12 warnings in 13.83s
+verify-system: PASS

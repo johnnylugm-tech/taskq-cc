@@ -1,4 +1,4 @@
-"""[FR-01/FR-02/FR-03] SQLAlchemy ORM models.
+"""[FR-01, FR-02, FR-03] SQLAlchemy ORM models.
 
 Citations: SPEC.md §3 FR-01 (tasks) + FR-02 (task_results v3 multi-row)
 + FR-03 (api_keys); SAD.md §2.2 L1 orm.

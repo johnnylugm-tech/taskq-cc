@@ -54,7 +54,6 @@ from sqlalchemy import event, text
 from taskq_api.repository import session as session_module
 from taskq_api.repository.session import (
     get_engine,
-    insert_scope,
     reset_engine,
     session_scope,
 )
@@ -336,7 +335,7 @@ def test_ac_6_5_engine_pool_size_and_pre_ping_configured(monkeypatch):  # NFR-09
     # FR06-pool-size (applies_to 5)
     assert result["engine_pool_size"] == 5
     # FR06-pre-ping (applies_to 5)
-    assert result["pool_pre_ping"] == True
+    assert result["pool_pre_ping"]
 
 
 # ---------------------------------------------------------------------------
@@ -356,7 +355,6 @@ def test_ac_6_5_engine_pool_size_and_pre_ping_configured(monkeypatch):  # NFR-09
 
 def test_coverage_session_get_insert_engine_and_insert_scope():
     """``get_insert_engine`` builds a distinct engine; ``insert_scope`` opens a transactional session on it."""
-    insert_engine = get_engine  # alias to keep pylint happy — re-resolved below
     from taskq_api.repository.session import get_insert_engine, insert_scope
 
     insert_engine = get_insert_engine()
@@ -672,9 +670,6 @@ def test_coverage_rate_repo_get_engine_rebuilds_on_url_change():
     from taskq_api.repository import rate_repo
 
     first = rate_repo.get_engine()
-    # Force a URL change by mutating TASKQ_DB_URL and the cached engine url
-    original_url = str(first.url)
-    new_url = original_url + "_changed"
     # We can't actually modify first.url on SQLAlchemy engines, so just clear the
     # module cache and call again — that exercises the None-branch (line 111).
     rate_repo._engine = None

@@ -42,7 +42,9 @@ def upgrade():  # noqa: ANN001,ANN201  — explicit type annotations would break
     that helper rejects ``--sql`` (offline) generation for SQLite, and
     AC-7.4 relies on offline mode to keep migrations under coverage.
     """
-    # 1. Create the destination table.
+    # 1. Create the destination table with the v3 multi-run schema (matches
+    # ``orm.TaskResult``) plus the legacy ``result_json`` column preserved
+    # for NFR-10 round-trip byte-identical reversibility (AC-7.2).
     op.create_table(
         "task_results",
         sa.Column("id", sa.Integer(), autoincrement=True, primary_key=True),
@@ -53,6 +55,12 @@ def upgrade():  # noqa: ANN001,ANN201  — explicit type annotations would break
             nullable=False,
         ),
         sa.Column("result_json", sa.Text(), nullable=True),
+        sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("exit_code", sa.Integer(), nullable=True),
+        sa.Column("stdout_tail", sa.Text(), nullable=True),
+        sa.Column("stderr_tail", sa.Text(), nullable=True),
+        sa.Column("duration_ms", sa.Integer(), nullable=True),
+        sa.Column("finished_at", sa.DateTime(timezone=True), nullable=True),
     )
     # 2. Backfill from the legacy ``tasks.result_json`` column.
     bind = op.get_bind()

@@ -230,10 +230,6 @@ def test_ac_9_2_readyz_db_unreachable_returns_503_with_db_detail():  # NFR-07 (D
 
     migration_unready = asyncio.run(_go("/readyz"))
     migration_body_text = migration_unready.text
-    try:
-        migration_body = json_module.loads(migration_body_text)
-    except json_module.JSONDecodeError:
-        migration_body = {"_raw": migration_body_text}
 
     result_migration = {
         "status": migration_unready.status_code,
@@ -810,3 +806,27 @@ def test_coverage_session_get_insert_engine_and_insert_scope():  # coverage — 
     with session_scope() as session:
         row = session.query(Task).filter_by(name="fr09_coverage_task").one()
         assert row.status == "pending"
+
+
+# -- Coverage-fix: ``_percentile`` edge branches (metrics.py:38-43) ------
+def test_percentile_pct_zero_returns_min():
+    """COVERAGE-FIX FR-09: ``pct <= 0`` branch returns the smallest value."""
+    from taskq_api.repository.metrics import _percentile
+
+    assert _percentile([10, 20, 30, 40, 50], 0.0) == 10.0
+    assert _percentile([10, 20, 30, 40, 50], -5.0) == 10.0
+
+
+def test_percentile_pct_hundred_returns_max():
+    """COVERAGE-FIX FR-09: ``pct >= 100`` branch returns the largest value."""
+    from taskq_api.repository.metrics import _percentile
+
+    assert _percentile([10, 20, 30, 40, 50], 100.0) == 50.0
+    assert _percentile([10, 20, 30, 40, 50], 250.0) == 50.0
+
+
+def test_percentile_pct_fifty_returns_median():
+    """COVERAGE-FIX FR-09: nominal ``rank = round(pct/100 * (n-1))`` branch."""
+    from taskq_api.repository.metrics import _percentile
+
+    assert _percentile([10, 20, 30, 40, 50], 50.0) == 30.0

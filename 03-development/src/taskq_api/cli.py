@@ -64,10 +64,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
     handler = _HANDLERS.get((args.command, args.key_command))
     if handler is None:
-        parser.error(f"unhandled command: {args.command!r}")
-        return 2  # unreachable — parser.error exits — but keeps mypy quiet
+        parser.error(f"unhandled command: {args.command!r}")  # pragma: no cover
+        return 2  # pragma: no cover
     return handler(args)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(main())

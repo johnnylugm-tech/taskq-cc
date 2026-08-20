@@ -1,4 +1,4 @@
-"""[FR-01/FR-09] Repository layer re-exports.
+"""[FR-01, FR-09] Repository layer re-exports.
 
 Citations: SPEC.md §3 FR-06 + FR-09; SAD.md §2.2 L2 repository.
 """

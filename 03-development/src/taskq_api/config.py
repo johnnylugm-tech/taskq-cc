@@ -1,4 +1,4 @@
-"""[FR-01/FR-09] Configuration loader for taskq_api.
+"""[FR-01, FR-09] Configuration loader for taskq_api.
 
 Reads ``TASKQ_*`` environment variables once at startup.
 Independence module — no sibling imports.
