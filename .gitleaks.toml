@@ -1,0 +1,20 @@
+title = "taskq-cc gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+paths = [
+  '''.venv/''',
+  '''venv/''',
+  '''node_modules/''',
+  '''__pycache__/''',
+  '''.pytest_cache/''',
+  '''.sessi-work/''',
+  '''.methodology/''',
+  '''harness/''',
+  '''.git/''',
+  '''coverage.json''',
+  '''coverage_.*\.json''',
+  '''.*\.bak$''',
+]
