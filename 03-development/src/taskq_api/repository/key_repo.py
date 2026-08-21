@@ -42,7 +42,7 @@ def _generate_plaintext() -> str:
 
 
 def create(scope: str) -> Tuple[int, str, str]:
-    """Mint a new key, persist its SHA-256 digest, return ``(id, plaintext, key_hash)``.
+    """[FR-03] Mint a new key, persist its SHA-256 digest, return ``(id, plaintext, key_hash)``.
 
     The plaintext is returned to the caller once and is never written to
     any persistent sink. ``ApiKey.key_hash`` is the 64-character
@@ -67,7 +67,7 @@ def create(scope: str) -> Tuple[int, str, str]:
 
 
 def get_active_by_hash(key_hash: str) -> Optional[Tuple[str, str, str]]:
-    """Return ``(key_id, scope, key_hash)`` for an active row, else ``None``.
+    """[FR-03] Return ``(key_id, scope, key_hash)`` for an active row, else ``None``.
 
     "Active" means ``revoked_at IS NULL`` (AC-3.5). The repo returns the
     stored hash as the third element so the auth service can run
@@ -87,7 +87,7 @@ def get_active_by_hash(key_hash: str) -> Optional[Tuple[str, str, str]]:
 
 
 def revoke(key_hash: str) -> bool:
-    """Mark the row with ``key_hash`` as revoked (sets ``revoked_at`` to now).
+    """[FR-03] Mark the row with ``key_hash`` as revoked (sets ``revoked_at`` to now).
 
     Idempotent — a second call on an already-revoked row is a no-op.
     """

@@ -20,7 +20,7 @@ from taskq_api.repository.session import session_scope
 
 
 def task_counts_by_status() -> Mapping[str, int]:
-    """Return ``{status: row_count}`` for every status with at least one task."""
+    """[FR-09] Return ``{status: row_count}`` for every status with at least one task."""
     try:
         with session_scope() as session:
             stmt = select(Task.status, func.count(Task.id)).group_by(Task.status)
@@ -43,14 +43,14 @@ def _percentile(sorted_values: list[int], pct: float) -> float:
         return 0.0
     if pct <= 0:
         return float(sorted_values[0])
-    if pct >= 100:
+    if pct > 100:
         return float(sorted_values[-1])
     rank = max(1, int(round(pct / 100.0 * (len(sorted_values) - 1))))
     return float(sorted_values[rank])
 
 
 def latency_percentiles() -> tuple[float, float, float]:
-    """Return ``(p50, p95, p99)`` of completed-task durations in ms.
+    """[FR-09] Return ``(p50, p95, p99)`` of completed-task durations in ms.
 
     Reads only ``task_results.duration_ms`` rows that have a recorded
     duration (i.e. the run reached a terminal state). Sorted in SQL so

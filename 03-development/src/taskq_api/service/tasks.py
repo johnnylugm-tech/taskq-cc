@@ -26,7 +26,7 @@ def _to_task_read(task: Task) -> dict:
 
 
 def create_task(name: str, command: str) -> dict:
-    """Service-level task creation.
+    """[FR-01] Service-level task creation.
 
     Citations: SPEC.md §3 FR-01 AC-1.1 / AC-1.2.
     Raises ``Problem(409)`` when the name already exists (AC-1.2 duplicate).
@@ -47,7 +47,7 @@ def create_task(name: str, command: str) -> dict:
 
 
 def get_task(task_id: int) -> Optional[dict]:
-    """Service-level task lookup by id."""
+    """[FR-01] Service-level task lookup by id."""
     task = task_repo.get_by_id(task_id)
     if task is None:
         return None
@@ -59,7 +59,7 @@ def list_tasks(
     cursor: Optional[str],
     status: Optional[str],
 ) -> dict:
-    """Service-level cursor-paginated list.
+    """[FR-01] Service-level cursor-paginated list.
 
     Citations: SPEC.md §3 FR-01 AC-1.4 / AC-1.5.
     """
@@ -72,7 +72,7 @@ def list_tasks(
 
 
 def delete_task(task_id: int) -> bool:
-    """Service-level transactional delete.
+    """[FR-01] Service-level transactional delete.
 
     Citations: SPEC.md §3 FR-01 AC-1.6; cascades to task_results in the
     same transaction (SQLAlchemy cascade="all, delete-orphan").

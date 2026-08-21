@@ -106,7 +106,7 @@ def _force_fail_requested() -> bool:
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in offline mode (``alembic ... --sql``).
+    """[FR-07] Run migrations in offline mode (``alembic ... --sql``).
 
     Emits SQL to stdout without touching the database; used by AC-7.4
     to verify that the revision files themselves are covered. The
@@ -127,7 +127,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations against a live database engine.
+    """[FR-07] Run migrations against a live database engine.
 
     Honours ``TASKQ_DB_URL`` (overrides ``alembic.ini``) and the
     ``TASKQ_MIGRATION_FORCE_FAIL`` contract used by AC-7.5.

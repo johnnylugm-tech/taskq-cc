@@ -21,7 +21,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    """Add ``tags`` / ``task_tags`` (m2m) and the unique index on ``tasks.name``."""
+    """[FR-07] Add ``tags`` / ``task_tags`` (m2m) and the unique index on ``tasks.name``."""
     op.create_table(
         "tags",
         sa.Column("id", sa.Integer(), autoincrement=True, primary_key=True),
@@ -50,7 +50,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Drop the unique index, the m2m table, and ``tags`` — symmetric to upgrade.
+    """[FR-07] Drop the unique index, the m2m table, and ``tags`` — symmetric to upgrade.
 
     Order matters: the unique index references ``tasks``; the m2m
     table references both ``tasks`` and ``tags``. Drop dependents

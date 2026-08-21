@@ -21,7 +21,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    """Create the ``tasks`` and ``api_keys`` tables.
+    """[FR-07] Create the ``tasks`` and ``api_keys`` tables.
 
     ``tasks.result_json`` is included here so v3 has a column to split
     into ``task_results`` (see ``v3_split_results``).
@@ -50,6 +50,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Drop the ``tasks`` and ``api_keys`` tables — symmetric to upgrade."""
+    """[FR-07] Drop the ``tasks`` and ``api_keys`` tables — symmetric to upgrade."""
     op.drop_table("api_keys")
     op.drop_table("tasks")

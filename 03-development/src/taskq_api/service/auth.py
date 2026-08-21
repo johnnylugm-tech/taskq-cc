@@ -61,7 +61,7 @@ def _is_wrong_key_stub_active() -> bool:
 
 
 def resolve_api_key(plaintext: str) -> Optional[Tuple[str, str]]:
-    """Resolve a plaintext API key to ``(key_id, scope)`` or a sentinel.
+    """[FR-03] Resolve a plaintext API key to ``(key_id, scope)`` or a sentinel.
 
     Returns ``None`` when ``plaintext`` is empty (so an absent header
     bubbles up as 401 from the auth dependency) and when a revoked-key
@@ -112,7 +112,7 @@ def resolve_api_key(plaintext: str) -> Optional[Tuple[str, str]]:
 
 
 def has_scope(held: str, required: str) -> bool:
-    """Return ``True`` when ``held`` covers ``required`` hierarchically.
+    """[FR-04] Return ``True`` when ``held`` covers ``required`` hierarchically.
 
     Scope ranks: ``read`` (=1) < ``write`` (=2) < ``admin`` (=3).
     An unknown scope ranks as 0, so a key with an unknown held scope is

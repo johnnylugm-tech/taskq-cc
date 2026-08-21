@@ -43,6 +43,7 @@ SAD.md §2.2 L0 app; SEC-T-05 (information disclosure); NFR-03
 from __future__ import annotations
 
 import logging
+import re
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -51,17 +52,35 @@ from fastapi.responses import JSONResponse
 
 from taskq_api.api.health import router as health_router
 from taskq_api.api.tasks import router as tasks_router
-from taskq_api.config import get_settings
+from taskq_api.config import get_settings, redact
 from taskq_api.errors import Problem, correlation_id_for
 from taskq_api.service import runner
 
-# [FR-10] Substring denylist for the generic 500 handler. The
-# AC-10.2 / SEC-T-05 contract requires that ``detail`` not leak
-# stack traces, SQL fragments, or absolute filesystem paths. Any
-# substring from this list appearing in the raw exception message is
-# replaced by a generic sentinel so the response cannot be used as
-# an information-disclosure sink.
-_INTERNAL_DETAIL_DENYLIST: tuple[str, ...] = ("Traceback", "SQL", "/Users")
+# [FR-10] Internal-detail detectors for the generic 500 handler. The
+# AC-10.2 / SEC-T-05 / AC-N2.5 contract requires that ``detail`` not leak
+# stack traces, SQL fragments, or absolute filesystem paths. Matching on
+# CLASSES of internal detail rather than a hand-listed set of substrings
+# is deliberate: the previous denylist (``Traceback``/``SQL``/``/Users``)
+# passed ``"…/etc/passwd SELECT * FROM users"`` straight through to the
+# client because neither the path nor the statement used one of the three
+# spellings it happened to enumerate.
+_TRACEBACK_MARKER = re.compile(r"Traceback|File \"|File '")
+# ``sql`` case-insensitively (catches ``SQL``, ``sqlite3``, ``sqlalchemy``)
+# plus the uppercase statement keywords a driver echoes back. The keywords
+# stay case-SENSITIVE so an operator-facing sentence like "failed to
+# delete the task" is not mistaken for a SQL fragment.
+_SQL_FRAGMENT = re.compile(
+    r"(?i:sql)|\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|FROM|WHERE|JOIN|TABLE)\b"
+)
+# A POSIX absolute path with at least one component (``/etc``,
+# ``/Users/x/y.py``). The lookbehind stops ``and/or`` from matching.
+_ABSOLUTE_PATH = re.compile(r"(?<![\w])/(?:[\w.\-]+/)*[\w.\-]+")
+
+_INTERNAL_DETAIL_PATTERNS: tuple[re.Pattern[str], ...] = (
+    _TRACEBACK_MARKER,
+    _SQL_FRAGMENT,
+    _ABSOLUTE_PATH,
+)
 
 # [FR-10] The logger every FR-10 handler emits to. NFR-09 requires
 # the ``correlation_id`` to appear in the server log for the same
@@ -74,18 +93,26 @@ _logger = logging.getLogger("taskq_api.errors")
 def _sanitize_detail(message: str) -> str:
     """Return ``message`` scrubbed of internal-detail substrings.
 
-    A message containing any of the :data:`_INTERNAL_DETAIL_DENYLIST`
-    substrings is replaced with the generic "Internal server error."
+    A message matching any of the :data:`_INTERNAL_DETAIL_PATTERNS`
+    classes (stack-trace marker, SQL fragment, absolute filesystem
+    path) is replaced with the generic "Internal server error."
     sentinel so the 500 response cannot disclose stack traces, SQL,
-    or absolute filesystem paths (AC-10.2 / SEC-T-05). The original
-    message is logged via the FR-10 audit log (with
+    or absolute filesystem paths (AC-10.2 / SEC-T-05 / AC-N2.5). The
+    original message is logged via the FR-10 audit log (with
     ``correlation_id``) for operator triage — the body, by contrast,
-    carries only the sanitised form.
+    carries only the sanitised form. A benign message (no internal
+    detail of any class) is returned verbatim so the body still gives
+    the operator something to act on.
+
+    [NFR-04] Whatever survives is finally passed through
+    :func:`taskq_api.config.redact`, so a secret embedded in an
+    otherwise benign exception message (``token=…``, ``Bearer …``,
+    ``postgres://…``) is replaced wholesale (AC-N4.1).
     """
-    for needle in _INTERNAL_DETAIL_DENYLIST:
-        if needle in message:
+    for pattern in _INTERNAL_DETAIL_PATTERNS:
+        if pattern.search(message):
             return "Internal server error."
-    return message
+    return redact(message)
 
 
 def _problem_json_response(
@@ -248,10 +275,13 @@ def create_app() -> FastAPI:
     """
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
-        # No-op startup — the runner is lazily initialised on first
-        # ``submit`` call (so per-test isolation via ``_isolated_db``
-        # is honoured). The shutdown path is what carries the FR-08
-        # graceful-drain contract.
+        """[FR-08] Startup/shutdown scope that drains in-flight runs.
+
+        Startup is a no-op — the runner is lazily initialised on first
+        ``submit`` call (so per-test isolation via ``_isolated_db`` is
+        honoured). The shutdown path is what carries the FR-08
+        graceful-drain contract.
+        """
         try:
             yield
         finally:

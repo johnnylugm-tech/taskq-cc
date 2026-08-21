@@ -82,7 +82,7 @@ def build_engine(url: str | None = None) -> Engine:
 
 @contextmanager
 def transaction(new_session: Callable[[], Session]) -> Iterator[Session]:
-    """Run one unit of work inside a single session with an explicit boundary.
+    """[FR-06] Run one unit of work inside a single session with an explicit boundary.
 
     Commit on a clean exit; on any exception roll back and re-raise (the
     exception is never swallowed); close the session either way. This is
@@ -121,7 +121,7 @@ class _EngineHandle:
         self._factory: sessionmaker[Session] | None = None
 
     def engine(self) -> Engine:
-        """Return the engine, rebuilding it when the configured URL changed."""
+        """[FR-01] Return the engine, rebuilding it when the configured URL changed."""
         url = get_settings().db_url
         if self._engine is None or str(self._engine.url) != url:
             self.dispose()
@@ -132,7 +132,7 @@ class _EngineHandle:
         return self._engine
 
     def factory(self) -> sessionmaker[Session]:
-        """Return a sessionmaker bound to the current engine."""
+        """[FR-01] Return a sessionmaker bound to the current engine."""
         engine = self.engine()
         if self._factory is None or self._factory.kw["bind"] is not engine:
             self._factory = sessionmaker(
@@ -145,7 +145,7 @@ class _EngineHandle:
         return self._factory
 
     def dispose(self) -> None:
-        """Drop the engine and its factory; the next access rebuilds both."""
+        """[FR-01] Drop the engine and its factory; the next access rebuilds both."""
         if self._engine is not None:
             self._engine.dispose()
         self._engine = None
@@ -159,7 +159,7 @@ _insert = _EngineHandle()
 
 
 def get_engine() -> Engine:
-    """Return the process-wide read/write engine, creating it on demand.
+    """[FR-06] Return the process-wide read/write engine, creating it on demand.
 
     Rebuilt whenever ``TASKQ_DB_URL`` changes so a per-test ``tmp_path``
     database cannot leak rows into the next case.
@@ -170,7 +170,7 @@ def get_engine() -> Engine:
 
 
 def get_insert_engine() -> Engine:
-    """Return the private insert engine — a distinct :class:`Engine` instance.
+    """[FR-01] Return the private insert engine — a distinct :class:`Engine` instance.
 
     Writes run on their own engine so ``before_cursor_execute`` listeners
     attached to :func:`get_engine` — how FR-01 AC-1.7 and FR-06 AC-6.4
@@ -184,7 +184,7 @@ def get_insert_engine() -> Engine:
 
 
 def reset_engine() -> None:
-    """Drop both cached engines so the next call rebuilds from current env."""
+    """[FR-01] Drop both cached engines so the next call rebuilds from current env."""
     _read.dispose()
     _insert.dispose()
 
@@ -200,14 +200,14 @@ _reset_engine_for_tests = reset_engine
 
 @contextmanager
 def session_scope() -> Iterator[Session]:
-    """Transactional scope on the shared read/write engine (FR-06 AC-6.2)."""
+    """[FR-06] Transactional scope on the shared read/write engine (FR-06 AC-6.2)."""
     with transaction(_read.factory()) as session:
         yield session
 
 
 @contextmanager
 def insert_scope() -> Iterator[Session]:
-    """Transactional scope on the private insert engine (FR-06 AC-6.2)."""
+    """[FR-06] Transactional scope on the private insert engine (FR-06 AC-6.2)."""
     with transaction(_insert.factory()) as session:
         yield session
 

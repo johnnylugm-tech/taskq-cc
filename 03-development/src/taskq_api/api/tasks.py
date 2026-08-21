@@ -64,7 +64,7 @@ def create_task_endpoint(
     body: TaskCreate,
     _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("write")),
 ):
-    """Create a task. FR-01 AC-1.1 / AC-1.2 / SEC-T-01."""
+    """[FR-01] Create a task. FR-01 AC-1.1 / AC-1.2 / SEC-T-01."""
     return service.create_task(name=body.name, command=body.command)
 
 
@@ -100,7 +100,7 @@ def list_tasks_endpoint(
     cursor: Optional[str] = Query(default=None),
     _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("read")),
 ):
-    """List tasks, cursor-paginated. FR-01 AC-1.4 / AC-1.5.
+    """[FR-01] List tasks, cursor-paginated. FR-01 AC-1.4 / AC-1.5.
 
     ``limit`` defaults to 50, max 200; ``limit > 200`` returns 422.
     ``offset`` is intentionally not exposed (FR-01: cursor only).
@@ -125,7 +125,7 @@ def delete_task_endpoint(
     task_id: int,
     _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("admin")),
 ):
-    """Delete a task (and its result row) atomically. FR-01 AC-1.6."""
+    """[FR-01] Delete a task (and its result row) atomically. FR-01 AC-1.6."""
     if not service.delete_task(task_id):
         raise _not_found_problem()
     return None
@@ -136,7 +136,7 @@ async def run_task_endpoint(
     task_id: int,
     _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("write")),
 ):
-    """Kick off a task run. FR-02 AC-2.1 / AC-2.3.
+    """[FR-02] Kick off a task run. FR-02 AC-2.1 / AC-2.3.
 
     Returns 202 + ``{"run_id": <str>}`` immediately and schedules the
     actual subprocess execution on the running event loop. An unknown
@@ -170,7 +170,7 @@ def list_runs_endpoint(
     task_id: int,
     _api_key: Tuple[str, str] = Depends(require_api_key_with_scope("read")),
 ):
-    """Run history for a task, newest-first. FR-02 AC-2.4 / AC-2.5.
+    """[FR-02] Run history for a task, newest-first. FR-02 AC-2.4 / AC-2.5.
 
     Returns ``{"items": [...]}``; each item carries the five FR-02 result
     columns plus ``started_at`` so the client can render history.

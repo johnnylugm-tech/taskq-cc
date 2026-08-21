@@ -19,7 +19,7 @@ _INJECTION_CHARS = re.compile(r"[;&|`$><\n\r\\]")
 
 
 class TaskCreate(BaseModel):
-    """Body for ``POST /v1/tasks``.
+    """[FR-01] Body for ``POST /v1/tasks``.
 
     Citations: SPEC.md §3 FR-01 validation rules.
     """
@@ -55,7 +55,7 @@ class TaskCreate(BaseModel):
 
 
 class TaskRead(BaseModel):
-    """Response body for ``GET /v1/tasks/{id}`` and ``POST /v1/tasks``.
+    """[FR-01] Response body for ``GET /v1/tasks/{id}`` and ``POST /v1/tasks``.
 
     Citations: SPEC.md §3 FR-01; SAD.md §2.2 schemas.TaskRead.
     """
@@ -76,7 +76,7 @@ class TaskRead(BaseModel):
 
 
 class TaskList(BaseModel):
-    """Response body for ``GET /v1/tasks``.
+    """[FR-01] Response body for ``GET /v1/tasks``.
 
     Citations: SPEC.md §3 FR-01; SAD.md §2.2 schemas.TaskList.
     """

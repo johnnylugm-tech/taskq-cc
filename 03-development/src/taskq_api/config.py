@@ -23,7 +23,7 @@ from dataclasses import dataclass, fields
 
 @dataclass(frozen=True)
 class Settings:
-    """Read-once typed view of the ``TASKQ_*`` environment variables."""
+    """[FR-01] Read-once typed view of the ``TASKQ_*`` environment variables."""
 
     db_url: str
     home: str
@@ -65,6 +65,38 @@ class Settings:
 # operators can still tell which credential is in use.
 _REDACT_USERINFO = re.compile(r"(?P<scheme>[a-zA-Z][a-zA-Z0-9+.\-]*)://[^:@\s/]+:[^@\s/]+@")
 
+# [NFR-04] AC-N4.1 secret pattern, verbatim from SPEC §4 NFR-04. A line
+# matching any alternative is replaced *wholesale* — the AC says the
+# matching line, not just the matched span, is swapped for the sentinel,
+# because a partial substitution still leaks the surrounding context the
+# secret was printed with (``export API_KEY=sk-…`` tells an attacker the
+# variable name and the sink).
+_SECRET_LINE = re.compile(
+    r"(sk-[A-Za-z0-9_-]{8,}|token=\S+|Bearer\s+\S+|postgres(ql)?://[^\s]+)"
+)
+
+REDACTED = "[REDACTED]"
+
+
+def redact(text: str) -> str:
+    """[NFR-04] Replace every secret-bearing line in ``text`` with ``[REDACTED]``.
+
+    Applied to ``stdout_tail`` / ``stderr_tail`` before they are written
+    to ``task_results`` and to every error ``detail`` / log message before
+    it is emitted, so an ``sk-`` key, a ``token=`` / ``Bearer``
+    credential, or a ``postgres://`` DSN echoed by a child command never
+    reaches a persistent sink (AC-N4.1 / SEC-T-05).
+
+    Line-oriented so a multi-line capture keeps the non-secret lines
+    readable for operator triage.
+    """
+    if not text:
+        return text
+    return "\n".join(
+        REDACTED if _SECRET_LINE.search(line) else line
+        for line in text.split("\n")
+    )
+
 
 def _tuple_env(name: str, default: tuple[str, ...] = ()) -> tuple[str, ...]:
     raw = os.environ.get(name, "")
@@ -74,7 +106,7 @@ def _tuple_env(name: str, default: tuple[str, ...] = ()) -> tuple[str, ...]:
 
 
 def get_settings() -> Settings:
-    """Return a fresh ``Settings`` snapshot from current env state."""
+    """[FR-01] Return a fresh ``Settings`` snapshot from current env state."""
     return Settings(
         db_url=os.environ.get("TASKQ_DB_URL", "sqlite:///./taskq.db"),
         home=os.environ.get("TASKQ_HOME", "."),

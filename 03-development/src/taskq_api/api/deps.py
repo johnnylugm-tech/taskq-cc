@@ -97,7 +97,7 @@ def _resolve_or_raise(x_api_key: str | None) -> tuple[str, str]:
 def require_api_key(
     x_api_key: str | None = Header(default=None, alias="X-API-Key"),
 ) -> tuple[str, str]:
-    """Standalone auth dependency: resolve the caller's API key or 401.
+    """[FR-03] Standalone auth dependency: resolve the caller's API key or 401.
 
     Production routes use the per-route closure built by
     :func:`require_api_key_with_scope` instead, so the resolved key
@@ -112,7 +112,7 @@ def require_api_key(
 
 
 def enforce_scope(api_key: tuple[str, str], required: str) -> tuple[str, str]:
-    """Enforce a hierarchical scope (``read`` < ``write`` < ``admin``).
+    """[FR-03] Enforce a hierarchical scope (``read`` < ``write`` < ``admin``).
 
     Plain helper (not a FastAPI dependency) — the per-route closure
     produced by :func:`require_api_key_with_scope` calls it after

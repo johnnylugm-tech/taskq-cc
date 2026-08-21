@@ -27,13 +27,13 @@ denial_count: int = 0
 
 
 def record_denial() -> None:
-    """Increment the rate-limit denial counter by one."""
+    """[FR-05] Increment the rate-limit denial counter by one."""
     global denial_count
     denial_count += 1
 
 
 def check(key_id: object) -> tuple[bool, int]:
-    """Charge one request against ``key_id``'s bucket.
+    """[FR-05] Charge one request against ``key_id``'s bucket.
 
     Returns ``(allowed, retry_after)`` — ``retry_after`` is the number of
     whole seconds the caller should wait before retrying, and is 0 when

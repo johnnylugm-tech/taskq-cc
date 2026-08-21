@@ -19,7 +19,7 @@ from fastapi import Request
 
 
 class Problem(Exception):
-    """Domain exception carrying a structured RFC 7807 problem body.
+    """[FR-10] Domain exception carrying a structured RFC 7807 problem body.
 
     Raised by service / API code to signal a non-2xx response; the
     exception handlers in :mod:`taskq_api.app` translate it into a
@@ -48,7 +48,7 @@ class Problem(Exception):
 
 
 def correlation_id_for(request: Request | None = None) -> str:
-    """Return the request's correlation id, or mint a fresh one.
+    """[FR-10] Return the request's correlation id, or mint a fresh one.
 
     Honours an incoming ``X-Correlation-Id`` header so distributed
     traces stitch back together (AC-10.3 / NFR-09); falls back to a
@@ -68,7 +68,7 @@ def make_problem(
     type_uri: str = "about:blank",
     headers: dict[str, str] | None = None,
 ) -> Problem:
-    """Construct a :class:`Problem` with the standard FR-10 attributes."""
+    """[FR-10] Construct a :class:`Problem` with the standard FR-10 attributes."""
     return Problem(
         status=status,
         title=title,

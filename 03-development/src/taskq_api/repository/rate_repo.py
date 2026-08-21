@@ -94,7 +94,7 @@ def _build_engine() -> _RateEngine:
 
 
 def get_engine() -> _RateEngine:
-    """Return the process-wide bucket engine, rebuilding on a URL change.
+    """[FR-05] Return the process-wide bucket engine, rebuilding on a URL change.
 
     The rebuild-on-change rule mirrors
     :func:`taskq_api.repository.session.get_engine` so a per-test
@@ -193,7 +193,7 @@ def _decide_withdrawal(row: RateBucket, rate: float, capacity: int) -> tuple[boo
 
 
 def withdraw(key_id: object) -> tuple[bool, int]:
-    """Take one token from ``key_id``'s bucket inside a single transaction.
+    """[FR-05] Take one token from ``key_id``'s bucket inside a single transaction.
 
     Returns ``(allowed, retry_after)``. ``allowed`` is ``True`` when a
     token was available and has been deducted; otherwise ``retry_after``

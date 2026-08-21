@@ -28,7 +28,7 @@ from taskq_api.repository.session import insert_scope, session_scope
 
 
 class DuplicateTaskError(Exception):
-    """Domain exception raised when a unique constraint on ``Task.name`` is violated.
+    """[FR-01] Domain exception raised when a unique constraint on ``Task.name`` is violated.
 
     Defined inside the repository layer so the service layer can catch a
     SQLAlchemy-free exception type. Catching ``sqlalchemy.exc.IntegrityError``
@@ -78,7 +78,7 @@ def _add_and_expunge(instance: Any) -> Any:
 
 
 def create(name: str, command: str, status: str = "pending") -> Task:
-    """Insert a new task and return the persisted ORM instance.
+    """[FR-01] Insert a new task and return the persisted ORM instance.
 
     Uses the private insert engine so SQL events fired here are not
     visible to listeners attached to ``session.get_engine()`` — that
@@ -98,7 +98,7 @@ def create(name: str, command: str, status: str = "pending") -> Task:
 
 
 def get_by_id(task_id: int) -> Optional[Task]:
-    """Return the task row with its result eagerly loaded, or None."""
+    """[FR-01] Return the task row with its result eagerly loaded, or None."""
     with session_scope() as session:
         stmt = (
             select(Task)
@@ -113,7 +113,7 @@ def list_paginated(
     cursor: str | None,
     status: str | None,
 ) -> tuple[list[Task], Optional[str]]:
-    """Cursor-paginated list of tasks with eager-loaded result rows.
+    """[FR-01] Cursor-paginated list of tasks with eager-loaded result rows.
 
     Returns ``(rows, next_cursor)``. The count statement is always
     executed so the SQL surface stays at exactly 3 statements regardless
@@ -146,7 +146,7 @@ def list_paginated(
 
 
 def delete(task_id: int) -> bool:
-    """Delete the task + its task_results row in one transaction.
+    """[FR-01] Delete the task + its task_results row in one transaction.
 
     Citations: SPEC.md §3 FR-01 + FR-06; AC-1.6 cascade delete.
     """
@@ -160,7 +160,7 @@ def delete(task_id: int) -> bool:
 
 
 def update_status(task_id: int, status: str) -> bool:
-    """Transition ``task_id`` to ``status``; no-op if the row is missing.
+    """[FR-02] Transition ``task_id`` to ``status``; no-op if the row is missing.
 
     Citations: SPEC.md §3 FR-02 state machine.
     """
@@ -181,7 +181,7 @@ def record_result(
     duration_ms: int,
     finished_at: datetime,
 ) -> TaskResult:
-    """Append a new ``task_results`` row (FR-07 v3 multi-row schema).
+    """[FR-07] Append a new ``task_results`` row (FR-07 v3 multi-row schema).
 
     The row is expunged so the caller can read attributes after the
     session closes (same pattern as ``create``).
@@ -202,7 +202,7 @@ def record_result(
 
 
 def list_runs(task_id: int) -> list[TaskResult]:
-    """Return all result rows for ``task_id`` newest-first.
+    """[FR-02] Return all result rows for ``task_id`` newest-first.
 
     Sorted by ``started_at`` descending with ``id`` descending as a
     deterministic tiebreaker (so AC-2.5's strict ``>`` between adjacent

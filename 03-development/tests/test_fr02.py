@@ -979,3 +979,376 @@ def test_coverage_delete_existing_task_returns_204_and_repo_returns_true():  # N
         "FR-02 coverage: DELETE /v1/tasks/{existing_id} must return 204 "
         f"(success path on line 121), got {response.status_code}"
     )
+
+
+def test_coverage_submit_admits_and_runs_to_terminal_state(monkeypatch):  # NFR-08 (no orphan subprocess), NFR-13 (admission control happy path)
+    """``runner.submit`` must admit, run, and return a terminal ``RunOutcome``.
+
+    Drives ``service.runner.submit`` into its happy path (lines 257-290):
+    the ``_get_gate`` first-time-creation branch (58-61), the
+    ``_register_in_flight`` body (66-68), the ``STATE_RUNNING`` transition
+    in ``_run_inner`` (228-229), the awaited inner task (279), and the
+    ``gate.release()`` finally branch (290). The done-callback registered
+    by ``_register_in_flight`` covers ``_unregister_in_flight`` (71-74).
+    """
+    from taskq_api.service import runner as runner_module
+    from taskq_api.repository import task_repo as task_repo_module
+
+    monkeypatch.setenv("TASKQ_MAX_CONCURRENT", "2")
+
+    task = task_repo_module.create(name="submit-happy", command="echo submit")
+
+    async def _run():
+        return await runner_module.submit(
+            task_id=task.id, command="echo submit", timeout_sec=5.0
+        )
+
+    outcome = _run_async(_run())
+    assert outcome.final_state == "done", (
+        f"FR-02 coverage: submit happy path must produce final_state=done, "
+        f"got {outcome.final_state!r}"
+    )
+    assert outcome.exit_code == 0
+    assert outcome.duration_ms >= 0
+    # And the in-flight registry must be empty once the inner task settled.
+    assert not runner_module._in_flight, (
+        "FR-02 coverage: _unregister_in_flight must run via the done_callback "
+        "so _in_flight is empty after the inner task settles"
+    )
+    # The DB row must be persisted in the terminal state.
+    row = task_repo_module.get_by_id(task.id)
+    assert row is not None and row.status == "done"
+
+
+def test_coverage_submit_over_cap_returns_queued_outcome(monkeypatch):  # NFR-13 (admission control — over-cap refusal, FR-08 AC-8.1)
+    """Over-cap ``submit`` must return a ``RunOutcome(final_state=queued)``.
+
+    Drives the ``if not gate.try_admit():`` refusal branch (line 258) by
+    saturating the gate first (two admits under ``TASKQ_MAX_CONCURRENT=1``
+    would be flaky, so we cap at 1 and submit twice — the second
+    invocation is refused without spawning a subprocess).
+    """
+    import asyncio as _asyncio
+
+    from taskq_api.repository import task_repo as task_repo_module
+    from taskq_api.service import runner as runner_module
+    from taskq_api.service.run_state import STATE_QUEUED
+
+    monkeypatch.setenv("TASKQ_MAX_CONCURRENT", "1")
+    # Force the gate to be recreated under the new cap.
+    runner_module._gate = None
+
+    # First submission: hold the only admission slot open across the
+    # event-loop boundary so the second submission observes a saturated
+    # gate. We use ``asyncio.Event`` to coordinate; the first submit
+    # is wrapped to wait on it before ``gate.release()`` runs.
+    blocker = _asyncio.Event()
+
+    async def _slow_submit(task_id, command, timeout_sec=None):
+        gate = runner_module._get_gate()
+        assert gate.try_admit()
+        runner_module._register_in_flight(
+            _asyncio.ensure_future(_asyncio.sleep(0)), task_id
+        )
+        await blocker.wait()
+        gate.release()
+        return runner_module.RunOutcome(
+            exit_code=0,
+            stdout_tail="",
+            stderr_tail="",
+            duration_ms=0,
+            final_state="done",
+        )
+
+    task_a = task_repo_module.create(name="submit-cap-a", command="echo a")
+    task_b = task_repo_module.create(name="submit-cap-b", command="echo b")
+
+    async def _scenario():
+        # Saturate the gate with the slow wrapper, then submit normally
+        # so the admission path returns False.
+        slow = _asyncio.create_task(_slow_submit(task_a.id, "echo a"))
+        # Yield so the slow wrapper has actually claimed the slot.
+        await _asyncio.sleep(0)
+        try:
+            outcome = await runner_module.submit(
+                task_id=task_b.id, command="echo b", timeout_sec=1.0
+            )
+        finally:
+            blocker.set()
+            await slow
+        return outcome
+
+    outcome = _run_async(_scenario())
+    assert outcome.final_state == STATE_QUEUED, (
+        f"FR-02 coverage: over-cap submit must refuse with final_state="
+        f"{STATE_QUEUED!r}, got {outcome.final_state!r}"
+    )
+    assert outcome.exit_code == -1
+    assert outcome.duration_ms == 0
+
+
+def test_coverage_execute_command_cancellation_kills_child():  # NFR-08 (no orphan on cancel), NFR-15 (timeout path)
+    """Cancelling ``execute_command`` must kill the child and re-raise.
+
+    Drives ``service.runner.execute_command`` into its ``except
+    asyncio.CancelledError`` branch (lines 120-128): the child is killed
+    and reaped before CancelledError propagates to the caller.
+    """
+    import asyncio as _asyncio
+    from unittest.mock import patch as _patch
+
+    from taskq_api.service import runner as runner_module
+
+    captured: dict[str, object] = {}
+
+    class _FakeProc:
+        def __init__(self):
+            self.pid = 12345
+            self.returncode = None
+
+        async def communicate(self):
+            # Block forever until killed.
+            await _asyncio.sleep(60)
+
+        async def wait(self):
+            captured["wait_called"] = True
+            self.returncode = -9
+            return self.returncode
+
+        def kill(self):
+            captured["kill_called"] = True
+
+    async def _fake_exec(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+        return _FakeProc()
+
+    async def _scenario():
+        with _patch.object(_asyncio, "create_subprocess_exec", _fake_exec):
+            task = _asyncio.create_task(
+                runner_module.execute_command("sleep 5", timeout=60.0)
+            )
+            await _asyncio.sleep(0)
+            task.cancel()
+            try:
+                await task
+            except _asyncio.CancelledError:
+                captured["cancelled_propagated"] = True
+                return
+            captured["cancelled_propagated"] = False
+
+    _run_async(_scenario())
+    assert captured.get("kill_called") is True, (
+        "FR-02 coverage: execute_command CancelledError branch must call "
+        "process.kill() before re-raising"
+    )
+    assert captured.get("wait_called") is True, (
+        "FR-02 coverage: execute_command CancelledError branch must reap the "
+        "child via await process.wait() so the OS releases the PID"
+    )
+    assert captured.get("cancelled_propagated") is True, (
+        "FR-02 coverage: CancelledError must propagate, not be swallowed"
+    )
+
+
+def test_coverage_collect_outcome_missing_binary_returns_failed_outcome():  # NFR-04 (graceful failure — no stranding), NFR-06 (runner no-op on spawn failure)
+    """A missing binary must produce ``RunOutcome(final_state=failed)``.
+
+    Drives ``service.runner._collect_outcome`` into its ``except (OSError,
+    ValueError)`` branch (lines 158-165) by feeding a command whose
+    ``shlex.split`` argv does not match any executable on PATH.
+    """
+    from taskq_api.service import runner as runner_module
+    from taskq_api.service.run_state import STATE_FAILED
+
+    async def _scenario():
+        return await runner_module._collect_outcome(
+            "definitely-not-a-real-binary-xyzzy", timeout=1.0
+        )
+
+    outcome = _run_async(_scenario())
+    assert outcome.final_state == STATE_FAILED, (
+        f"FR-02 coverage: missing binary must resolve to final_state="
+        f"{STATE_FAILED!r}, got {outcome.final_state!r}"
+    )
+    assert outcome.exit_code == -1
+    assert outcome.duration_ms == 0
+    assert "definitely-not-a-real-binary-xyzzy" in outcome.stderr_tail or (
+        outcome.stderr_tail != ""
+    ), (
+        "FR-02 coverage: stderr_tail must carry the OSError message so the "
+        "operator can debug the spawn failure"
+    )
+
+
+def test_coverage_drain_empty_returns_zero_stragglers():  # NFR-08 (drain happy path on an idle runner), NFR-15 (FR-08 graceful drain)
+    """``runner.drain`` with no in-flight tasks must report zero stragglers.
+
+    Drives the ``if not in_flight_snapshot`` early-return branch on lines
+    307-309.
+    """
+    from taskq_api.service import runner as runner_module
+
+    async def _scenario():
+        # Make sure the registry is empty.
+        runner_module._in_flight.clear()
+        runner_module._task_ids.clear()
+        report = await runner_module.drain(timeout=1.0)
+        return report
+
+    report = _run_async(_scenario())
+    assert report.stragglers_marked_interrupted == 0, (
+        "FR-02 coverage: drain on an empty registry must report zero stragglers"
+    )
+
+
+def test_coverage_drain_cancels_stragglers_and_marks_interrupted(monkeypatch):  # NFR-08 (drain cancellation reaps children), NFR-15 (FR-08 graceful drain stragglers)
+    """``runner.drain`` must cancel stragglers and persist ``state=interrupted``.
+
+    Drives ``service.runner.drain`` into its straggler branch (lines
+    307-342) by populating the in-flight registry with a slow fake task
+    and observing that the cancellation propagates + the DB row is
+    transitioned to ``STATE_INTERRUPTED``.
+    """
+    import asyncio as _asyncio
+
+    from taskq_api.repository import task_repo as task_repo_module
+    from taskq_api.service import runner as runner_module
+    from taskq_api.service.run_state import (
+        STATE_INTERRUPTED,
+        STATE_RUNNING,
+    )
+
+    monkeypatch.setenv("TASKQ_TASK_TIMEOUT", "30")
+
+    task = task_repo_module.create(name="drain-strag", command="sleep 30")
+    # Transition the row to running so drain's interrupted update is the
+    # final visible transition.
+    task_repo_module.update_status(task.id, STATE_RUNNING)
+
+    async def _scenario():
+        # Build a long-running inner future that will be in flight when
+        # drain() runs. We bypass submit() so the cap does not have to
+        # be configured — only the in-flight registry matters for drain.
+        runner_module._in_flight.clear()
+        runner_module._task_ids.clear()
+
+        async def _slow():
+            try:
+                await _asyncio.sleep(60)
+            except _asyncio.CancelledError:
+                # Mirror execute_command's kill+wait reaping pattern so
+                # the test exercises the drain branch that depends on
+                # cancellation propagating into the inner coroutine.
+                raise
+
+        inner = _asyncio.ensure_future(_slow())
+        runner_module._register_in_flight(inner, task.id)
+        # Yield so the inner future is actually scheduled.
+        await _asyncio.sleep(0)
+        report = await runner_module.drain(timeout=0.05)
+        return report
+
+    report = _run_async(_scenario())
+    assert report.stragglers_marked_interrupted == 1, (
+        f"FR-02 coverage: drain must mark exactly one straggler as "
+        f"interrupted, got {report.stragglers_marked_interrupted}"
+    )
+    row = task_repo_module.get_by_id(task.id)
+    assert row is not None and row.status == STATE_INTERRUPTED, (
+        f"FR-02 coverage: drain must transition the row to "
+        f"{STATE_INTERRUPTED!r}, got status={row.status if row else None!r}"
+    )
+
+
+def test_coverage_get_task_awaitable_branch(monkeypatch):  # NFR-03 (cancellation propagation — async service path), NFR-10 (round-trip)
+    """``get_task_endpoint`` must ``await`` a service result that is an awaitable.
+
+    Drives ``api.tasks:get_task_endpoint`` into the ``row = await row``
+    branch on line 90 by stubbing ``service.get_task`` to return an
+    ``asyncio.Future`` whose result is the task dict. This is the
+    FR-10 cancellation-propagation forward-compat path.
+    """
+    from taskq_api.repository import task_repo as task_repo_module
+    from taskq_api.service import tasks as service_tasks
+
+    task = task_repo_module.create(name="awaitable", command="echo await")
+
+    # Save the unpatched function BEFORE we monkeypatch, so the wrapper
+    # does not recurse into itself when called from inside _fake_get_task.
+    _real_get_task = service_tasks.get_task
+
+    async def _fake_get_task(task_id):
+        # Return the real dict but wrapped in a coroutine so the endpoint
+        # takes the ``row = await row`` branch (line 90).
+        return _real_get_task(task_id)
+
+    monkeypatch.setattr(service_tasks, "get_task", _fake_get_task)
+
+    from httpx import ASGITransport, AsyncClient
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.get(
+                f"/v1/tasks/{task.id}",
+                headers=_auth_headers("read_key"),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code == 200, (
+        "FR-02 coverage: get_task_endpoint awaitable branch must return 200"
+    )
+    payload = response.json()
+    assert payload["id"] == str(task.id)
+
+
+def test_coverage_run_task_endpoint_db_error_propagates(monkeypatch):  # NFR-03 (DB outage surfaces 500, not 404), NFR-07 (dependency fault — DB unavailable)
+    """A DB error during the run existence check must propagate, not return 404.
+
+    Drives ``api.tasks:run_task_endpoint`` into the ``except Exception:
+    raise`` branch on lines 149-153 by stubbing ``task_repo.get_by_id``
+    to raise. The global exception handler is expected to convert this
+    into a 500; the assertion is that the request does not return 404.
+    """
+    from taskq_api.repository import task_repo as task_repo_module
+    from taskq_api.errors import make_problem
+
+    def _raise_db_error(task_id):
+        # Raise a FastAPI-recognised Problem so the global handler maps
+        # it to a deterministic status — easier to assert than a bare
+        # RuntimeError, which would still pass but route through the
+        # generic 500 path.
+        raise make_problem(
+            status=500,
+            title="DB unavailable",
+            detail="simulated DB outage during run existence check",
+            type_uri="/errors/db-unavailable",
+        )
+
+    monkeypatch.setattr(task_repo_module, "get_by_id", _raise_db_error)
+
+    from httpx import ASGITransport, AsyncClient
+
+    async def _run():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as ac:
+            return await ac.post(
+                "/v1/tasks/1/run",
+                headers=_auth_headers("write_key"),
+            )
+
+    response = _run_async(_run())
+    assert response.status_code != 404, (
+        "FR-02 coverage: a DB error during the run existence check must "
+        "propagate (becomes 500 via the global handler), not silently "
+        "surface as a misleading 404"
+    )
+    assert response.status_code == 500, (
+        f"FR-02 coverage: expected 500 from the global handler, got "
+        f"{response.status_code}"
+    )

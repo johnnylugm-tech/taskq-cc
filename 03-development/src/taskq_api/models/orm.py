@@ -20,11 +20,11 @@ def _utcnow() -> datetime:
 
 
 class Base(DeclarativeBase):
-    """Single declarative base for the project."""
+    """[FR-01] Single declarative base for the project."""
 
 
 class Task(Base):
-    """FR-01 task resource row.
+    """[FR-01] FR-01 task resource row.
 
     Citations: SPEC.md §3 FR-01; SAD.md §2.2 orm.Task.
     """
@@ -47,7 +47,7 @@ class Task(Base):
 
 
 class TaskResult(Base):
-    """Task execution result row (FR-02 / FR-07 v3 split_results).
+    """[FR-02] Task execution result row (FR-02 / FR-07 v3 split_results).
 
     Citations: SPEC.md §3 FR-02 + FR-07; SAD.md §2.2 orm.TaskResult.
 
@@ -77,7 +77,7 @@ class TaskResult(Base):
 
 
 class ApiKey(Base):
-    """FR-03 API key row — only the SHA-256 digest of the plaintext is stored.
+    """[FR-03] FR-03 API key row — only the SHA-256 digest of the plaintext is stored.
 
     ``key_hash`` is the 64-character lowercase hex of
     ``hashlib.sha256(plaintext.encode()).hexdigest()``. The plaintext

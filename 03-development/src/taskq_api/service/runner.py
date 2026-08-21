@@ -23,123 +23,25 @@ from __future__ import annotations
 import asyncio
 import shlex
 import time
-from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Optional
 
 from taskq_api.config import get_settings
 from taskq_api.repository import task_repo
-
-
-# ---------------------------------------------------------------------------
-# FR-02 / FR-08 state machine. ``STATE_PENDING`` is the value a row ships
-# with from the FR-01 create path; ``STATE_RUNNING`` is set just before
-# subprocess spawn; ``STATE_DONE`` / ``STATE_FAILED`` / ``STATE_TIMEOUT``
-# are the FR-02 terminal values the runner hands back to the repository at
-# the end of a run. ``STATE_INTERRUPTED`` is the FR-08 drain terminal
-# value (a straggler cancelled by the drain budget); ``STATE_QUEUED`` is
-# the FR-08 admission-control refusal value (over-cap submit, no
-# subprocess spawned). Spelled here rather than inlined at each call site
-# so a typo in one place cannot drift the state machine — every writer
-# goes through the same seven names.
-# ---------------------------------------------------------------------------
-STATE_PENDING = "pending"
-STATE_RUNNING = "running"
-STATE_DONE = "done"
-STATE_FAILED = "failed"
-STATE_TIMEOUT = "timeout"
-STATE_INTERRUPTED = "interrupted"
-STATE_QUEUED = "queued"
-
-
-@dataclass(frozen=True)
-class ExecResult:
-    """One execution attempt — populated fields written to ``task_results``."""
-
-    exit_code: int
-    stdout_tail: str
-    stderr_tail: str
-    duration_ms: int
-
-
-@dataclass(frozen=True)
-class RunOutcome:
-    """Final state of a single task run — ready to persist + transition.
-
-    ``final_state`` is one of ``STATE_DONE``, ``STATE_FAILED``,
-    ``STATE_TIMEOUT``, ``STATE_INTERRUPTED``, or ``STATE_QUEUED``; the
-    constant names above drive the FR-02 / FR-08 state machine so callers
-    do not re-derive them from exit_code (which would silently diverge if
-    a future state ever meant ``exit_code != 0``).
-    """
-
-    exit_code: int
-    stdout_tail: str
-    stderr_tail: str
-    duration_ms: int
-    final_state: str
-
-
-@dataclass(frozen=True)
-class DrainReport:
-    """[FR-08] Outcome of a graceful drain — stragglers forced to ``interrupted``.
-
-    ``stragglers_marked_interrupted`` is the count of in-flight tasks
-    that were still running when the drain budget elapsed and were
-    therefore cancelled + persisted as ``state='interrupted'``.
-    """
-
-    stragglers_marked_interrupted: int
-
-
-def _now() -> datetime:
-    """Return a fresh timezone-aware UTC ``datetime``."""
-    return datetime.now(timezone.utc)
-
-
-def _decode_tail(raw: Optional[bytes]) -> str:
-    """Decode subprocess stdout/stderr capture into a UTF-8-safe string."""
-    return (raw or b"").decode(errors="replace")
-
-
-class _AdmissionGate:
-    """[FR-08] One-shot admission gate keyed off ``TASKQ_MAX_CONCURRENT``.
-
-    Admits at most ``cap`` total submissions during the gate's lifetime;
-    subsequent ``try_admit`` calls return ``False`` until the gate is
-    recreated (which the ``_get_gate`` helper does whenever the configured
-    cap changes). The non-releasing model is what makes AC-8.1's
-    ``queued_count >= max_concurrent`` invariant hold under
-    ``TASKQ_MAX_CONCURRENT=4`` with 20 submissions — the first 4 are
-    admitted, the remaining 16 are refused with
-    ``final_state=STATE_QUEUED`` and never spawn a subprocess.
-
-    ``try_admit`` is intentionally synchronous (no ``await``) so the
-    check-and-decrement is atomic at the asyncio-cooperative-scheduling
-    boundary: no other coroutine can interleave between the read and
-    the write.
-    """
-
-    def __init__(self, cap: int) -> None:
-        self._cap = cap
-        self._remaining = cap
-
-    def try_admit(self) -> bool:
-        """Atomically claim one admission slot; return ``False`` if saturated."""
-        if self._remaining > 0:
-            self._remaining -= 1
-            return True
-        return False
-
-    def release(self) -> None:
-        """Give a claimed slot back once its submission has settled.
-
-        Without this the cap would be a *lifetime* budget rather than a
-        concurrency limit: after ``cap`` submissions the gate would refuse
-        every later ``submit`` forever, even with nothing in flight.
-        """
-        if self._remaining < self._cap:
-            self._remaining += 1
+from taskq_api.service.run_state import (
+    STATE_DONE,
+    STATE_FAILED,
+    STATE_INTERRUPTED,
+    STATE_PENDING,
+    STATE_QUEUED,
+    STATE_RUNNING,
+    STATE_TIMEOUT,
+    DrainReport,
+    ExecResult,
+    RunOutcome,
+    _AdmissionGate,
+    decode_tail as _decode_tail,
+    now as _now,
+)
 
 
 # Module-level gate + in-flight registry. The gate is recreated when
@@ -184,7 +86,7 @@ _TaskGroup = asyncio.TaskGroup
 
 
 async def execute_command(command: str, timeout: Optional[float] = None) -> ExecResult:
-    """Spawn ``command`` via argv-split subprocess, returning an ``ExecResult``.
+    """[FR-08] Spawn ``command`` via argv-split subprocess, returning an ``ExecResult``.
 
     The command string is split with ``shlex.split`` and passed positionally
     to ``asyncio.create_subprocess_exec``; the forbidden ``shell=`` kwarg
@@ -441,7 +343,7 @@ async def drain(timeout: float) -> DrainReport:
 
 
 async def run_task(task_id: int, command: str) -> None:
-    """Run ``command`` for ``task_id`` end-to-end: state + persist + result.
+    """[FR-02] Run ``command`` for ``task_id`` end-to-end: state + persist + result.
 
     Kept for the FR-02 ``api/tasks.py`` route (``POST /v1/tasks/{id}/run``);
     FR-08's admission-controlled submission goes through ``submit`` instead.

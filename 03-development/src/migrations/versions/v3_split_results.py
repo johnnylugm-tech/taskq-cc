@@ -37,7 +37,7 @@ depends_on = None
 
 
 def upgrade():  # noqa: ANN001,ANN201  — explicit type annotations would break the AC-7.3 regex
-    """Forward split: ``tasks.result_json`` → ``task_results`` rows.
+    """[FR-07] Forward split: ``tasks.result_json`` → ``task_results`` rows.
 
     SQLite 3.35.0+ (we ship 3.50.4) supports ``ALTER TABLE … DROP
     COLUMN`` natively, so we do NOT use ``op.batch_alter_table`` here —
@@ -78,7 +78,7 @@ def upgrade():  # noqa: ANN001,ANN201  — explicit type annotations would break
 
 
 def downgrade():  # noqa: ANN001,ANN201  — explicit type annotations would break the AC-7.3 regex
-    """Reverse split: ``task_results`` → ``tasks.result_json`` — real migration.
+    """[FR-07] Reverse split: ``task_results`` → ``tasks.result_json`` — real migration.
 
     AC-7.3 forbids a destructive data-loss shortcut here;
     every step below is an actual schema + data operation, NOT a

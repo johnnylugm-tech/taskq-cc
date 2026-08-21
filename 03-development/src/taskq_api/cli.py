@@ -60,7 +60,7 @@ _HANDLERS: dict[tuple[str, str], Callable[[argparse.Namespace], int]] = {
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Parse ``argv`` and dispatch to a subcommand handler.
+    """[FR-03] Parse ``argv`` and dispatch to a subcommand handler.
 
     Returns the process exit code (0 on success, non-zero on error).
     ``argv`` defaults to ``sys.argv[1:]`` so ``python -m taskq_api``

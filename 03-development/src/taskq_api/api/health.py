@@ -145,7 +145,7 @@ def _not_ready(detail: str) -> JSONResponse:
 
 @router.get("/healthz")
 def healthz_route() -> dict[str, str]:
-    """Liveness probe — always 200, no auth (FR-09 / AC-9.1).
+    """[FR-09] Liveness probe — always 200, no auth (FR-09 / AC-9.1).
 
     The probe MUST NOT touch the DB: a pod that has lost its DB
     connection is still alive and a liveness probe restart on a
@@ -158,7 +158,7 @@ def healthz_route() -> dict[str, str]:
 
 @router.get("/readyz")
 def readyz_route() -> Any:
-    """Readiness probe — 200 if DB reachable AND alembic current == head (FR-09 / AC-9.2).
+    """[FR-09] Readiness probe — 200 if DB reachable AND alembic current == head (FR-09 / AC-9.2).
 
     Otherwise returns 503 with ``Content-Type: application/problem+json``
     whose ``detail`` names the failing side (``"db"`` for a DB outage,
@@ -202,7 +202,7 @@ def readyz_route() -> Any:
     dependencies=[Depends(require_api_key_with_scope("admin"))],
 )
 def metrics_route() -> dict[str, Any]:
-    """Admin-scope metrics view (FR-09 / AC-9.3).
+    """[FR-09] Admin-scope metrics view (FR-09 / AC-9.3).
 
     Returns five fields — the ``latency_p50/p95/p99`` triple and the
     ``rate_limit_denials`` counter — in the order documented in
