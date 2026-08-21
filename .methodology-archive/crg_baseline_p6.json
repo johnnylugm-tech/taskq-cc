@@ -1,0 +1,36 @@
+{
+  "community_cohesion": {
+    "score": 88.9,
+    "healthy": 8,
+    "total": 9,
+    "total_all": 43,
+    "excluded_test_communities": 34,
+    "unhealthy": [
+      {
+        "name": "migrations-migration",
+        "cohesion": 0.1714,
+        "size": 6,
+        "issues": [
+          "low_cohesion(0.17)"
+        ],
+        "dominant_file": "03-development/src/migrations/env.py"
+      }
+    ],
+    "_cohesion_threshold": 0.2,
+    "_community_oversized": 50,
+    "_community_min_size": 5,
+    "_extra_excludes": [],
+    "excludes_matched": {},
+    "excludes_files_matched": {}
+  },
+  "large_functions_critical": [],
+  "large_functions_penalty": 0,
+  "architecture_score": 88.9,
+  "_source": "framework-independent",
+  "_graph_files": 50,
+  "_source_files": 50,
+  "_unparsed_files": [],
+  "_build_type": "update",
+  "_baseline_sha": "5e3e0529aa97d95de8998aeedd346fe33e606c8a",
+  "_baseline_phase": 6
+}

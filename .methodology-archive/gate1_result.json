@@ -1,0 +1,107 @@
+{
+  "gate": 1,
+  "phase": 8,
+  "fr_id": "FR-10",
+  "overall_score": 100.0,
+  "quality_complete": true,
+  "rounds_used": 1,
+  "breakdown": {
+    "linting": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "All checks passed!"
+    },
+    "type_safety": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787325239485\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.161}}"
+    },
+    "test_coverage": {
+      "score": 100.0,
+      "threshold": 100,
+      "tests_passed": 116,
+      "tests_failed": 0,
+      "tests_skipped": 0,
+      "tool_evidence": "116 passed in 8.21s. coverage totals: percent_covered=100.0, covered_lines=133, num_statements=133"
+    },
+    "architecture_constraints": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT."
+    }
+  },
+  "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
+  "enforcer_surface": {
+    "core/quality_gate": "e42e8a1db831bc1a315be867d3cb095c36c0b752",
+    "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
+    "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
+  },
+  "evidence_digest": {
+    "mutation_testing::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "45faf3237c9c35c9919ec7b08cfb20fe4cf1880e1dfeeb58c480c0a18eeb1fcc",
+      "bytes": 1386,
+      "head": "[mutmut]\n# Mutation test scope — per SAB NFR-08.\n# Note: uses mutmut 2.x syntax (not 3.x); pin: pip install \"mutmut==2.5.1\"\npaths_to_mutate=03-development/src/taskq_api/repository,03-development/src/taskq_api/service\npaths_to_exclude=__init__.py,config.py\ntests_dir=03-development/tests\n# Baseline scope, expressed with -k so it is cwd-independent (mutmut runs\n# the runner from a temp workdir, where a path-relative --ignore silently\n# matches nothing):\n#   * `test_ac_n*` — the NFR acceptance tests assert on the *environment*\n#     (degradations log, pinned deps, license scan, `make verify-system`).\n#     None of them can kill a mutant in repository/ or service/, two of\n#     them shell out to a nested pytest that the framework's\n#     PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 baseline env breaks, and one of\n#     them re-runs the whole suite — which would multiply every mutant's\n#     runtime by the suite's.\n#   * `test_perf_*` — pytest-benchmark's `benchmark` fixture is not\n#     importable under PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 (see\n#     harness/core/quality_gate/mutation_enforcer.py:_mutmut_subprocess_env).\n# CI itself runs `pytest 03-development/tests` unfiltered (NFR-09 AC-N9.3);"
+    },
+    "test_coverage::pyproject.toml": {
+      "source": "pyproject.toml (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "cb9635f56108f11f955a40d8e1b7cd66d657a405fd77e6902c94a9e19aa4700b",
+      "bytes": 713,
+      "head": "[tool.pytest.ini_options]\n# NFR-09 AC-N9.3 forbids structural test exclusion (`--ignore` / `-k` /\n# `--deselect` / `collect_ignore`), so this block declares no filters.\n# The three tests that used to be deselected here now run in-suite:\n#   - test_ac_n1_1 / test_ac_n1_2 seed their 10k rows with one bulk\n#     `executemany` instead of 10k ORM inserts (seconds -> milliseconds);\n#   - test_ac_n12_2 recurses into `make verify-system`, which exports\n#     TASKQ_INSIDE_VERIFY_SYSTEM=1 for the suite it chains, so the inner\n#     invocation asserts the sentinel rather than re-entering make.\n# The pytest-cov timeout for this project is raised to 900s in\n# .methodology/harness_config.json to cover the nested run."
+    },
+    "test_coverage::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "45faf3237c9c35c9919ec7b08cfb20fe4cf1880e1dfeeb58c480c0a18eeb1fcc",
+      "bytes": 1386,
+      "head": "[mutmut]\n# Mutation test scope — per SAB NFR-08.\n# Note: uses mutmut 2.x syntax (not 3.x); pin: pip install \"mutmut==2.5.1\"\npaths_to_mutate=03-development/src/taskq_api/repository,03-development/src/taskq_api/service\npaths_to_exclude=__init__.py,config.py\ntests_dir=03-development/tests\n# Baseline scope, expressed with -k so it is cwd-independent (mutmut runs\n# the runner from a temp workdir, where a path-relative --ignore silently\n# matches nothing):\n#   * `test_ac_n*` — the NFR acceptance tests assert on the *environment*\n#     (degradations log, pinned deps, license scan, `make verify-system`).\n#     None of them can kill a mutant in repository/ or service/, two of\n#     them shell out to a nested pytest that the framework's\n#     PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 baseline env breaks, and one of\n#     them re-runs the whole suite — which would multiply every mutant's\n#     runtime by the suite's.\n#   * `test_perf_*` — pytest-benchmark's `benchmark` fixture is not\n#     importable under PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 (see\n#     harness/core/quality_gate/mutation_enforcer.py:_mutmut_subprocess_env).\n# CI itself runs `pytest 03-development/tests` unfiltered (NFR-09 AC-N9.3);"
+    },
+    "linting": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
+    },
+    "type_safety": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "0f3e60c39eff2852978f6d92c6823971fe92b2f6785103b40ad095f1807e1102",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787325239485\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.161}}"
+    },
+    "test_coverage": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "5ad017511f4a101d8dd2077771b798a0c663fd22a933ca534dbcb45685777dce",
+      "bytes": 98,
+      "head": "116 passed in 8.21s. coverage totals: percent_covered=100.0, covered_lines=133, num_statements=133"
+    },
+    "architecture_constraints": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "a660e907b263801434ab9cbd1263db824a4c103dd948259c2a19b40ea8c41ddb",
+      "bytes": 279,
+      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT."
+    }
+  },
+  "composite_score": 100.0,
+  "verdict": "PASS",
+  "passed": true,
+  "spec_undelivered": [],
+  "spec_declared": 0,
+  "measurement_scope": {
+    "weight_covered": 0.75,
+    "weight_total": 1.0,
+    "dimensions_scored": [
+      "architecture_constraints",
+      "linting",
+      "type_safety"
+    ],
+    "dimensions_unscored": [
+      "test_coverage"
+    ]
+  }
+}

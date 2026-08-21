@@ -1,0 +1,14 @@
+{
+  "crg_cohesion_healthy": 0.2,
+  "crg_excludes": [],
+  "values": {
+    "timeouts": {
+      "pytest-cov": 900,
+      "system-verification": 600,
+      "readability-v2": 60
+    }
+  },
+  "features": {
+    "mutation_testing": true
+  }
+}

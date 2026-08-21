@@ -1,0 +1,21 @@
+........................................................................ [ 67%]
+...................................                                      [100%]
+=============================== warnings summary ===============================
+03-development/tests/test_fr07.py: 11 warnings
+  /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+------------------------------------------------------------------------------------------- benchmark: 3 tests -------------------------------------------------------------------------------------------
+Name (time in us)                 Min                   Max                Mean              StdDev              Median                IQR            Outliers  OPS (Kops/s)            Rounds  Iterations
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_perf_get_by_id          264.5830 (1.0)        405.3750 (1.0)      273.5104 (1.0)       13.7638 (1.0)      269.9170 (1.0)       5.5420 (1.0)         14;24        3.6562 (1.0)         348           1
+test_perf_list_paginated     320.0830 (1.21)       622.0000 (1.53)     358.4294 (1.31)      24.4667 (1.78)     352.8745 (1.31)      6.0825 (1.10)        24;58        2.7899 (0.76)        500           1
+test_perf_create_task        351.8330 (1.33)     1,919.0000 (4.73)     428.0573 (1.57)     139.2163 (10.11)    400.5420 (1.48)     46.6035 (8.41)         8;20        2.3361 (0.64)        285           1
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+107 passed, 11 warnings in 6.04s

@@ -1,0 +1,105 @@
+{
+  "generated_at": "2026-08-20T07:05:25.225607+00:00",
+  "tool": "mutmut",
+  "survivor_count": 16,
+  "survivors": [
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/key_repo.py",
+      "line": null,
+      "mutant_id": "1",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "19",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "22",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "26",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "28",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "34",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "40",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "43",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "52",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "54",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "76",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "79",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "80",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "81",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "86",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "87",
+      "mutator": null
+    }
+  ],
+  "raw": "To apply a mutant on disk:\n    mutmut apply <id>\n\nTo show a mutant:\n    mutmut show <id>\n\n\nSurvived 🙁 (16)\n\n---- /Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/key_repo.py (1) ----\n\n1\n\n---- /Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py (9) ----\n\n19, 22, 26, 28, 34, 40, 43, 52, 54\n\n---- /Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py (6) ----\n\n76, 79-81, 86-87",
+  "reported_total": 16
+}

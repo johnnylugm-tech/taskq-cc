@@ -1,0 +1,5 @@
+# Harness-executed: ast-assertions
+# returncode: 0
+# agent_score: 100.0 | threshold: 70.0
+
+{"total": 279, "asserted": 279, "zero_assert": [], "neutralised": []}

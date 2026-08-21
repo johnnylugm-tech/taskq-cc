@@ -1,0 +1,86 @@
+{
+  "gate": 1,
+  "phase": 3,
+  "fr_id": "FR-02",
+  "overall_score": 100.0,
+  "quality_complete": true,
+  "rounds_used": 1,
+  "breakdown": {
+    "linting": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "All checks passed!"
+    },
+    "type_safety": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 17, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.994}}"
+    },
+    "test_coverage": {
+      "score": 100.0,
+      "threshold": 100,
+      "tests_passed": 38,
+      "tests_failed": 0,
+      "tests_skipped": 0,
+      "tool_evidence": "============================== 38 passed in 2.54s ==============================\n{\"totals\": {\"covered_lines\": 225, \"num_statements\": 225, \"percent_covered\": 100.0}}"
+    },
+    "architecture_constraints": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "Analyzed 35 files, 78 dependencies. Contracts: 4 kept, 0 broken."
+    }
+  },
+  "enforcer_sha": "6e7942e2c6992f148201ae95ff66d49336c25a03",
+  "enforcer_surface": {
+    "core/quality_gate": "5021f0333ad5b068994f587ed08b37193cb8ee59",
+    "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
+    "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
+  },
+  "evidence_digest": {
+    "linting": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
+    },
+    "type_safety": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "1d347b8bc92cb9b06f40d0f999e1c7e2604062fb0c4cc8c7d4ff74a7407788b1",
+      "bytes": 135,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 17, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.994}}"
+    },
+    "test_coverage": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "777ee26eeca509d4d573a9743cd10cf3750248e7ccb14075a16225e100893363",
+      "bytes": 164,
+      "head": "============================== 38 passed in 2.54s ==============================\n{\"totals\": {\"covered_lines\": 225, \"num_statements\": 225, \"percent_covered\": 100.0}}"
+    },
+    "architecture_constraints": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "5dd9bbd0eb7fa0f81e3e8e37a53effe3e9a74c79820a919f7ee7dcc9ddab891d",
+      "bytes": 64,
+      "head": "Analyzed 35 files, 78 dependencies. Contracts: 4 kept, 0 broken."
+    }
+  },
+  "composite_score": 100.0,
+  "verdict": "PASS",
+  "passed": true,
+  "spec_undelivered": [],
+  "spec_declared": 0,
+  "measurement_scope": {
+    "weight_covered": 0.75,
+    "weight_total": 1.0,
+    "dimensions_scored": [
+      "architecture_constraints",
+      "linting",
+      "type_safety"
+    ],
+    "dimensions_unscored": [
+      "test_coverage"
+    ]
+  }
+}

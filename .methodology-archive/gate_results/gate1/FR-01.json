@@ -1,0 +1,86 @@
+{
+  "gate": 1,
+  "phase": 3,
+  "fr_id": "FR-01",
+  "overall_score": 100.0,
+  "quality_complete": true,
+  "rounds_used": 1,
+  "breakdown": {
+    "linting": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "All checks passed!"
+    },
+    "type_safety": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 16, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.951}, \"generalDiagnostics\": []}"
+    },
+    "test_coverage": {
+      "score": 100.0,
+      "threshold": 100,
+      "tests_passed": 17,
+      "tests_failed": 0,
+      "tests_skipped": 0,
+      "tool_evidence": "collected 17 items\n\n03-development/tests/test_fr01.py .................                      [100%]\n\n============================== 17 passed in 0.90s ==============================\n{\"meta\": {\"format\": 3, \"version\": \"7.15.4\", ... \"totals\": {\"covered_lines\": 196, \"num_statements\": 196, \"percent_covered\": 100.0, \"missing_lines\": 0, \"excluded_lines\": 0}}"
+    },
+    "architecture_constraints": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "Analyzed 30 files, 62 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+    }
+  },
+  "enforcer_sha": "6e7942e2c6992f148201ae95ff66d49336c25a03",
+  "enforcer_surface": {
+    "core/quality_gate": "5021f0333ad5b068994f587ed08b37193cb8ee59",
+    "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
+    "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
+  },
+  "evidence_digest": {
+    "linting": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
+    },
+    "type_safety": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "d7f0931cb6754dde8ec69f22381631195e6223b959691dca65065b98d9f75c89",
+      "bytes": 161,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 16, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.951}, \"generalDiagnostics\": []}"
+    },
+    "test_coverage": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "83d939dfbd0c95481d3fe11518a82701faee108ff2a2452e666b1f86737aac4f",
+      "bytes": 353,
+      "head": "collected 17 items\n\n03-development/tests/test_fr01.py .................                      [100%]\n\n============================== 17 passed in 0.90s ==============================\n{\"meta\": {\"format\": 3, \"version\": \"7.15.4\", ... \"totals\": {\"covered_lines\": 196, \"num_statements\": 196, \"percent_covered\": 100.0, \"missing_lines\": 0, \"excluded_lines\": 0}}"
+    },
+    "architecture_constraints": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "1a9e09294d9851e2aaa67943ed962bf5adde4ff3e692afe27cbdee60341c8a38",
+      "bytes": 274,
+      "head": "Analyzed 30 files, 62 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+    }
+  },
+  "composite_score": 100.0,
+  "verdict": "PASS",
+  "passed": true,
+  "spec_undelivered": [],
+  "spec_declared": 0,
+  "measurement_scope": {
+    "weight_covered": 0.75,
+    "weight_total": 1.0,
+    "dimensions_scored": [
+      "architecture_constraints",
+      "linting",
+      "type_safety"
+    ],
+    "dimensions_unscored": [
+      "test_coverage"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+03-development/src/taskq_api/service/runner.py                 125      0   100%
+03-development/src/taskq_api/service/tasks.py                   25      0   100%
+--------------------------------------------------------------------------------
+TOTAL                                                          967     14    99%
+177 passed, 12 warnings in 12.81s
+verify-system: PASS

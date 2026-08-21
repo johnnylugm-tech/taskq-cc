@@ -1,0 +1,11 @@
+{
+  "total": 169,
+  "asserted": 168,
+  "zero_assert": 1,
+  "density": 2.87,
+  "zero_assert_ratio": 0.0059,
+  "tool_score": 100,
+  "zero_assert_examples": [
+    "test_fr06.py::test_coverage_task_repo_create_duplicate_raises_domain_error"
+  ]
+}

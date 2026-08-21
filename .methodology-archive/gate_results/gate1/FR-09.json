@@ -1,0 +1,86 @@
+{
+  "gate": 1,
+  "phase": 3,
+  "fr_id": "FR-09",
+  "overall_score": 100.0,
+  "quality_complete": true,
+  "rounds_used": 1,
+  "breakdown": {
+    "linting": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "All checks passed!"
+    },
+    "type_safety": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "{\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":30,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.171}}"
+    },
+    "test_coverage": {
+      "score": 100.0,
+      "threshold": 100,
+      "tests_passed": 55,
+      "tests_failed": 0,
+      "tests_skipped": 0,
+      "tool_evidence": "55 passed in 6.62s. Coverage 100.0% on health.py/app.py/config.py/session.py (205/205 statements)."
+    },
+    "architecture_constraints": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "Analyzed 50 files, 129 dependencies. Contracts: 4 kept, 0 broken (api > service > repository > models; config/errors independence; sqlalchemy isolation; fastapi isolation)."
+    }
+  },
+  "enforcer_sha": "0efae09329744213ea821c48c3c8d5d755e90ac0",
+  "enforcer_surface": {
+    "core/quality_gate": "5021f0333ad5b068994f587ed08b37193cb8ee59",
+    "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
+    "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
+  },
+  "evidence_digest": {
+    "linting": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
+    },
+    "type_safety": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "e7bc26b613ab6b65ff7fa26006b2af60979bc5a6c1ca0e3189962f1bb0d34baf",
+      "bytes": 123,
+      "head": "{\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":30,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.171}}"
+    },
+    "test_coverage": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "a596ac82ce5b729337d3d61cc39622ca8e9841060e2a29842c33c6ed31222ed2",
+      "bytes": 98,
+      "head": "55 passed in 6.62s. Coverage 100.0% on health.py/app.py/config.py/session.py (205/205 statements)."
+    },
+    "architecture_constraints": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "c1e4d6ae4cec2195d1e4277113853efbe9d46553a2a6509b43a859e46e66e841",
+      "bytes": 172,
+      "head": "Analyzed 50 files, 129 dependencies. Contracts: 4 kept, 0 broken (api > service > repository > models; config/errors independence; sqlalchemy isolation; fastapi isolation)."
+    }
+  },
+  "composite_score": 100.0,
+  "verdict": "PASS",
+  "passed": true,
+  "spec_undelivered": [],
+  "spec_declared": 0,
+  "measurement_scope": {
+    "weight_covered": 0.75,
+    "weight_total": 1.0,
+    "dimensions_scored": [
+      "architecture_constraints",
+      "linting",
+      "type_safety"
+    ],
+    "dimensions_unscored": [
+      "test_coverage"
+    ]
+  }
+}

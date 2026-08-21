@@ -1,0 +1,7 @@
+$ lint-imports  (PYTHONPATH=./03-development/src lint-imports)
+=============
+Import Linter
+=============
+
+No matches for ignored import taskq_api.errors -> taskq_api.config.
+EXIT=1

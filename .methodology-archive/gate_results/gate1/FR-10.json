@@ -1,0 +1,86 @@
+{
+  "gate": 1,
+  "phase": 3,
+  "fr_id": "FR-10",
+  "overall_score": 100.0,
+  "quality_complete": true,
+  "rounds_used": 1,
+  "breakdown": {
+    "linting": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "All checks passed!"
+    },
+    "type_safety": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1787170271188\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":30,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.229}}"
+    },
+    "test_coverage": {
+      "score": 100.0,
+      "threshold": 100,
+      "tests_passed": 91,
+      "tests_failed": 0,
+      "tests_skipped": 0,
+      "tool_evidence": "============================== 91 passed in 8.16s ==============================\n03-development/src/taskq_api/api/deps.py                        33      0   100%\n03-development/src/taskq_api/app.py                             76      0   100%\n03-development/src/taskq_api/errors.py                          20      0   100%\n03-development/src/taskq_api/api/health.py                      67      0   100%\nTOTAL                                                          967    129    87%"
+    },
+    "architecture_constraints": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "Analyzed 51 files, 130 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+    }
+  },
+  "enforcer_sha": "0efae09329744213ea821c48c3c8d5d755e90ac0",
+  "enforcer_surface": {
+    "core/quality_gate": "5021f0333ad5b068994f587ed08b37193cb8ee59",
+    "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
+    "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
+  },
+  "evidence_digest": {
+    "linting": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
+    },
+    "type_safety": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "3b0248d9581cf0667e5cc9236c1ea4a1843817b7ec0351271fade3588d15eb98",
+      "bytes": 170,
+      "head": "{\"version\":\"1.1.409\",\"time\":\"1787170271188\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":30,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.229}}"
+    },
+    "test_coverage": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "d2fdb179143c9edd1d56c7224656070f4ac84b7fdc4075c88057d90995a87e7d",
+      "bytes": 485,
+      "head": "============================== 91 passed in 8.16s ==============================\n03-development/src/taskq_api/api/deps.py                        33      0   100%\n03-development/src/taskq_api/app.py                             76      0   100%\n03-development/src/taskq_api/errors.py                          20      0   100%\n03-development/src/taskq_api/api/health.py                      67      0   100%\nTOTAL                                                          967    129    87%"
+    },
+    "architecture_constraints": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "c310f365b12d2d28c1e7ed9af6b7427cb23ab9c09dfb9faa997f13040385b3f0",
+      "bytes": 275,
+      "head": "Analyzed 51 files, 130 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+    }
+  },
+  "composite_score": 100.0,
+  "verdict": "PASS",
+  "passed": true,
+  "spec_undelivered": [],
+  "spec_declared": 0,
+  "measurement_scope": {
+    "weight_covered": 0.75,
+    "weight_total": 1.0,
+    "dimensions_scored": [
+      "architecture_constraints",
+      "linting",
+      "type_safety"
+    ],
+    "dimensions_unscored": [
+      "test_coverage"
+    ]
+  }
+}

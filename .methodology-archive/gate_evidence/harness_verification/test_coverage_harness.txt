@@ -1,0 +1,69 @@
+# Harness-executed: pytest-cov
+# returncode: 0
+# agent_score: 100.0 | threshold: 80.0
+
+........................................................................ [ 25%]
+........................................................................ [ 50%]
+........................................................................ [ 75%]
+.......................................................................  [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+03-development/tests/test_fr07.py: 11 warnings
+  /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.11.15-final-0 _______________
+
+Name                                                         Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------------------
+03-development/src/migrations/__init__.py                        0      0   100%
+03-development/src/migrations/env.py                            51      0   100%
+03-development/src/migrations/versions/__init__.py               0      0   100%
+03-development/src/migrations/versions/v1_initial.py            13      0   100%
+03-development/src/migrations/versions/v2_tags.py               15      0   100%
+03-development/src/migrations/versions/v3_split_results.py      17      0   100%
+03-development/src/taskq_api/__init__.py                         0      0   100%
+03-development/src/taskq_api/__main__.py                         5      0   100%
+03-development/src/taskq_api/api/__init__.py                     4      0   100%
+03-development/src/taskq_api/api/deps.py                        33      0   100%
+03-development/src/taskq_api/api/health.py                      67      0   100%
+03-development/src/taskq_api/api/tasks.py                       62      0   100%
+03-development/src/taskq_api/app.py                             80      0   100%
+03-development/src/taskq_api/cli.py                             28      0   100%
+03-development/src/taskq_api/config.py                          37      0   100%
+03-development/src/taskq_api/errors.py                          20      0   100%
+03-development/src/taskq_api/models/__init__.py                  3      0   100%
+03-development/src/taskq_api/models/orm.py                      39      0   100%
+03-development/src/taskq_api/models/schemas.py                  35      0   100%
+03-development/src/taskq_api/repository/__init__.py              4      0   100%
+03-development/src/taskq_api/repository/key_repo.py             43      0   100%
+03-development/src/taskq_api/repository/metrics.py              30      0   100%
+03-development/src/taskq_api/repository/rate_repo.py            63      0   100%
+03-development/src/taskq_api/repository/session.py              72      0   100%
+03-development/src/taskq_api/repository/task_repo.py            83      0   100%
+03-development/src/taskq_api/service/__init__.py                 3      0   100%
+03-development/src/taskq_api/service/auth.py                    29      0   100%
+03-development/src/taskq_api/service/ratelimit.py                8      0   100%
+03-development/src/taskq_api/service/run_state.py               45      0   100%
+03-development/src/taskq_api/service/runner.py                  91      0   100%
+03-development/src/taskq_api/service/tasks.py                   25      0   100%
+------------------------------------------------------------------------------------------
+TOTAL                                                         1005      0   100%
+
+-------------------------------------------------------------------------------------------- benchmark: 3 tests -------------------------------------------------------------------------------------------
+Name (time in us)                 Min                    Max                Mean              StdDev              Median                IQR            Outliers  OPS (Kops/s)            Rounds  Iterations
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_perf_get_by_id          240.2500 (1.0)      22,283.3330 (45.16)    289.1282 (1.0)      921.4217 (61.02)    245.5205 (1.0)       6.9165 (1.84)         1;55        3.4587 (1.0)         572           1
+test_perf_create_task        300.8750 (1.25)        493.4170 (1.0)      341.7553 (1.18)      26.5944 (1.76)     337.7705 (1.38)     28.2290 (7.53)         36;8        2.9261 (0.85)        204           1
+test_perf_list_paginated     314.0420 (1.31)        514.3750 (1.04)     322.9297 (1.12)      15.0999 (1.0)      318.4580 (1.30)      3.7500 (1.0)         54;84        3.0966 (0.90)        593           1
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+287 passed, 12 warnings in 82.55s (0:01:22)

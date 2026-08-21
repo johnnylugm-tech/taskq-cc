@@ -1,0 +1,86 @@
+{
+  "gate": 1,
+  "phase": 3,
+  "fr_id": "FR-04",
+  "overall_score": 100.0,
+  "quality_complete": true,
+  "rounds_used": 1,
+  "breakdown": {
+    "linting": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "$ python3 -m ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003\nAll checks passed!\n(exit 0 -> score 100)"
+    },
+    "type_safety": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "$ python3 -m pyright 03-development/src/ --outputjson\n{\n    \"version\": \"1.1.409\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 20,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.015\n    }\n}\n(errorCount 0 -> 100 - 0*5 = 100)"
+    },
+    "test_coverage": {
+      "score": 100.0,
+      "threshold": 100,
+      "tests_passed": 37,
+      "tests_failed": 0,
+      "tests_skipped": 0,
+      "tool_evidence": "$ python3 -m coverage run -m pytest 03-development/tests/test_fr04.py 03-development/tests/test_fr03.py\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 37 items\n03-development/tests/test_fr04.py .................                      [ 45%]\n03-development/tests/test_fr03.py ....................                   [100%]\n============================== 37 passed in 0.77s ==============================\n--- coverage json --include=deps.py,auth.py ---\n03-development/src/taskq_api/api/deps.py 100% missing: [] excluded: []\n03-development/src/taskq_api/service/auth.py 100% missing: [] excluded: []\nTOTAL covered_lines 50 / num_statements 50 -> percent_covered 100.0\nspec_cov 5/5 required tests present+passing = 100% -> score = min(100.0, 100) = 100.0"
+    },
+    "architecture_constraints": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "$ PYTHONPATH=src lint-imports -> FAILED: \"Could not find package 'taskq_api' in your Python path.\" (the 'src' path in the generic template does not exist; project src root is 03-development/src)\n$ PYTHONPATH=03-development/src lint-imports   (run from repo root, where .importlinter lives)\n=============\nImport Linter\n=============\nAnalyzed 43 files, 97 dependencies.\n-----------------------------------\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\n\nContracts: 4 kept, 0 broken.\n(exit 0 -> score 100)"
+    }
+  },
+  "enforcer_sha": "6e7942e2c6992f148201ae95ff66d49336c25a03",
+  "enforcer_surface": {
+    "core/quality_gate": "5021f0333ad5b068994f587ed08b37193cb8ee59",
+    "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
+    "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
+  },
+  "evidence_digest": {
+    "linting": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "eff9c75f344ee467685d1667c8c50ad88faac5e4312ba683e42803ccd0d5f8eb",
+      "bytes": 121,
+      "head": "$ python3 -m ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003\nAll checks passed!\n(exit 0 -> score 100)"
+    },
+    "type_safety": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "0ef6d9097a12ab7435b86bb06a1cee7af0f883d6b9d3a2e4d239552aeef10627",
+      "bytes": 309,
+      "head": "$ python3 -m pyright 03-development/src/ --outputjson\n{\n    \"version\": \"1.1.409\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 20,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.015\n    }\n}\n(errorCount 0 -> 100 - 0*5 = 100)"
+    },
+    "test_coverage": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "951df1c37d57634b23303ec46f76bae69959e99730b616f615aed2b7e320a4ac",
+      "bytes": 773,
+      "head": "$ python3 -m coverage run -m pytest 03-development/tests/test_fr04.py 03-development/tests/test_fr03.py\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 37 items\n03-development/tests/test_fr04.py .................                      [ 45%]\n03-development/tests/test_fr03.py ....................                   [100%]\n============================== 37 passed in 0.77s ==============================\n--- coverage json --include=deps.py,auth.py ---\n03-development/src/taskq_api/api/deps.py 100% missing: [] excluded: []\n03-development/src/taskq_api/service/auth.py 100% missing: [] excluded: []\nTOTAL covered_lines 50 / num_statements 50 -> percent_covered 100.0\nspec_cov 5/5 required tests present+passing = 100% -> score = min(100.0, 100) = 100.0"
+    },
+    "architecture_constraints": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "ba47ca97b05331439e244e2f0fecc71163ef85f2b4b299b3b72908f2fffcf2e2",
+      "bytes": 665,
+      "head": "$ PYTHONPATH=src lint-imports -> FAILED: \"Could not find package 'taskq_api' in your Python path.\" (the 'src' path in the generic template does not exist; project src root is 03-development/src)\n$ PYTHONPATH=03-development/src lint-imports   (run from repo root, where .importlinter lives)\n=============\nImport Linter\n=============\nAnalyzed 43 files, 97 dependencies.\n-----------------------------------\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\n\nContracts: 4 kept, 0 broken.\n(exit 0 -> score 100)"
+    }
+  },
+  "composite_score": 100.0,
+  "verdict": "PASS",
+  "passed": true,
+  "spec_undelivered": [],
+  "spec_declared": 0,
+  "measurement_scope": {
+    "weight_covered": 0.75,
+    "weight_total": 1.0,
+    "dimensions_scored": [
+      "architecture_constraints",
+      "linting",
+      "type_safety"
+    ],
+    "dimensions_unscored": [
+      "test_coverage"
+    ]
+  }
+}

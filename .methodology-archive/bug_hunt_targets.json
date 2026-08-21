@@ -1,0 +1,364 @@
+{
+  "generated_at": "2026-08-21T04:40:17.905490+00:00",
+  "git_sha": "b5b87b314e04a3e79a48eefa04abbabec236e8fc",
+  "language": "python",
+  "high_risk": [
+    {
+      "path": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "name": "task_repo",
+      "reasons": [
+        "mutation_survivors:9"
+      ]
+    },
+    {
+      "path": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "name": "tasks",
+      "reasons": [
+        "mutation_survivors:6"
+      ]
+    },
+    {
+      "path": "03-development/src/taskq_api/api/deps.py",
+      "name": "deps",
+      "reasons": [
+        "threat_model:T-04 elevation_of_privilege"
+      ]
+    },
+    {
+      "path": "03-development/src/taskq_api/config.py",
+      "name": "config",
+      "reasons": [
+        "threat_model:T-08 information_disclosure"
+      ]
+    },
+    {
+      "path": "03-development/src/taskq_api/errors.py",
+      "name": "errors",
+      "reasons": [
+        "threat_model:T-05 information_disclosure"
+      ]
+    },
+    {
+      "path": "03-development/src/taskq_api/service/auth.py",
+      "name": "auth",
+      "reasons": [
+        "threat_model:T-03 spoofing"
+      ]
+    },
+    {
+      "path": "03-development/src/taskq_api/service/ratelimit.py",
+      "name": "ratelimit",
+      "reasons": [
+        "threat_model:T-02 denial_of_service"
+      ]
+    },
+    {
+      "path": "03-development/src/taskq_api/service/runner.py",
+      "name": "runner",
+      "reasons": [
+        "threat_model:T-06 tampering",
+        "threat_model:T-07 denial_of_service"
+      ]
+    },
+    {
+      "path": "03-development/src/taskq_api/service/tasks.py",
+      "name": "tasks",
+      "reasons": [
+        "threat_model:T-01 tampering"
+      ]
+    },
+    {
+      "path": "migrations.versions.v3_split_results",
+      "name": "migrations.versions",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "taskq_api.repository.session",
+      "name": "taskq_api.repository",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "taskq_api.service.auth",
+      "name": "taskq_api.service",
+      "reasons": [
+        "declared"
+      ]
+    },
+    {
+      "path": "taskq_api.service.runner",
+      "name": "taskq_api.service",
+      "reasons": [
+        "declared"
+      ]
+    }
+  ],
+  "standard": [
+    {
+      "path": "03-development/src/migrations/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/migrations/env.py",
+      "name": "env"
+    },
+    {
+      "path": "03-development/src/migrations/versions/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/migrations/versions/v1_initial.py",
+      "name": "v1_initial"
+    },
+    {
+      "path": "03-development/src/migrations/versions/v2_tags.py",
+      "name": "v2_tags"
+    },
+    {
+      "path": "03-development/src/migrations/versions/v3_split_results.py",
+      "name": "v3_split_results"
+    },
+    {
+      "path": "03-development/src/taskq_api/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/taskq_api/__main__.py",
+      "name": "__main__"
+    },
+    {
+      "path": "03-development/src/taskq_api/api/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/taskq_api/api/health.py",
+      "name": "health"
+    },
+    {
+      "path": "03-development/src/taskq_api/api/tasks.py",
+      "name": "tasks"
+    },
+    {
+      "path": "03-development/src/taskq_api/app.py",
+      "name": "app"
+    },
+    {
+      "path": "03-development/src/taskq_api/cli.py",
+      "name": "cli"
+    },
+    {
+      "path": "03-development/src/taskq_api/models/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/taskq_api/models/orm.py",
+      "name": "orm"
+    },
+    {
+      "path": "03-development/src/taskq_api/models/schemas.py",
+      "name": "schemas"
+    },
+    {
+      "path": "03-development/src/taskq_api/repository/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/taskq_api/repository/key_repo.py",
+      "name": "key_repo"
+    },
+    {
+      "path": "03-development/src/taskq_api/repository/metrics.py",
+      "name": "metrics"
+    },
+    {
+      "path": "03-development/src/taskq_api/repository/rate_repo.py",
+      "name": "rate_repo"
+    },
+    {
+      "path": "03-development/src/taskq_api/repository/session.py",
+      "name": "session"
+    },
+    {
+      "path": "03-development/src/taskq_api/repository/task_repo.py",
+      "name": "task_repo"
+    },
+    {
+      "path": "03-development/src/taskq_api/service/__init__.py",
+      "name": "__init__"
+    },
+    {
+      "path": "03-development/src/taskq_api/service/run_state.py",
+      "name": "run_state"
+    }
+  ],
+  "mutation_survivors": [
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/key_repo.py",
+      "line": null,
+      "mutant_id": "1",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "19",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "22",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "26",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "28",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "34",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "40",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "43",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "52",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/repository/task_repo.py",
+      "line": null,
+      "mutant_id": "54",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "76",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "79",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "80",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "81",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "86",
+      "mutator": null
+    },
+    {
+      "file": "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/tasks.py",
+      "line": null,
+      "mutant_id": "87",
+      "mutator": null
+    }
+  ],
+  "integration_coverage": {
+    "gate": 2,
+    "score": 81.0
+  },
+  "threat_model": [
+    {
+      "threat_id": "T-01",
+      "category": "tampering",
+      "description": "malformed JSON body or injection-character command attempts to mutate task state",
+      "owner_module": "taskq_api.service.tasks",
+      "boundary": "TB-01"
+    },
+    {
+      "threat_id": "T-02",
+      "category": "denial_of_service",
+      "description": "excessive request volume exhausts DB connections or async slots",
+      "owner_module": "taskq_api.service.ratelimit",
+      "boundary": "TB-01"
+    },
+    {
+      "threat_id": "T-03",
+      "category": "spoofing",
+      "description": "forged or revoked X-API-Key; replay attempts",
+      "owner_module": "taskq_api.service.auth",
+      "boundary": "TB-01"
+    },
+    {
+      "threat_id": "T-04",
+      "category": "elevation_of_privilege",
+      "description": "write-scoped token attempts DELETE /v1/tasks/{id} or /v1/metrics",
+      "owner_module": "taskq_api.api.deps",
+      "boundary": "TB-02"
+    },
+    {
+      "threat_id": "T-05",
+      "category": "information_disclosure",
+      "description": "unhandled exception leaks stack trace / SQL / file paths via detail field",
+      "owner_module": "taskq_api.errors",
+      "boundary": "TB-02"
+    },
+    {
+      "threat_id": "T-06",
+      "category": "tampering",
+      "description": "command injection via shell metacharacters (e.g. '; rm -rf /')",
+      "owner_module": "taskq_api.service.runner",
+      "boundary": "TB-04"
+    },
+    {
+      "threat_id": "T-07",
+      "category": "denial_of_service",
+      "description": "long-running command exhausts the host process table or blocks shutdown",
+      "owner_module": "taskq_api.service.runner",
+      "boundary": "TB-04"
+    },
+    {
+      "threat_id": "T-08",
+      "category": "information_disclosure",
+      "description": "TASKQ_DB_URL with embedded credentials leaks via logs or /v1/metrics response",
+      "owner_module": "taskq_api.config",
+      "boundary": "TB-03"
+    }
+  ],
+  "sources": {
+    "declared": 4,
+    "crg_hubs": 0,
+    "mutation_survivors": 16,
+    "integration_coverage": true,
+    "threat_model": 8
+  }
+}

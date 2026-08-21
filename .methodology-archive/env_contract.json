@@ -1,0 +1,60 @@
+{
+  "classified_at": "2026-08-20T10:50:13Z",
+  "cli_tools": [
+    "alembic",
+    "bandit",
+    "docker",
+    "fastapi",
+    "httpx",
+    "importlinter",
+    "lint-imports",
+    "mutmut",
+    "pip",
+    "pip-licenses",
+    "psql",
+    "pydantic",
+    "pytest",
+    "pytest_asyncio",
+    "pytest_benchmark",
+    "pytest_cov",
+    "python3",
+    "python3.11",
+    "radon",
+    "sqlalchemy",
+    "sqlite3",
+    "uvicorn"
+  ],
+  "enforcer_sha": "0efae09329744213ea821c48c3c8d5d755e90ac0",
+  "env_vars": {
+    "dev_opt_in": [],
+    "has_default": [
+      "TASKQ_CORS_ORIGINS",
+      "TASKQ_DB_POOL_SIZE",
+      "TASKQ_DB_URL",
+      "TASKQ_DRAIN_TIMEOUT",
+      "TASKQ_HOME",
+      "TASKQ_HOST",
+      "TASKQ_LOG_FORMAT",
+      "TASKQ_LOG_LEVEL",
+      "TASKQ_MAX_CONCURRENT",
+      "TASKQ_PORT",
+      "TASKQ_RATE_BURST",
+      "TASKQ_RATE_PER_SEC",
+      "TASKQ_TASK_TIMEOUT"
+    ],
+    "mandatory": []
+  },
+  "infra_services": {
+    "docker_compose_services": [],
+    "required": [
+      {
+        "checked_via": "python3 sqlite3 roundtrip (CREATE/INSERT/SELECT) on a tempfile sqlite file",
+        "name": "sqlite",
+        "reachable": true,
+        "type": "SQLite 3.51 (stdlib + CLI)"
+      }
+    ]
+  },
+  "schema_version": 1,
+  "source_sha256": "0c78e4230961b442da486ab1927a9eddb074e581874317c94186ebca4bea91a3"
+}

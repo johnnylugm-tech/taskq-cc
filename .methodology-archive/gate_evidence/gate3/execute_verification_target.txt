@@ -1,0 +1,6 @@
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+286 passed, 12 warnings in 43.83s
+verify-system: PASS

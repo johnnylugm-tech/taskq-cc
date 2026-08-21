@@ -1,0 +1,33 @@
+{
+  "fr": "ADR.md",
+  "review_status": "APPROVE",
+  "reason": "ADR.md (02-architecture/adr/ADR.md, 277 lines) clears the P2 architecture-decisions bar. Twelve ADRs (001-012) span the full stack/architecture surface — runtime stack, layering, subprocess safety, key storage, migration round-trip, dual-DB, rate-limit, error contract, readiness, TaskGroup, authz, hub modules — each with Status / Context / Decision / Alternatives Considered / Consequences and an explicit SRS / SAD source line. Decisions align with SAD §2.2 module catalog (deps / runner / auth / ratelimit / errors / health), §4.2 NFR handling matrix, and §3 data-flow diagrams; no orphan ADRs and no missing major decision. Template deviation (Alternatives Considered in place of Rationale) is a non-fatal methodology artifact — every ADR still carries the rationale as part of the Alternatives ",
+  "citations": [
+    "02-architecture/adr/ADR.md:7",
+    "02-architecture/adr/ADR.md:28",
+    "02-architecture/adr/ADR.md:48",
+    "02-architecture/adr/ADR.md:69",
+    "02-architecture/adr/ADR.md:90",
+    "02-architecture/adr/ADR.md:111",
+    "02-architecture/adr/ADR.md:132",
+    "02-architecture/adr/ADR.md:153",
+    "02-architecture/adr/ADR.md:173",
+    "02-architecture/adr/ADR.md:194",
+    "02-architecture/adr/ADR.md:215",
+    "02-architecture/adr/ADR.md:235",
+    "02-architecture/adr/ADR.md:259",
+    "02-architecture/adr/ADR.md:273",
+    "02-architecture/adr/ADR.md:274",
+    "02-architecture/adr/ADR.md:275",
+    "02-architecture/SAD.md:387",
+    "01-requirements/SRS.md:439",
+    "01-requirements/SRS.md:553",
+    "01-requirements/SRS.md:575"
+  ],
+  "docs_embedded": [
+    "SRS.md",
+    "SAD.md",
+    "ADR.md"
+  ],
+  "confidence": 0.9
+}
