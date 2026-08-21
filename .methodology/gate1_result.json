@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-07",
+  "fr_id": "FR-08",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -19,15 +19,15 @@
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 14,
+      "tests_passed": 87,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "===================== 14 passed, 11 warnings in 1.84s ===================== coverage: percent_covered=100.0, percent_statements_covered=100.0, totals: covered_lines=96, num_statements=96, missing_lines=0"
+      "tool_evidence": "============================== 87 passed in 7.95s ==============================\nCoverage: 100% on runner.py and app.py (171/171 lines covered). 6/6 required FR-08 tests present."
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT"
+      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken."
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -75,16 +75,16 @@
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "fd45fffc0173e782893e18793f7f19386c56db2ec36ec7a47852260ada846c9a",
-      "bytes": 203,
-      "head": "===================== 14 passed, 11 warnings in 1.84s ===================== coverage: percent_covered=100.0, percent_statements_covered=100.0, totals: covered_lines=96, num_statements=96, missing_lines=0"
+      "sha256": "5cd04d17f03d13478dc469200cb059aafcfc529226b9e10f80edd431f8750098",
+      "bytes": 178,
+      "head": "============================== 87 passed in 7.95s ==============================\nCoverage: 100% on runner.py and app.py (171/171 lines covered). 6/6 required FR-08 tests present."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c6e4c8a5c07cace8c18b61548f3f6c6607f12328ef6f21a05a482995c058891b",
-      "bytes": 278,
-      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT"
+      "sha256": "8940e042b6c34f46f20cd838dfdd3e3a4635563d47726542833d319631789985",
+      "bytes": 65,
+      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken."
     }
   },
   "composite_score": 100.0,
