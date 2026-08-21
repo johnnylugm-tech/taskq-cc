@@ -1,7 +1,7 @@
 {
   "gate": 1,
-  "phase": 4,
-  "fr_id": "FR-10",
+  "phase": 5,
+  "fr_id": "FR-01",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -9,12 +9,12 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!"
+      "tool_evidence": "All checks passed!\n"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
+      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1787304360907\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 31,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.179\n    }\n}\n"
     },
     "test_coverage": {
       "score": 100.0,
@@ -22,12 +22,12 @@
       "tests_passed": 115,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= 115 passed in 8.22s ==============================  [100% coverage on errors.py, api/deps.py, app.py]"
+      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nbenchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=2 warmup=False warmup_iterations=100000)\nrootdir: /Users/johnny/projects/taskq-cc\nconfigfile: pyproject.toml\nplugins: cov-7.1.0, asyncio-1.4.0, anyio-4.14.2\nasyncio: mode=Mode.STRICT, debug=False, asyncio\n============================= 115 passed in 5.11s ==============================\n"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken."
+      "tool_evidence": "Import Linter\nContracts\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken.\n"
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -68,23 +68,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "614ae4ae509e601f4a917ce53da1e067520906d3133047944e593c04a93e2079",
-      "bytes": 115,
-      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
+      "sha256": "11c0e0e41f3465c074eebd7e0736d5e4e37adb2fdb637c9597b9428f7d8135d3",
+      "bytes": 250,
+      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1787304360907\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 31,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.179\n    }\n}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "22214c0214c81238fc6f00d8adf09592be5081cb347c75aaa99866bea2c485f2",
-      "bytes": 131,
-      "head": "============================= 115 passed in 8.22s ==============================  [100% coverage on errors.py, api/deps.py, app.py]"
+      "sha256": "67974aecc2de973a2ce69215f9897cd97addbaef5f8dcb1117816b5e0bea6a7b",
+      "bytes": 563,
+      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nbenchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=2 warmup=False warmup_iterations=100000)\nrootdir: /Users/johnny/projects/taskq-cc\nconfigfile: pyproject.toml\nplugins: cov-7.1.0, asyncio-1.4.0, anyio-4.14.2\nasyncio: mode=Mode.STRICT, debug=False, asyncio\n============================= 115 passed in 5.11s =============================="
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "8940e042b6c34f46f20cd838dfdd3e3a4635563d47726542833d319631789985",
-      "bytes": 65,
-      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken."
+      "sha256": "bb01c96feee0bdd3e7afbeacd20f7e56e0f886cbbb16ce91d147d84553e4af98",
+      "bytes": 299,
+      "head": "Import Linter\nContracts\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
     }
   },
   "composite_score": 100.0,
