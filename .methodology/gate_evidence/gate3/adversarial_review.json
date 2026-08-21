@@ -32,7 +32,7 @@
       "resolution": {
         "status": "resolved",
         "fix_commit": "5c1c2cfdc6c1876e66b38e276ae7dd3174daf837",
-        "repro_test": "03-development/tests/test_bug_hunt_regressions.py"
+        "repro_test": "03-development/tests/test_bug_hunt_regressions.py::test_bughunt_v3_downgrade_restores_latest_result_for_multi_run_tasks"
       }
     },
     {
@@ -54,7 +54,7 @@
       "resolution": {
         "status": "resolved",
         "fix_commit": "c1351e550258f4570e32f174fdc6fb6d048e723c",
-        "repro_test": "03-development/tests/test_bug_hunt_regressions.py"
+        "repro_test": "03-development/tests/test_bug_hunt_regressions.py::test_bughunt_runner_admission_slot_released_after_completion"
       }
     },
     {
@@ -76,7 +76,7 @@
       "resolution": {
         "status": "resolved",
         "fix_commit": "c1351e550258f4570e32f174fdc6fb6d048e723c",
-        "repro_test": "03-development/tests/test_bug_hunt_regressions.py"
+        "repro_test": "03-development/tests/test_bug_hunt_regressions.py::test_bughunt_runner_unspawnable_command_reaches_terminal_state"
       }
     },
     {
@@ -98,7 +98,7 @@
       "resolution": {
         "status": "resolved",
         "fix_commit": "c1351e550258f4570e32f174fdc6fb6d048e723c",
-        "repro_test": "03-development/tests/test_bug_hunt_regressions.py"
+        "repro_test": "03-development/tests/test_bug_hunt_regressions.py::test_bughunt_metrics_reports_live_rate_limit_denials"
       }
     },
     {
@@ -120,7 +120,7 @@
       "resolution": {
         "status": "resolved",
         "fix_commit": "c1351e550258f4570e32f174fdc6fb6d048e723c",
-        "repro_test": "03-development/tests/test_nfr_spec_coverage.py"
+        "repro_test": "03-development/tests/test_nfr_spec_coverage.py::test_ac_n2_5_500_error_body_no_stack_sql_or_paths"
       },
       "attack_vector": "T-05 information_disclosure — unhandled exception leaks stack trace / SQL / file paths via detail field",
       "attempted_exploit": "Drive _sanitize_detail with a Linux-style absolute path in the exception message (FileNotFoundError on /home/deploy/secrets/taskq.db), a stack-trace marker, and a SQL fragment.",

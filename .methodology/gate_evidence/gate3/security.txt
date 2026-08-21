@@ -1,6 +1,6 @@
 {
   "errors": [],
-  "generated_at": "2026-08-20T22:04:28Z",
+  "generated_at": "2026-08-21T07:46:47Z",
   "metrics": {
     "03-development/src/migrations/__init__.py": {
       "CONFIDENCE.HIGH": 0,

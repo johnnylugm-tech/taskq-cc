@@ -4,7 +4,7 @@
 
 {
   "errors": [],
-  "generated_at": "2026-08-20T20:32:10Z",
+  "generated_at": "2026-08-21T08:57:23Z",
   "metrics": {
     "/Users/johnny/projects/taskq-cc/03-development/src/migrations/__init__.py": {
       "CONFIDENCE.HIGH": 0,
@@ -171,7 +171,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 243,
+      "loc": 266,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -197,7 +197,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 67,
+      "loc": 87,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -370,6 +370,19 @@
       "nosec": 0,
       "skipped_tests": 0
     },
+    "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/run_state.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 110,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
     "/Users/johnny/projects/taskq-cc/03-development/src/taskq_api/service/runner.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
@@ -379,7 +392,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 329,
+      "loc": 268,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -405,7 +418,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 2528,
+      "loc": 2620,
       "nosec": 0,
       "skipped_tests": 0
     }

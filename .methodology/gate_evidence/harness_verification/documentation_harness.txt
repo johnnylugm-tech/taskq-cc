@@ -2,4 +2,4 @@
 # returncode: 0
 # agent_score: 100.0 | threshold: 75.0
 
-{"total": 72, "with_doc": 72, "missing": []}
+{"total": 75, "with_doc": 75, "missing": []}

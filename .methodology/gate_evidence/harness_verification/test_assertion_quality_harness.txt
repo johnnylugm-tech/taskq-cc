@@ -2,4 +2,4 @@
 # returncode: 0
 # agent_score: 100.0 | threshold: 60.0
 
-{"total": 266, "asserted": 262, "zero_assert": ["03-development/tests/test_fr03.py::test_enforce_rate_limit_admits_when_ratelimit_check_raises", "03-development/tests/test_perf_benchmarks.py::test_perf_create_task", "03-development/tests/test_perf_benchmarks.py::test_perf_get_by_id", "03-development/tests/test_perf_benchmarks.py::test_perf_list_paginated"], "neutralised": []}
+{"total": 279, "asserted": 279, "zero_assert": [], "neutralised": []}

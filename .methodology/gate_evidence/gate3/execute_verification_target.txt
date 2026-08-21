@@ -1,7 +1,6 @@
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
   OPS: Operations Per Second, computed as 1 / Mean
-[36m[1m=========================== short test summary info ============================[0m
-[31mFAILED[0m 03-development/tests/test_nfr_spec_coverage.py::[1mtest_ac_n8_2_mutmut_score_at_least_70_over_service_and_repository[0m - AssertionError: assert None is not None
-[31mFAILED[0m 03-development/tests/test_nfr_spec_coverage.py::[1mtest_ac_n8_3_mutation_scope_annotated_service_repository_with_rationale[0m - AssertionError: assert 'service' in ''
-[31m[31m[1m2 failed[0m, [32m274 passed[0m, [33m12 warnings[0m[31m in 51.39s[0m[0m
-verify-system: FAIL
-make: *** [verify-system] Error 1
+286 passed, 12 warnings in 43.83s
+verify-system: PASS

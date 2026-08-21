@@ -1,5 +1,9 @@
 # Harness-executed: readability-v2
-# returncode: 1
-# agent_score: 95.0 | threshold: 80.0
+# returncode: 0
+# agent_score: 94.5 | threshold: 80.0
 
-/Users/johnny/projects/taskq-cc/.venv/bin/python: Error while finding module specification for 'harness.toolchains.readability_v2' (ModuleNotFoundError: No module named 'harness.toolchains')
+{
+  "project_score": 94.5,
+  "project_avg_cc": 2.04,
+  "total_lloc": 1237
+}

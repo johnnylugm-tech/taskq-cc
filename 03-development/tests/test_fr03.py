@@ -1220,3 +1220,38 @@ def test_cli_module_runs_via_python_dash_m_subprocess():
     # ``if __name__ == "__main__":`` guards.
     assert proc.returncode == 0, proc.stderr
     assert "usage:" in proc.stdout.lower()
+
+
+def test_cli_key_create_failure_returns_nonzero_and_prints_stderr(monkeypatch, capsys):
+    """Coverage-fix — ``cli._handle_key_create`` exception branch (cli.py:45-49).
+
+    When ``key_repo.create`` raises (DB unavailable, integrity error, etc.)
+    the CLI must surface a non-zero exit code AND print a one-line failure
+    notice to stderr; it must not crash with a traceback (NFR-03). The
+    plaintext was never minted in this path, so nothing leaks to stdout.
+    """
+    from taskq_api import cli
+
+    def _raise_db_error(*_args, **_kwargs):
+        raise RuntimeError("simulated DB failure during key create")
+
+    monkeypatch.setattr(key_repo, "create", _raise_db_error)
+
+    rc = cli.main(["key", "create", "--scope", "read"])
+
+    captured = capsys.readouterr()
+    assert rc == 1, (
+        f"FR-03 coverage: cli.main must return 1 on key_repo.create "
+        f"failure (NFR-03); got {rc}"
+    )
+    assert captured.out == "", (
+        "FR-03 coverage: stdout must remain empty on failure — the "
+        "plaintext was never minted and must never leak. "
+        f"Got: {captured.out!r}"
+    )
+    assert "key create failed:" in captured.err, (
+        "FR-03 coverage: a one-line failure notice must surface on "
+        "stderr so operators can diagnose without a traceback. "
+        f"Got stderr: {captured.err!r}"
+    )
+    assert "simulated DB failure" in captured.err

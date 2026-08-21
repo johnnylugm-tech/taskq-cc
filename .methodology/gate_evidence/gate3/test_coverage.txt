@@ -1,26 +1,18 @@
-# Harness-executed: pytest-cov
-# returncode: 0
-# agent_score: 99.7 | threshold: 80.0
-
 ........................................................................ [ 25%]
 ........................................................................ [ 50%]
-........................................................................ [ 75%]
-.......................................................................  [100%]
+........................................................................ [ 76%]
+....................................................................     [100%]
 =============================== warnings summary ===============================
-.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
-  /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
-    from starlette.testclient import TestClient as TestClient  # noqa
-
 03-development/tests/test_fr07.py: 11 warnings
-  /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+  /Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
     util.warn_deprecated(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 ================================ tests coverage ================================
 ______________ coverage: platform darwin, python 3.11.15-final-0 _______________
 
-Name                                                         Stmts   Miss  Cover   Missing
-------------------------------------------------------------------------------------------
+Name                                                         Stmts   Miss  Cover
+--------------------------------------------------------------------------------
 03-development/src/migrations/__init__.py                        0      0   100%
 03-development/src/migrations/env.py                            51      0   100%
 03-development/src/migrations/versions/__init__.py               0      0   100%
@@ -52,18 +44,6 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/run_state.py               45      0   100%
 03-development/src/taskq_api/service/runner.py                  91      0   100%
 03-development/src/taskq_api/service/tasks.py                   25      0   100%
-------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 TOTAL                                                         1005      0   100%
-
--------------------------------------------------------------------------------------------- benchmark: 3 tests -------------------------------------------------------------------------------------------
-Name (time in us)                 Min                    Max                Mean              StdDev              Median                IQR            Outliers  OPS (Kops/s)            Rounds  Iterations
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-test_perf_get_by_id          235.8750 (1.0)      22,007.7910 (45.39)    284.3331 (1.0)      914.0797 (49.60)    241.0840 (1.0)       4.7397 (1.0)          1;69        3.5170 (1.0)         567           1
-test_perf_list_paginated     307.7910 (1.30)        523.8750 (1.08)     318.7499 (1.12)      18.4305 (1.0)      313.9590 (1.30)      5.4265 (1.14)        41;67        3.1373 (0.89)        637           1
-test_perf_create_task        318.2920 (1.35)        484.8750 (1.0)      347.5878 (1.22)      21.1345 (1.15)     343.2500 (1.42)     20.4273 (4.31)         35;6        2.8770 (0.82)        193           1
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-Legend:
-  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
-  OPS: Operations Per Second, computed as 1 / Mean
-287 passed, 12 warnings in 82.59s (0:01:22)
+284 passed, 11 warnings in 87.23s (0:01:27)
