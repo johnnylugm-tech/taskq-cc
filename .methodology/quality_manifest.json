@@ -302,7 +302,9 @@
       "phase": 6,
       "gate": 4,
       "fr_scope": "all",
-      "overall_score": 95.28
+      "overall_score": 95.28,
+      "commit_landed": true,
+      "note": "commit landed via manual push after framework push timed out at 60s; gate4 evaluation PASSED (composite 95.28, all dims >= threshold, DA present, D4 100%, CRG 88.9)"
     }
   }
 }
