@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 8,
-  "fr_id": "FR-04",
+  "fr_id": "FR-05",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -14,20 +14,20 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1787323056342\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":31,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.173}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787323526345\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.178}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 72,
+      "tests_passed": 144,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================== 72 passed in 2.42s ==============================\ncoverage for FR-04 source files:\n  src/taskq_api/api/deps.py: 100.0%\n  src/taskq_api/service/auth.py: 100.0%\noverall: percent_covered=100.0, covered_lines=62, num_statements=62"
+      "tool_evidence": "============================= 144 passed in 5.49s ============================== Coverage totals: percent_covered=100.0% across deps.py, ratelimit.py, rate_repo.py, orm.py"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. (layer-hierarchy, independence-config-errors, sqlalchemy restricted, fastapi restricted)"
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -68,23 +68,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "4c146b191765c5c923e67fb5bae70553db1de244b022b659b6c0adf9f702f37e",
-      "bytes": 170,
-      "head": "{\"version\":\"1.1.409\",\"time\":\"1787323056342\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":31,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.173}}"
+      "sha256": "55cd2100e5656532affa89e7b2e425f342bd73b7bd8a148b5b984f8d4d3285b2",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787323526345\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.178}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c01bb4128a8c89433acc55a5b127d6530e8b753bb4151be5e585c816837be9ee",
-      "bytes": 257,
-      "head": "============================== 72 passed in 2.42s ==============================\ncoverage for FR-04 source files:\n  src/taskq_api/api/deps.py: 100.0%\n  src/taskq_api/service/auth.py: 100.0%\noverall: percent_covered=100.0, covered_lines=62, num_statements=62"
+      "sha256": "5a35eab1cfd7128dcf5397c0a368efdee51cf6bf298f5cbb7a46133d01779dbc",
+      "bytes": 171,
+      "head": "============================= 144 passed in 5.49s ============================== Coverage totals: percent_covered=100.0% across deps.py, ratelimit.py, rate_repo.py, orm.py"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "718767a5fae5144a1c4a3ac61f2f2f58039c049415c61b37313e75be4e0e2b60",
-      "bytes": 275,
-      "head": "Analyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+      "sha256": "13941eeec80c57e7f7349b49f6e51e618a75efd140ff88ab7d25aab9369a1151",
+      "bytes": 154,
+      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. (layer-hierarchy, independence-config-errors, sqlalchemy restricted, fastapi restricted)"
     }
   },
   "composite_score": 100.0,
