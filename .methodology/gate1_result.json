@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-07",
+  "fr_id": "FR-08",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -9,25 +9,25 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed! (ruff exit 0)\n"
+      "tool_evidence": "All checks passed!"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.184}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 14,
+      "tests_passed": 87,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "collected 14 items\n03-development/tests/test_fr07.py ..............                         [100%]\n======================= 14 passed, 11 warnings in 1.82s ========================\nCoverage: env.py 100% / v1_initial.py 100% / v2_tags.py 100% / v3_split_results.py 100% (totals 96/96 statements, 100%)"
+      "tool_evidence": "totals: covered_lines=171, num_statements=171, percent_covered=100.0. pytest: 87 passed, 0 failed, 0 skipped in 8.01s. test_coverage=100%"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Import Linter\nContracts: 4 kept, 0 broken.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT"
+      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken."
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -61,30 +61,30 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "dd91b03e9a8e3ee29f312c3add719ddad2b268046675753a49265f709c11774f",
-      "bytes": 32,
-      "head": "All checks passed! (ruff exit 0)"
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "175a6f8e4607564f617a7b3c70b898c5987d7c792a30762e2e182fae43b96a18",
-      "bytes": 161,
-      "head": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.184}}"
+      "sha256": "614ae4ae509e601f4a917ce53da1e067520906d3133047944e593c04a93e2079",
+      "bytes": 115,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "607e6515abbf8f32e37699eadc08bca726b9d3a26094c37e41bd5c311a469e07",
-      "bytes": 299,
-      "head": "collected 14 items\n03-development/tests/test_fr07.py ..............                         [100%]\n======================= 14 passed, 11 warnings in 1.82s ========================\nCoverage: env.py 100% / v1_initial.py 100% / v2_tags.py 100% / v3_split_results.py 100% (totals 96/96 statements, 100%)"
+      "sha256": "0c141fbbc65d6950b6badd9be065bcf03e1b1db352aa354130cea703758b08c4",
+      "bytes": 137,
+      "head": "totals: covered_lines=171, num_statements=171, percent_covered=100.0. pytest: 87 passed, 0 failed, 0 skipped in 8.01s. test_coverage=100%"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "4ac9d9ecbfa1b035d2f20b0b8d553bc3c47b304787cb069df4e8688f18476eae",
-      "bytes": 252,
-      "head": "Import Linter\nContracts: 4 kept, 0 broken.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT"
+      "sha256": "8940e042b6c34f46f20cd838dfdd3e3a4635563d47726542833d319631789985",
+      "bytes": 65,
+      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken."
     }
   },
   "composite_score": 100.0,
