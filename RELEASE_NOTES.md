@@ -1,6 +1,6 @@
 # Release Notes
 
-> **Generated**: 2026-08-21 12:21:19 UTC
+> **Generated**: 2026-08-21 12:28:43 UTC
 > **Version**: development
 
 ---
@@ -72,6 +72,8 @@
 
 ## Other
 
+- release(P6): Gate4 PASS score=95.3 pipeline complete
+- release(P6): Gate4 PASS score=95.3 — pipeline complete
 - handover: advance to Phase 6
 - docs(P5): BASELINE.md — review baseline checkpoint
 - chore(p5): baseline + verification-report artifacts
@@ -89,8 +91,6 @@
 - chore(submodule): bump harness to 197f1cb8
 - test(FR-09): add coverage tests and pragma exclusions
 - chore(submodule): bump harness to b90e2275
-- chore(p4): test-plan + coverage + bug-hunt artifacts
-- test(FR-08): add coverage tests and pragma exclusions
 - chore(p4): test-plan + coverage + bug-hunt artifacts
 
 ---

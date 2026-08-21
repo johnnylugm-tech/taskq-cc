@@ -4,7 +4,7 @@
 
 {
   "errors": [],
-  "generated_at": "2026-08-21T12:20:09Z",
+  "generated_at": "2026-08-21T12:27:33Z",
   "metrics": {
     "/Users/johnny/projects/taskq-cc/03-development/src/migrations/__init__.py": {
       "CONFIDENCE.HIGH": 0,
