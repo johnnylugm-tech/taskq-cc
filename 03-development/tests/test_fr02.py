@@ -1305,6 +1305,97 @@ def test_coverage_get_task_awaitable_branch(monkeypatch):  # NFR-03 (cancellatio
     assert payload["id"] == str(task.id)
 
 
+def test_coverage_submit_cancelled_error_raises_and_releases_gate(monkeypatch):  # NFR-03 (CancelledError propagation, SAB architecture constraint), NFR-08 (drain concurrency slot freed on cancel)
+    """``runner.submit`` must re-raise ``CancelledError`` and free the gate.
+
+    Drives ``service.runner.submit`` into its ``except asyncio.CancelledError:
+    raise`` branch (lines 280-285) by cancelling the outer awaiter while the
+    inner coroutine is still running, and exercises the ``finally: gate.release()``
+    that frees the admission slot even on cancellation.
+    """
+    import asyncio as _asyncio
+
+    from taskq_api.repository import task_repo as task_repo_module
+    from taskq_api.service import runner as runner_module
+
+    monkeypatch.setenv("TASKQ_MAX_CONCURRENT", "2")
+    runner_module._gate = None
+
+    task = task_repo_module.create(name="submit-cancel", command="sleep 30")
+
+    async def _scenario():
+        # Wrap submit so we can grab the in-flight task and cancel it
+        # before the inner sleep completes.
+        outer = _asyncio.create_task(
+            runner_module.submit(task_id=task.id, command="sleep 30", timeout_sec=5.0)
+        )
+        # Let submit admit + register the inner task.
+        await _asyncio.sleep(0)
+        # Cancel the outer task — cancellation propagates into the inner.
+        outer.cancel()
+        try:
+            await outer
+        except _asyncio.CancelledError:
+            return "cancelled"
+        return "settled"
+
+    outcome = _run_async(_scenario())
+    assert outcome == "cancelled", (
+        "FR-02 coverage: submit's outer await must surface CancelledError, "
+        "not convert it into a RunOutcome(final_state='failed')"
+    )
+    # The gate slot must be released by the finally branch on line 290.
+    assert runner_module._gate is not None, (
+        "FR-02 coverage: gate must still be initialised after cancellation"
+    )
+    assert runner_module._gate._remaining == runner_module._gate._cap, (
+        "FR-02 coverage: finally: gate.release() must free the slot even "
+        "when CancelledError propagates; otherwise the runner leaks "
+        "admission slots and over-cap refusals (AC-8.1) become sticky"
+    )
+
+
+def test_coverage_drain_skips_in_flight_tasks_with_missing_task_id(monkeypatch):  # NFR-08 (drain defensive — no crash on stale registry entry), NFR-15 (FR-08 graceful drain defensive)
+    """``runner.drain`` must skip stragglers whose ``_task_ids`` mapping was popped.
+
+    Drives the ``if task_id is None: continue`` defensive branch (line 338) by
+    registering an in-flight future, then popping its ``_task_ids`` mapping
+    before ``drain`` snapshots it — simulating a done-callback that fired
+    between snapshot acquisition and the post-cancellation status update.
+    """
+    import asyncio as _asyncio
+
+    from taskq_api.service import runner as runner_module
+
+    async def _scenario():
+        runner_module._in_flight.clear()
+        runner_module._task_ids.clear()
+
+        async def _slow():
+            await _asyncio.sleep(60)
+
+        inner = _asyncio.ensure_future(_slow())
+        runner_module._register_in_flight(inner, 99999)
+        # Strip the _task_ids mapping AFTER registration but BEFORE drain
+        # takes its snapshot — mirrors the done_callback firing early.
+        runner_module._task_ids.pop(inner, None)
+        # Yield so the inner future is scheduled.
+        await _asyncio.sleep(0)
+        # A tiny timeout means the inner is still pending; drain must
+        # cancel it, then take the `task_id is None` defensive branch.
+        report = await runner_module.drain(timeout=0.05)
+        return report
+
+    report = _run_async(_scenario())
+    # The defensive branch leaves stragglers_marked_interrupted at 0
+    # because no task_id was associated with the straggler.
+    assert report.stragglers_marked_interrupted == 0, (
+        "FR-02 coverage: drain's defensive `continue` must skip stragglers "
+        "with a popped _task_ids mapping; got "
+        f"{report.stragglers_marked_interrupted}"
+    )
+
+
 def test_coverage_run_task_endpoint_db_error_propagates(monkeypatch):  # NFR-03 (DB outage surfaces 500, not 404), NFR-07 (dependency fault — DB unavailable)
     """A DB error during the run existence check must propagate, not return 404.
 
