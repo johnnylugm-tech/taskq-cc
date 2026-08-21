@@ -1,8 +1,8 @@
 # Harness Methodology — Session Handover
 
-**Checkpoint**: `P6-entry-20260821`  
-**Phase**: P6 — Full Review / Gate 4  
-**Generated**: 2026-08-21T10:47:29Z
+**Checkpoint**: `P7-entry-20260821`  
+**Phase**: P7 — Risk Register  
+**Generated**: 2026-08-21T12:54:49Z
 
 > ⚠️  **開始下一個工作階段前，請先執行 `/compact` 壓縮上下文**，再從「接下來的工作」繼續。
 
@@ -14,8 +14,8 @@
 # 1. Clone (if working directory cleared)
 git clone --recurse-submodules https://github.com/johnnylugm-tech/taskq-cc.git && cd taskq-cc
 
-# 2. Read plan and continue Phase 6
-cat .methodology/phase6_plan.md
+# 2. Read plan and continue Phase 7
+cat .methodology/phase7_plan.md
 # Follow the active plan and continue from where you left off
 ```
 
@@ -31,33 +31,33 @@ git clone --recurse-submodules https://github.com/johnnylugm-tech/taskq-cc.git /
 git log --oneline -3
 
 # Confirm FSM state
-cat .methodology/state.json   # expected: phase=6 state=RUNNING last_gate=3 last_fr=FR-10
+cat .methodology/state.json   # expected: phase=7 state=RUNNING last_gate=4 last_fr=FR-10
 
 # Read active plan
-cat .methodology/phase6_plan.md
+cat .methodology/phase7_plan.md
 ```
 
 | 欄位 | 值 |
 |------|----|
 | Remote | `https://github.com/johnnylugm-tech/taskq-cc.git` |
 | Branch | `main` |
-| State | `phase=6 state=RUNNING last_gate=3 last_fr=FR-10` |
-| Plan | `.methodology/phase6_plan.md` |
+| State | `phase=7 state=RUNNING last_gate=4 last_fr=FR-10` |
+| Plan | `.methodology/phase7_plan.md` |
 
 ---
 
 ## 任務背景
 
-Phase 5 complete (10/10 FRs Gate 1 PASS). Gate 3 (score=95.72). Advancing to Phase 6.
+Phase 6 complete (10/10 FRs Gate 1 PASS). Gate 4 (score=95.28). Advancing to Phase 7.
 
 ## 目前執行狀況
 
-Phase 5: 10/10 FRs Gate 1 PASS. Gate 3 (score=95.72) — quality_complete. Ready to begin Phase 6.
+Phase 6: 10/10 FRs Gate 1 PASS. Gate 4 (score=95.28) — quality_complete. Ready to begin Phase 7.
 
 ## 接下來的工作
 
-1. Follow SKILL.md §0.1 Phase 6 entry checklist
-2. Read the Phase 6 plan and execute
+1. Follow SKILL.md §0.1 Phase 7 entry checklist
+2. Read the Phase 7 plan and execute
 
 ## 注意事項
 
