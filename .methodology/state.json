@@ -1,9 +1,9 @@
 {
   "state": "RUNNING",
   "current_phase": 8,
-  "last_gate": 4,
-  "last_fr": "FR-10",
-  "last_update": "2026-08-21T14:13:43.663131+00:00",
+  "last_gate": 1,
+  "last_fr": "FR-01",
+  "last_update": "2026-08-21T14:22:39.535641+00:00",
   "language": "python",
   "phase_completed": {
     "1": {
@@ -75,18 +75,16 @@
       "recovered_at": "2026-08-21T12:53:06.917335+00:00"
     },
     "7": {
-      "sha": "e445f924dcce4c3cb408110a3786370f521191d3",
-      "timestamp": "2026-08-21T14:11:59.324457+00:00",
+      "sha": "664de49a93cd43f0704395ca38c999d33b955db6",
+      "timestamp": "2026-08-21T14:13:44.732795+00:00",
       "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
       "enforcer_surface": {
         "core/quality_gate": "e42e8a1db831bc1a315be867d3cb095c36c0b752",
         "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
         "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
       },
-      "delivered_tree_sha256": "eeb18f3c181407c33caa10478846b699321d70be77410fec452ccf885faf5a0c",
-      "recovered_marker": "phase7(review-complete) reconciliation",
-      "recovered_at": "2026-08-21T14:11:59.324457+00:00",
-      "recovered_from_sha": null
+      "delivered_tree_sha256": "ce775ba53471350fbae41014b05986cab7bb4a597fc08d86a60fbcda5d7ec87a",
+      "recovered_at": "2026-08-21T14:11:59.324457+00:00"
     }
   },
   "test_inventory_checksum": "641c9d9652a71f6156dc0acd2bd7e966a1ffb2a9700e724eb8f5e1c994f96aaa",
