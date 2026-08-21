@@ -1,0 +1,11 @@
+[tool.pytest.ini_options]
+# NFR-09 AC-N9.3 forbids structural test exclusion (`--ignore` / `-k` /
+# `--deselect` / `collect_ignore`), so this block declares no filters.
+# The three tests that used to be deselected here now run in-suite:
+#   - test_ac_n1_1 / test_ac_n1_2 seed their 10k rows with one bulk
+#     `executemany` instead of 10k ORM inserts (seconds -> milliseconds);
+#   - test_ac_n12_2 recurses into `make verify-system`, which exports
+#     TASKQ_INSIDE_VERIFY_SYSTEM=1 for the suite it chains, so the inner
+#     invocation asserts the sentinel rather than re-entering make.
+# The pytest-cov timeout for this project is raised to 900s in
+# .methodology/harness_config.json to cover the nested run.
