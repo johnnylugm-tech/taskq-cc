@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 8,
-  "fr_id": "FR-07",
+  "fr_id": "FR-08",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -14,20 +14,20 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787324184926\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.167}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787324520639\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.179}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 14,
+      "tests_passed": 87,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "======================= 14 passed, 11 warnings in 1.89s ========================\ncoverage: 100.0% (96/96 statements covered)"
+      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2\ncollected 87 items\n\n03-development/tests/test_fr08.py .....................                  [ 24%]\n03-development/tests/test_fr02.py ...............................        [ 59%]\n03-development/tests/test_fr09.py .......................                [ 86%]\n03-development/tests/test_fr10.py .............                           [100%]\n\n============================== 87 passed in 7.99s ==============================\nCoverage: 100% on runner.py + app.py (171/171 statements)"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken."
+      "tool_evidence": "Import Linter\nContracts: 4 kept, 0 broken.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT"
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -68,23 +68,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "27a1dc07a09815e713222a25cf0ce932ee6f2cb4d4cd3319fa97598470dd72a0",
+      "sha256": "4ee7d0f44853207fc333821fd09c735c7dd16918e11ae49716785471f6418e7d",
       "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1787324184926\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.167}}"
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787324520639\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.179}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "9c498670f82c50829c6b8f6c9b874e514219980754f9e4b42707c486cb73c550",
-      "bytes": 124,
-      "head": "======================= 14 passed, 11 warnings in 1.89s ========================\ncoverage: 100.0% (96/96 statements covered)"
+      "sha256": "9311309ca18940bf369412b8b39e9199c8c236e7b1faea882956dba52682bee8",
+      "bytes": 609,
+      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2\ncollected 87 items\n\n03-development/tests/test_fr08.py .....................                  [ 24%]\n03-development/tests/test_fr02.py ...............................        [ 59%]\n03-development/tests/test_fr09.py .......................                [ 86%]\n03-development/tests/test_fr10.py .............                           [100%]\n\n============================== 87 passed in 7.99s ==============================\nCoverage: 100% on runner.py + app.py (171/171 statements)"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "8940e042b6c34f46f20cd838dfdd3e3a4635563d47726542833d319631789985",
-      "bytes": 65,
-      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken."
+      "sha256": "4ac9d9ecbfa1b035d2f20b0b8d553bc3c47b304787cb069df4e8688f18476eae",
+      "bytes": 252,
+      "head": "Import Linter\nContracts: 4 kept, 0 broken.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT"
     }
   },
   "composite_score": 100.0,
