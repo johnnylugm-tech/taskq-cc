@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-03",
+  "fr_id": "FR-04",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -9,25 +9,25 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!\nEXIT=0"
+      "tool_evidence": "All checks passed!"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1787284040499\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 31,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.165\n    }\n}\n\nEXIT=0"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787284454840\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.158}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 143,
+      "tests_passed": 71,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "..................................................... [ 50%]\n....................................................................... [100%]\n================================ tests coverage ==============================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                                         Stmts   Miss  Cover   Missing\n------------------------------------------------------------------------------------------\n03-development/src/taskq_api/api/deps.py                        33      0   100%\n03-development/src/taskq_api/service/auth.py                    29      0   100%\n03-development/src/taskq_api/repository/key_repo.py             43      0   100%\n03-development/src/taskq_api/models/orm.py                      39      0   100%\n----------\n143 passed in 5.41s\nEXIT=0"
+      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 71 items\n03-development/tests/test_fr04.py .................                      [ 23%]\n03-development/tests/test_fr03.py ............................           [ 63%]\n03-development/tests/test_fr05.py ..............                         [ 83%]\n03-development/tests/test_fr10.py ............                           [100%]\n============================== 71 passed in 2.46s ==============================\n{\"meta\": {\"format\": 3, \"version\": \"7.15.4\", \"timestamp\": \"2026-08-21T11:53:39.657914\"}, \"files\": {\"03-development/src/taskq_api/api/deps.py\": {\"summary\": {\"covered_lines\": 33, \"num_statements\": 33, \"percent_covered\": 100.0, \"missing_lines\": 0}}, \"03-development/src/taskq_api/service/auth.py\": {\"summary\": {\"covered_lines\": 29, \"num_statements\": 29, \"percent_covered\": 100.0, \"missing_lines\": 0}}}, \"totals\": {\"covered_lines\": 62, \"num_statements\": 62, \"percent_covered\": 100.0, \"missing_lines\": 0}}"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Import Linter\nContracts: 4 kept, 0 broken.\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nEXIT=0"
+      "tool_evidence": "=============\nImport Linter\n=============\nContracts\n---------\nAnalyzed 52 files, 135 dependencies.\n------------------------------------\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -61,30 +61,30 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "821aea98b0447901f9f5d243824d9d61c4a339243295f6d63b6834cd54e3670e",
-      "bytes": 25,
-      "head": "All checks passed!\nEXIT=0"
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c3f8e28f6143b82ffb651f0f0322911838bf2b9e33e44f983b7fd6cfd908953f",
-      "bytes": 258,
-      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1787284040499\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 31,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.165\n    }\n}\n\nEXIT=0"
+      "sha256": "b6448ab2081a505dc48934cbd3420d1759cccab328b67e70f36d894cb09e2b71",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787284454840\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.158}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "d9b7e97472e37e55018fb7c65bcd5f3b53cd04308296243f964a17004cc0576d",
-      "bytes": 844,
-      "head": "..................................................... [ 50%]\n....................................................................... [100%]\n================================ tests coverage ==============================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                                         Stmts   Miss  Cover   Missing\n------------------------------------------------------------------------------------------\n03-development/src/taskq_api/api/deps.py                        33      0   100%\n03-development/src/taskq_api/service/auth.py                    29      0   100%\n03-development/src/taskq_api/repository/key_repo.py             43      0   100%\n03-development/src/taskq_api/models/orm.py                      39      0   100%\n----------\n143 passed in 5.41s\nEXIT=0"
+      "sha256": "2722ef4800839b2c01b5447e7136db6e298bd9f3b02881fa7a3ba4da17b6464d",
+      "bytes": 1062,
+      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 71 items\n03-development/tests/test_fr04.py .................                      [ 23%]\n03-development/tests/test_fr03.py ............................           [ 63%]\n03-development/tests/test_fr05.py ..............                         [ 83%]\n03-development/tests/test_fr10.py ............                           [100%]\n============================== 71 passed in 2.46s ==============================\n{\"meta\": {\"format\": 3, \"version\": \"7.15.4\", \"timestamp\": \"2026-08-21T11:53:39.657914\"}, \"files\": {\"03-development/src/taskq_api/api/deps.py\": {\"summary\": {\"covered_lines\": 33, \"num_statements\": 33, \"percent_covered\": 100.0, \"missing_lines\": 0}}, \"03-development/src/taskq_api/service/auth.py\": {\"summary\": {\"covered_lines\": 29, \"num_statements\": 29, \"percent_covered\": 100.0, \"missing_lines\": 0}}}, \"totals\": {\"covered_lines\": 62, \"num_statements\": 62, \"percent_covered\": 100.0, \"missing_lines\": 0}}"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "dbad34e10814e7f3f9eb4a977c710de5dbac4a2072966fc97ca9342f932ff31d",
-      "bytes": 296,
-      "head": "Import Linter\nContracts: 4 kept, 0 broken.\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nEXIT=0"
+      "sha256": "94b5d4fc46a6212d74ea17d296a92ba5838779489b65359faee2b5f6d2ab6de1",
+      "bytes": 374,
+      "head": "=============\nImport Linter\n=============\nContracts\n---------\nAnalyzed 52 files, 135 dependencies.\n------------------------------------\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
     }
   },
   "composite_score": 100.0,
