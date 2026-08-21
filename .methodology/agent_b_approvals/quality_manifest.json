@@ -1,0 +1,20 @@
+{
+  "fr": "quality_manifest",
+  "review_status": "APPROVE",
+  "reason": ".methodology/quality_manifest.json is internally consistent and serves as the SoT for the composite scores cited by the other three deliverables: gate_results.gate4.overall_score=95.28 at line 305 matches QUALITY_REPORT.md line 5, RELEASE_NOTES.md line 13, and FINAL_SIGN_OFF.md line 6; gate_results.gate4.quality_complete=true at line 298 plus note at line 307 ('gate4 evaluation PASSED (composite 95.28, all dims >= threshold, DA present, D4 100%, CRG 88.9)') corroborates the sign-off envelope; gate_results.gate3.overall_score=95.72 at line 294 matches the rounded values in RELEASE_NOTES.md line 14 and FINAL_SIGN_OFF.md line 27 (VERIFICATION_REPORT.md v.0 line 25 has 95.724 unrounded, no conflict); gate_results.gate2.overall_score=92.66 at line 283 matches RELEASE_NOTES.md line 15 and FINAL_",
+  "citations": [
+    ".methodology/quality_manifest.json:297",
+    ".methodology/quality_manifest.json:298",
+    ".methodology/quality_manifest.json:305",
+    ".methodology/quality_manifest.json:307",
+    ".methodology/quality_manifest.json:283",
+    ".methodology/quality_manifest.json:294"
+  ],
+  "docs_embedded": [
+    "QUALITY_REPORT.md",
+    "RELEASE_NOTES.md",
+    "FINAL_SIGN_OFF.md",
+    "VERIFICATION_REPORT.md"
+  ],
+  "confidence": 0.9
+}

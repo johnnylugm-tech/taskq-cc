@@ -1,0 +1,20 @@
+{
+  "fr": "FINAL_SIGN_OFF.md",
+  "review_status": "APPROVE",
+  "reason": "Final Sign-Off at line 6 cites Gate 4 composite 95.28 / 100 from the manifest SoT and lists release commit 60557c4 with trailing f32db5c on line 7, matching QUALITY_REPORT.md and RELEASE_NOTES.md; gate progression table lines 23-28 reports Gate 1 100.0x10, Gate 2 92.66, Gate 3 95.72, Gate 4 95.28 which cross-checks exactly against .methodology/quality_manifest.json gate_results.gate2.overall_score=92.66, gate_results.gate3.overall_score=95.72, gate_results.gate4.overall_score=95.28, and against VERIFICATION_REPORT.md v.0 line 25 (95.724, rounded); 16-dimension breakdown lines 34-49 matches QUALITY_REPORT.md lines 13-28 byte-for-byte; verification provenance section lines 52-60 traces BASELINE.md and VERIFICATION_REPORT.md authored on 2026-08-21 with timestamps that match the file mtimes; h",
+  "citations": [
+    "FINAL_SIGN_OFF.md:6",
+    "FINAL_SIGN_OFF.md:25",
+    ".methodology/quality_manifest.json:283",
+    ".methodology/quality_manifest.json:294",
+    ".methodology/quality_manifest.json:305",
+    "05-verification/VERIFICATION_REPORT.md:25"
+  ],
+  "docs_embedded": [
+    "QUALITY_REPORT.md",
+    "RELEASE_NOTES.md",
+    "FINAL_SIGN_OFF.md",
+    "VERIFICATION_REPORT.md"
+  ],
+  "confidence": 0.9
+}

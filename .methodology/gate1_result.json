@@ -1,7 +1,7 @@
 {
   "gate": 1,
-  "phase": 5,
-  "fr_id": "FR-10",
+  "phase": 7,
+  "fr_id": "FR-01",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -9,25 +9,25 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!"
+      "tool_evidence": "All checks passed!\nEXIT=0"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.177}}\nEXIT=0"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 116,
+      "tests_passed": 115,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= 116 passed in 8.27s ==============================\nFR-10 source files (errors.py:20stmts, api/deps.py:33stmts, app.py:80stmts) all at 100% coverage via coverage json.\nspec_cov_pct=100% (0/6 required tests missing)"
+      "tool_evidence": "============================= 115 passed in 5.17s ==============================\ntotals: {'covered_lines': 244, 'num_statements': 244, 'percent_covered': 100.0, 'percent_covered_display': '100', 'missing_lines': 0, 'excluded_lines': 0}"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. (api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT)"
+      "tool_evidence": "Analyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken.\nEXIT=0"
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -61,30 +61,30 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
-      "bytes": 18,
-      "head": "All checks passed!"
+      "sha256": "821aea98b0447901f9f5d243824d9d61c4a339243295f6d63b6834cd54e3670e",
+      "bytes": 25,
+      "head": "All checks passed!\nEXIT=0"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "614ae4ae509e601f4a917ce53da1e067520906d3133047944e593c04a93e2079",
-      "bytes": 115,
-      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
+      "sha256": "ca20e94cff67884ee8b4d561938d9e1569ca4e6eceef5ebd49a9b1edb6c14af2",
+      "bytes": 142,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.177}}\nEXIT=0"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "19e3dca28f6ed84f152cde1cc2258dffdc571f6401775f37cc733dd8d0b62444",
-      "bytes": 243,
-      "head": "============================= 116 passed in 8.27s ==============================\nFR-10 source files (errors.py:20stmts, api/deps.py:33stmts, app.py:80stmts) all at 100% coverage via coverage json.\nspec_cov_pct=100% (0/6 required tests missing)"
+      "sha256": "62295e8e340a606eb4659a135874a7b5eb680b375a0996afec176ee9a31ed1cb",
+      "bytes": 235,
+      "head": "============================= 115 passed in 5.17s ==============================\ntotals: {'covered_lines': 244, 'num_statements': 244, 'percent_covered': 100.0, 'percent_covered_display': '100', 'missing_lines': 0, 'excluded_lines': 0}"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c7d6cfc39dbe58de47e43680760758f0cb8da430fb35d7be2f29cba229dc6b20",
-      "bytes": 280,
-      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. (api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT)"
+      "sha256": "341575ec60e563343d6115d14eb9243453d599fb26196f80b7a81ab98a30fceb",
+      "bytes": 282,
+      "head": "Analyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken.\nEXIT=0"
     }
   },
   "composite_score": 100.0,
