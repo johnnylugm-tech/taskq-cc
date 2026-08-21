@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-05",
-  "overall_score": 100.0,
+  "fr_id": "FR-06",
+  "overall_score": 98.25,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -14,20 +14,20 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.165}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787306247235\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.162}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 144,
+      "tests_passed": 138,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "144 passed in 5.58s\n\nFR-05 source files coverage:\n03-development/src/taskq_api/api/deps.py  33/33  100%\n03-development/src/taskq_api/service/ratelimit.py  8/8  100%\n03-development/src/taskq_api/repository/rate_repo.py  63/63  100%\n03-development/src/taskq_api/models/orm.py  39/39  100%\n\nRequired tests: 4/4 present (test_ac_5_1, test_ac_5_2, test_ac_5_3, test_sec_t02)"
+      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nbenchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)\nrootdir: /Users/johnny/projects/taskq-cc\nconfigfile: pyproject.toml\nplugins: benchmark-5.2.3, cov-7.1.0, asyncio-1.4.0, anyio-4.14.2\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\ncollected 138 items\n\n03-development/tests/test_fr06.py .......................                [ 16%]\n03-development/tests/test_fr01.py ..................                     [ 29%]\n03-development/tests/test_fr02.py ...............................        [ 52%]\n03-development/tests/test_fr03.py .............................          [ 73%]\n03-development/tests/test_fr05.py ..............                         [ 83%]\n03-development/tests/test_fr09.py .......................                [100%]\n\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                                         Stmts   Miss  Cover   Missing\n------------------------------------------------------------------------------------------\n03-development/src/migrations/__init__.py                        0      0   100%\n03-development/src/migrations/env.py                            51     51     0%   32-173\n03-development/src/migrations/versions/__init__.py               0      0   100%\n03-development/src/migrations/versions/v1_initial.py            13      4    69%   29-43, 54-55\n03-development/src/migrations/versions/v2_tags.py               15      6    60%   25-49, 59-61\n03-development/src/migrations/versions/v3_split_results.py      17      8    53%   50-77, 89-116\n03-development/src/taskq_api/__init__.py                         0      0   100%\n03-development/src/taskq_api/__main__.py                         5      1    80%   18\n03-development/src/taskq_api/api/__init__.py                     4      0   100%\n03-development/src/taskq_api/api/deps.py                        33      0   100%\n03-development/src/taskq_api/api/health.py                      67      0   100%\n03-development/src/taskq_api/api/tasks.py                       62      0   100%\n03-development/src/taskq_api/app.py                             80      0   100%\n03-development/src/taskq_api/cli.py                             28      0   100%\n03-development/src/taskq_api/config.py                          37      0   100%\n03-development/src/taskq_api/errors.py                          20      1    95%   60\n03-development/src/taskq_api/models/__init__.py                  3      0   100%\n03-development/src/taskq_api/models/orm.py                      39      0   100%\n03-development/src/taskq_api/models/schemas.py                  35      0   100%\n03-development/src/taskq_api/repository/__init__.py              4      0   100%\n03-development/src/taskq_api/repository/key_repo.py             43      0   100%\n03-development/src/taskq_api/repository/metrics.py              30      0   100%\n03-development/src/taskq_api/repository/rate_repo.py            63      0   100%\n03-development/src/taskq_api/repository/session.py              72      0   100%\n03-development/src/taskq_api/repository/task_repo.py            83      0   100%\n03-development/src/taskq_api/service/__init__.py                 3      0   100%\n03-development/src/taskq_api/service/auth.py                    29      0   100%\n03-development/src/taskq_api/service/ratelimit.py                8      0   100%\n03-development/src/taskq_api/service/run_state.py               45      0   100%\n03-development/src/taskq_api/service/runner.py                  91      0   100%\n03-development/src/taskq_api/service/tasks.py                   25      0   100%\n------------------------------------------------------------------------------------------\nTOTAL                                                         1005     71    93%\n============================= 138 passed in 5.40s =============================="
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 135 dependencies.\napi > service > repository > models  KEPT\nconfig and errors do not import each other  KEPT\nsqlalchemy imports restricted to repository and models layers  KEPT\nfastapi imports restricted to api and app layers  KEPT\nContracts: 4 kept, 0 broken."
+      "tool_evidence": "=============\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 135 dependencies.\n------------------------------------\n\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\n\nContracts: 4 kept, 0 broken."
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -68,26 +68,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "a17f0500dc89e03b71485760e07be50d3a5c1437923851f7696ecbaf83cf9640",
-      "bytes": 135,
-      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.165}}"
+      "sha256": "800cceb71cfd40efce6c55f142b8a48534d001b7117cdda970c0a4c9529cd9c5",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787306247235\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.162}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "a999a26bcf2fde13d142204cf2fef5439655f51bde3d4b70fa9b037ce208c473",
-      "bytes": 369,
-      "head": "144 passed in 5.58s\n\nFR-05 source files coverage:\n03-development/src/taskq_api/api/deps.py  33/33  100%\n03-development/src/taskq_api/service/ratelimit.py  8/8  100%\n03-development/src/taskq_api/repository/rate_repo.py  63/63  100%\n03-development/src/taskq_api/models/orm.py  39/39  100%\n\nRequired tests: 4/4 present (test_ac_5_1, test_ac_5_2, test_ac_5_3, test_sec_t02)"
+      "sha256": "7d3ffe5cd795f80943fd381efe51f33ce5ec1716a3e6fc55f5b37c86f8cb7f09",
+      "bytes": 4250,
+      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nbenchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)\nrootdir: /Users/johnny/projects/taskq-cc\nconfigfile: pyproject.toml\nplugins: benchmark-5.2.3, cov-7.1.0, asyncio-1.4.0, anyio-4.14.2\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\ncollected 138 items\n\n03-development/tests/test_fr06.py .......................                [ 16%]\n03-development/tests/test_fr01.py ..................                     [ 29%]\n03-development/tests/test_fr02.py ...............................        [ 52%]\n03-development/tests/test_fr03.py .............................          [ 73%]\n03-development/tests/test_fr05.py ..............                         [ 83%]\n03-development/tests/test_fr09.py .......................                [100%]\n\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                                         Stmts   Miss  Cover   Missing"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c846c4f93541f5585b9360a256f2ba1868ece19995b1cfff93ae984168447d12",
-      "bytes": 279,
-      "head": "Analyzed 52 files, 135 dependencies.\napi > service > repository > models  KEPT\nconfig and errors do not import each other  KEPT\nsqlalchemy imports restricted to repository and models layers  KEPT\nfastapi imports restricted to api and app layers  KEPT\nContracts: 4 kept, 0 broken."
+      "sha256": "31872f7ce62ad0bd8c47591e45a9d8a5b21b2c49a581c2b3e9cc801d35e324d5",
+      "bytes": 378,
+      "head": "=============\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 135 dependencies.\n------------------------------------\n\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\n\nContracts: 4 kept, 0 broken."
     }
   },
-  "composite_score": 100.0,
+  "composite_score": 98.25,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
