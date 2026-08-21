@@ -1,9 +1,9 @@
 {
   "state": "RUNNING",
-  "current_phase": 8,
-  "last_gate": 1,
+  "current_phase": 9,
+  "last_gate": 4,
   "last_fr": "FR-10",
-  "last_update": "2026-08-21T15:18:04.542404+00:00",
+  "last_update": "2026-08-21T15:32:32.952344+00:00",
   "language": "python",
   "phase_completed": {
     "1": {
@@ -85,11 +85,17 @@
       },
       "delivered_tree_sha256": "ce775ba53471350fbae41014b05986cab7bb4a597fc08d86a60fbcda5d7ec87a",
       "recovered_at": "2026-08-21T14:11:59.324457+00:00"
+    },
+    "8": {
+      "sha": "d013a7e1139f7fd73ec2dfc221ef864114b5b1f0",
+      "timestamp": "2026-08-21T15:30:52.062250+00:00",
+      "recovered_at": "2026-08-21T15:30:52.062250+00:00",
+      "recovery_marker": "phase8(review-complete)"
     }
   },
   "test_inventory_checksum": "641c9d9652a71f6156dc0acd2bd7e966a1ffb2a9700e724eb8f5e1c994f96aaa",
   "phase_truth_passed": true,
-  "last_milestone_command": "push-milestone --type p8",
+  "last_milestone_command": "advance-phase --completed-phase 8",
   "last_milestone_head": {
     "p3-post-gate2": "47db1dba1bf5475c4fc3461903c60a7214de0cc5"
   },
@@ -120,6 +126,15 @@
       "observed_head": "e445f924dcce4c3cb408110a3786370f521191d3",
       "marker": "phase7(review-complete) reconciliation",
       "reason": "phase_completed[7] was missing per advance-verify gap (Round R1 P7->P8); manually reconciled to current HEAD to unblock P7->P8 advance"
+    },
+    {
+      "phase": 8,
+      "from_sha": null,
+      "to_sha": "d013a7e1139f7fd73ec2dfc221ef864114b5b1f0",
+      "at": "2026-08-21T15:30:52.062250+00:00",
+      "observed_head": "d013a7e1139f7fd73ec2dfc221ef864114b5b1f0",
+      "marker": "phase8(review-complete) reconciliation",
+      "reason": "phase_completed[8] was missing per advance-verify gap (Round R1 P8->P9); manually reconciled to current HEAD to unblock P8->P9 advance"
     }
   ]
 }
