@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-03",
+  "fr_id": "FR-04",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -9,25 +9,25 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!"
+      "tool_evidence": "$ python3 -m ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003\nAll checks passed!"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787305142582\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.162}}"
+      "tool_evidence": "$ python3 -m pyright 03-development/src/ --outputjson\n{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.174}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 144,
+      "tests_passed": 72,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= test session starts ==============================\ncollected 144 items\n03-development/tests/test_fr03.py .............................          [ 20%]\n03-development/tests/test_fr01.py ..................                     [ 32%]\n03-development/tests/test_fr02.py ...............................        [ 54%]\n03-development/tests/test_fr04.py .................                      [ 65%]\n03-development/tests/test_fr05.py ..............                         [ 75%]\n03-development/tests/test_fr06.py .......................                [ 91%]\n03-development/tests/test_fr10.py ............                           [100%]\n\nFR-03 source files coverage:\n  taskq_api/api/deps.py: 33/33 (100%)\n  taskq_api/service/auth.py: 29/29 (100%)\n  taskq_api/repository/key_repo.py: 43/43 (100%)\n  taskq_api/models/orm.py: 39/39 (100%)\n\nTOTAL 1005 stmts, 112 miss, 89% overall; FR-03 modules 100% covered\n\n============================= 144 passed in 5.44s =============================="
+      "tool_evidence": "collected 72 items\n\n03-development/tests/test_fr04.py .................      [ 23%]\n03-development/tests/test_fr03.py .............................  [ 63%]\n03-development/tests/test_fr05.py ..............                [ 83%]\n03-development/tests/test_fr10.py ............                  [100%]\n\n============================== 72 passed in 2.44s ==============================\ncoverage json --include=deps.py,auth.py -> TOTAL_PCT 100.0 ; spec_cov_pct=100 (5/5 required tests present)"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Import Linter\nContracts\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+      "tool_evidence": "$ PYTHONPATH=03-development/src lint-imports\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -61,30 +61,30 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
-      "bytes": 18,
-      "head": "All checks passed!"
+      "sha256": "fad7bf8fec552781f58e1c0ffeca42f9112045994a8b691d1b407d6151442b6f",
+      "bytes": 99,
+      "head": "$ python3 -m ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003\nAll checks passed!"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "e1cdfa5723c08b6a02d6e00a7cc7ece63206bc7a57ba56d77d09bce3d94ada4b",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1787305142582\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.162}}"
+      "sha256": "a897bfb707e2249fe02ebb4f04348f90a84dc8c31b8ee32d6501edda8a1a2e0f",
+      "bytes": 215,
+      "head": "$ python3 -m pyright 03-development/src/ --outputjson\n{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.174}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "1f2ac85e746eee1169ef1905ea8dc7e4f680e4a5b4b3e2155fe3ac8af7a5519c",
-      "bytes": 1010,
-      "head": "============================= test session starts ==============================\ncollected 144 items\n03-development/tests/test_fr03.py .............................          [ 20%]\n03-development/tests/test_fr01.py ..................                     [ 32%]\n03-development/tests/test_fr02.py ...............................        [ 54%]\n03-development/tests/test_fr04.py .................                      [ 65%]\n03-development/tests/test_fr05.py ..............                         [ 75%]\n03-development/tests/test_fr06.py .......................                [ 91%]\n03-development/tests/test_fr10.py ............                           [100%]\n\nFR-03 source files coverage:\n  taskq_api/api/deps.py: 33/33 (100%)\n  taskq_api/service/auth.py: 29/29 (100%)\n  taskq_api/repository/key_repo.py: 43/43 (100%)\n  taskq_api/models/orm.py: 39/39 (100%)\n\nTOTAL 1005 stmts, 112 miss, 89% overall; FR-03 modules 100% covered\n\n============================= 144 passed in 5.44s =============================="
+      "sha256": "e754e364e8b0b42e30fd4ad48c813842952d3e6f7737dca960fd24e0e174feff",
+      "bytes": 486,
+      "head": "collected 72 items\n\n03-development/tests/test_fr04.py .................      [ 23%]\n03-development/tests/test_fr03.py .............................  [ 63%]\n03-development/tests/test_fr05.py ..............                [ 83%]\n03-development/tests/test_fr10.py ............                  [100%]\n\n============================== 72 passed in 2.44s ==============================\ncoverage json --include=deps.py,auth.py -> TOTAL_PCT 100.0 ; spec_cov_pct=100 (5/5 required tests present)"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "bb01c96feee0bdd3e7afbeacd20f7e56e0f886cbbb16ce91d147d84553e4af98",
-      "bytes": 299,
-      "head": "Import Linter\nContracts\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+      "sha256": "025199941a8cf114968ce75a1133317249c702b20f4b41ec168d662cbf4e42bf",
+      "bytes": 320,
+      "head": "$ PYTHONPATH=03-development/src lint-imports\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
     }
   },
   "composite_score": 100.0,
