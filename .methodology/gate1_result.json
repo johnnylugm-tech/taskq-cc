@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 8,
-  "fr_id": "FR-02",
+  "fr_id": "FR-03",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -9,25 +9,25 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed! (python3 -m ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003)"
+      "tool_evidence": "All checks passed!"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "pyright 03-development/src/ --outputjson: {\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":31,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.162}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787322654900\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.174}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 136,
+      "tests_passed": 144,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "136 passed in 11.35s. coverage totals: covered_lines=275, num_statements=275, percent_covered=100.0. Required tests: 7/7 present (test_ac_2_1_post_run_returns_202_and_runs_to_terminal_state, test_ac_2_2_runner_uses_subprocess_exec_no_shell_true, test_ac_2_3_timeout_kills_child_no_orphans_terminal_state_timeout, test_ac_2_4_result_row_carries_five_columns, test_ac_2_5_get_runs_returns_history_newest_first, test_sec_t06_no_shell_true_in_source). spec_cov_pct=100, coverage_pct=100."
+      "tool_evidence": "============================= 144 passed in 5.45s ============================== {\"meta\": {\"format\": 3, \"version\": \"7.15.4\", \"timestamp\": \"2026-08-21T22:32:09.686784\", \"branch_coverage\": false, \"show_contexts\": false}, \"files\": {\"03-development/src/taskq_api/api/deps.py\": {\"executed_lines\": [25, 27, 29, 30, 33, 51, 52, 53, 56, 57, 60, 61, 70, 83, 87, 88, 94, 97, 111, 114, 125, 126, 127, 133, 136, 146, 149, 153, 158, 162, 163, 164, 167], \"summary\": {\"covered_lines\": 33, \"num_statements\": 33, \"percent_covered\": 100.0, \"percent_covered_display\": \"100\", \"missing_lines\": 0}}"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "lint-imports exit 0: Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken (api > service > repository > models; config and errors do not import each other; sqlalchemy imports restricted to repository and models; fastapi imports restricted to api and app)."
+      "tool_evidence": "Import Linter\nContracts\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -61,30 +61,30 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "aaa66dd39288bd907b6211ce7736d3edede909ccbce699d9283f851b9caade07",
-      "bytes": 99,
-      "head": "All checks passed! (python3 -m ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003)"
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "d327a53b0da451ac84e9422710e77f8b86a514640291166bff84c6ee0485e793",
-      "bytes": 165,
-      "head": "pyright 03-development/src/ --outputjson: {\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":31,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.162}}"
+      "sha256": "2c02a08180ff9b546be437d3e21ee3891d25f605225979f09e811e092c3fbb88",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787322654900\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.174}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "264d38ae18dbfca1b78790bf77451f9d127099076441b492fc6c043307b170f7",
-      "bytes": 483,
-      "head": "136 passed in 11.35s. coverage totals: covered_lines=275, num_statements=275, percent_covered=100.0. Required tests: 7/7 present (test_ac_2_1_post_run_returns_202_and_runs_to_terminal_state, test_ac_2_2_runner_uses_subprocess_exec_no_shell_true, test_ac_2_3_timeout_kills_child_no_orphans_terminal_state_timeout, test_ac_2_4_result_row_carries_five_columns, test_ac_2_5_get_runs_returns_history_newest_first, test_sec_t06_no_shell_true_in_source). spec_cov_pct=100, coverage_pct=100."
+      "sha256": "0c71217afcbebc8b71cddcae1c5ab1dbe9988bd2cb71e55714363888559439a8",
+      "bytes": 576,
+      "head": "============================= 144 passed in 5.45s ============================== {\"meta\": {\"format\": 3, \"version\": \"7.15.4\", \"timestamp\": \"2026-08-21T22:32:09.686784\", \"branch_coverage\": false, \"show_contexts\": false}, \"files\": {\"03-development/src/taskq_api/api/deps.py\": {\"executed_lines\": [25, 27, 29, 30, 33, 51, 52, 53, 56, 57, 60, 61, 70, 83, 87, 88, 94, 97, 111, 114, 125, 126, 127, 133, 136, 146, 149, 153, 158, 162, 163, 164, 167], \"summary\": {\"covered_lines\": 33, \"num_statements\": 33, \"percent_covered\": 100.0, \"percent_covered_display\": \"100\", \"missing_lines\": 0}}"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "8ba5f933f50bbabae1201af9ecb582583710c2e5588bc112fc75605d298058df",
-      "bytes": 267,
-      "head": "lint-imports exit 0: Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken (api > service > repository > models; config and errors do not import each other; sqlalchemy imports restricted to repository and models; fastapi imports restricted to api and app)."
+      "sha256": "bb01c96feee0bdd3e7afbeacd20f7e56e0f886cbbb16ce91d147d84553e4af98",
+      "bytes": 299,
+      "head": "Import Linter\nContracts\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
     }
   },
   "composite_score": 100.0,
