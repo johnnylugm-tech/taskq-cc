@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 7,
-  "fr_id": "FR-04",
+  "fr_id": "FR-05",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -9,20 +9,20 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!"
+      "tool_evidence": "All checks passed!\n"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.164}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.159}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 72,
+      "tests_passed": 144,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "collected 72 items\n03-development/tests/test_fr04.py ................. [23%]\n03-development/tests/test_fr03.py ............................. [63%]\n03-development/tests/test_fr05.py .............. [83%]\n03-development/tests/test_fr10.py ............ [100%]\n\n============================== 72 passed in 2.43s ==============================\n\nCoverage: 03-development/src/taskq_api/api/deps.py 100% (33/33 statements), 03-development/src/taskq_api/service/auth.py 100% (29/29 statements). Totals: 62 statements, 100% covered. spec_cov_pct=100% (5/5 required tests present)."
+      "tool_evidence": "collected 144 items\n03-development/tests/test_fr05.py .............. [ 9%]\n03-development/tests/test_fr01.py .................. [ 22%]\n03-development/tests/test_fr02.py ............................... [ 43%]\n03-development/tests/test_fr03.py ............................. [ 63%]\n03-development/tests/test_fr04.py ................. [ 75%]\n03-development/tests/test_fr06.py ....................... [ 91%]\n03-development/tests/test_fr10.py ............ [100%]\n\n============================= 144 passed in 4.05s ==============================\nCoverage: 100% across deps.py, ratelimit.py, rate_repo.py, orm.py (143/143 statements covered)."
     },
     "architecture_constraints": {
       "score": 100.0,
@@ -68,16 +68,16 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "1bc4be64f57263bc97e77d697a40147d554d4b6c940d2e9e9287d42776431251",
+      "sha256": "4d46dfcbbf4f1786efcd124862c507ab45fcbdb791a3e0423cd28b9f3018d831",
       "bytes": 161,
-      "head": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.164}}"
+      "head": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.159}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "acf685de6faf41d8c913908b25dcd660658012de0bc5c6068b862ef9237e5b31",
-      "bytes": 569,
-      "head": "collected 72 items\n03-development/tests/test_fr04.py ................. [23%]\n03-development/tests/test_fr03.py ............................. [63%]\n03-development/tests/test_fr05.py .............. [83%]\n03-development/tests/test_fr10.py ............ [100%]\n\n============================== 72 passed in 2.43s ==============================\n\nCoverage: 03-development/src/taskq_api/api/deps.py 100% (33/33 statements), 03-development/src/taskq_api/service/auth.py 100% (29/29 statements). Totals: 62 statements, 100% covered. spec_cov_pct=100% (5/5 required tests present)."
+      "sha256": "397caba2727c522b5db33483dc7dc6d342699bbd7dc5dfd8c6d7e877f91ea92a",
+      "bytes": 634,
+      "head": "collected 144 items\n03-development/tests/test_fr05.py .............. [ 9%]\n03-development/tests/test_fr01.py .................. [ 22%]\n03-development/tests/test_fr02.py ............................... [ 43%]\n03-development/tests/test_fr03.py ............................. [ 63%]\n03-development/tests/test_fr04.py ................. [ 75%]\n03-development/tests/test_fr06.py ....................... [ 91%]\n03-development/tests/test_fr10.py ............ [100%]\n\n============================= 144 passed in 4.05s ==============================\nCoverage: 100% across deps.py, ratelimit.py, rate_repo.py, orm.py (143/143 statements covered)."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
