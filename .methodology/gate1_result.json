@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-06",
+  "fr_id": "FR-07",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -14,20 +14,20 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787285155577\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.202}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.17}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 137,
+      "tests_passed": 14,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= 137 passed in 5.37s ==============================\ncoverage: 100% (261/261 statements covered) for FR-06 source files: session.py, task_repo.py, key_repo.py, rate_repo.py"
+      "tool_evidence": "===================== 14 passed, 11 warnings in 1.84s ===================== coverage: percent_covered=100.0, percent_statements_covered=100.0, totals: covered_lines=96, num_statements=96, missing_lines=0"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT. sqlalchemy imports restricted to repository and models layers KEPT."
+      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT"
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -68,23 +68,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "124707c172d0cf92ce9f3ab3d93f4b884460e73bca6282ea9f24ddfdfbdbff88",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1787285155577\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.202}}"
+      "sha256": "5f994cbc09fa13c73db7a286cfed53c7bc9ba5374c63efffcd008eb8f0a0ab95",
+      "bytes": 134,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.17}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "dca23be6476caa65c91f597c93fdb81151397a66626cdd19bac6363fa3a582b7",
-      "bytes": 200,
-      "head": "============================= 137 passed in 5.37s ==============================\ncoverage: 100% (261/261 statements covered) for FR-06 source files: session.py, task_repo.py, key_repo.py, rate_repo.py"
+      "sha256": "fd45fffc0173e782893e18793f7f19386c56db2ec36ec7a47852260ada846c9a",
+      "bytes": 203,
+      "head": "===================== 14 passed, 11 warnings in 1.84s ===================== coverage: percent_covered=100.0, percent_statements_covered=100.0, totals: covered_lines=96, num_statements=96, missing_lines=0"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "5a43e24255698ed8dbed7807a9bd17bf1eb3ad30561977c36e071744eec064fa",
-      "bytes": 175,
-      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT. sqlalchemy imports restricted to repository and models layers KEPT."
+      "sha256": "c6e4c8a5c07cace8c18b61548f3f6c6607f12328ef6f21a05a482995c058891b",
+      "bytes": 278,
+      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT"
     }
   },
   "composite_score": 100.0,
