@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-04",
+  "fr_id": "FR-05",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -14,20 +14,20 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787284454840\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.158}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787284806073\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.181}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 71,
+      "tests_passed": 143,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 71 items\n03-development/tests/test_fr04.py .................                      [ 23%]\n03-development/tests/test_fr03.py ............................           [ 63%]\n03-development/tests/test_fr05.py ..............                         [ 83%]\n03-development/tests/test_fr10.py ............                           [100%]\n============================== 71 passed in 2.46s ==============================\n{\"meta\": {\"format\": 3, \"version\": \"7.15.4\", \"timestamp\": \"2026-08-21T11:53:39.657914\"}, \"files\": {\"03-development/src/taskq_api/api/deps.py\": {\"summary\": {\"covered_lines\": 33, \"num_statements\": 33, \"percent_covered\": 100.0, \"missing_lines\": 0}}, \"03-development/src/taskq_api/service/auth.py\": {\"summary\": {\"covered_lines\": 29, \"num_statements\": 29, \"percent_covered\": 100.0, \"missing_lines\": 0}}}, \"totals\": {\"covered_lines\": 62, \"num_statements\": 62, \"percent_covered\": 100.0, \"missing_lines\": 0}}"
+      "tool_evidence": "143 passed in 5.32s. coverage 100% on all 4 FR-05 files (api/deps.py, service/ratelimit.py, repository/rate_repo.py, models/orm.py). 0 required tests missing. spec_cov_pct=100. score = min(100, 100) = 100."
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "=============\nImport Linter\n=============\nContracts\n---------\nAnalyzed 52 files, 135 dependencies.\n------------------------------------\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. (api > service > repository > models KEPT, config/errors independent KEPT, sqlalchemy restricted to repository/models KEPT, fastapi restricted to api/app KEPT)"
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -68,23 +68,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "b6448ab2081a505dc48934cbd3420d1759cccab328b67e70f36d894cb09e2b71",
+      "sha256": "cf12f4fdd5b01a2b3f04c26b8d73e4990f191688fb1e4f20136d1ef3c65e19b3",
       "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1787284454840\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.158}}"
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787284806073\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.181}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "2722ef4800839b2c01b5447e7136db6e298bd9f3b02881fa7a3ba4da17b6464d",
-      "bytes": 1062,
-      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 71 items\n03-development/tests/test_fr04.py .................                      [ 23%]\n03-development/tests/test_fr03.py ............................           [ 63%]\n03-development/tests/test_fr05.py ..............                         [ 83%]\n03-development/tests/test_fr10.py ............                           [100%]\n============================== 71 passed in 2.46s ==============================\n{\"meta\": {\"format\": 3, \"version\": \"7.15.4\", \"timestamp\": \"2026-08-21T11:53:39.657914\"}, \"files\": {\"03-development/src/taskq_api/api/deps.py\": {\"summary\": {\"covered_lines\": 33, \"num_statements\": 33, \"percent_covered\": 100.0, \"missing_lines\": 0}}, \"03-development/src/taskq_api/service/auth.py\": {\"summary\": {\"covered_lines\": 29, \"num_statements\": 29, \"percent_covered\": 100.0, \"missing_lines\": 0}}}, \"totals\": {\"covered_lines\": 62, \"num_statements\": 62, \"percent_covered\": 100.0, \"missing_lines\": 0}}"
+      "sha256": "571cd3481b338b950794e5c7eec17efe2e8df771d11e67a9d2b3c812240ba0a7",
+      "bytes": 205,
+      "head": "143 passed in 5.32s. coverage 100% on all 4 FR-05 files (api/deps.py, service/ratelimit.py, repository/rate_repo.py, models/orm.py). 0 required tests missing. spec_cov_pct=100. score = min(100, 100) = 100."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "94b5d4fc46a6212d74ea17d296a92ba5838779489b65359faee2b5f6d2ab6de1",
-      "bytes": 374,
-      "head": "=============\nImport Linter\n=============\nContracts\n---------\nAnalyzed 52 files, 135 dependencies.\n------------------------------------\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
+      "sha256": "1a4c5d251ebda2f785bc55a2141d50433d3b6b10985d61cd40017b63f092561b",
+      "bytes": 225,
+      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. (api > service > repository > models KEPT, config/errors independent KEPT, sqlalchemy restricted to repository/models KEPT, fastapi restricted to api/app KEPT)"
     }
   },
   "composite_score": 100.0,
