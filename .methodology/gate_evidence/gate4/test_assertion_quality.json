@@ -1,0 +1,1 @@
+{"total_funcs": 279, "total_asserts": 717, "zero_assert_count": 2, "zero_assert": ["test_fr06.py::test_coverage_task_repo_create_duplicate_raises_domain_error", "test_nfr_spec_coverage.py::test_ac_n3_3_cancelled_error_propagates_in_task_handler"], "score": 100}

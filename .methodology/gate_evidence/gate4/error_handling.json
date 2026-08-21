@@ -1,0 +1,23 @@
+{
+  "total": 15,
+  "with_handler": 13,
+  "no_handler": [
+    "03-development/src/taskq_api/repository/rate_repo.py",
+    "03-development/src/taskq_api/service/ratelimit.py"
+  ],
+  "exempt_count": 9,
+  "exempt_files": [
+    "03-development/src/migrations/versions/v1_initial.py",
+    "03-development/src/migrations/versions/v2_tags.py",
+    "03-development/src/migrations/versions/v3_split_results.py",
+    "03-development/src/taskq_api/__main__.py",
+    "03-development/src/taskq_api/config.py",
+    "03-development/src/taskq_api/errors.py",
+    "03-development/src/taskq_api/models/orm.py",
+    "03-development/src/taskq_api/models/schemas.py",
+    "03-development/src/taskq_api/service/run_state.py"
+  ],
+  "anti_patterns_count": 0,
+  "anti_patterns": [],
+  "score": 86.7
+}

@@ -1,6 +1,6 @@
 # Harness-executed: pytest-cov-integration
 # returncode: 0
-# agent_score: 81.5 | threshold: 60.0
+# agent_score: 81.0 | threshold: 75.0
 
 .................................                                        [100%]
 =============================== warnings summary ===============================
@@ -43,8 +43,8 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/auth.py                    29      4    86%   89-93, 104, 110
 03-development/src/taskq_api/service/ratelimit.py                8      0   100%
 03-development/src/taskq_api/service/run_state.py               45      8    82%   122-123, 127-130, 139-140
-03-development/src/taskq_api/service/runner.py                  91     41    55%   58-61, 66-68, 73-74, 117-119, 127-128, 151, 228-229, 257-290, 318-342
+03-development/src/taskq_api/service/runner.py                  91     39    57%   58-61, 66-68, 73-74, 117-119, 151, 228-229, 257-290, 318-342
 03-development/src/taskq_api/service/tasks.py                   25      0   100%
 ------------------------------------------------------------------------------------------
-TOTAL                                                         1005    187    81%
-33 passed, 1 warning in 1.14s
+TOTAL                                                         1005    185    82%
+33 passed, 1 warning in 1.11s
