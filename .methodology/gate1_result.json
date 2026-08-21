@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 7,
-  "fr_id": "FR-01",
+  "fr_id": "FR-02",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -9,25 +9,25 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!\nEXIT=0"
+      "tool_evidence": "All checks passed!"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.177}}\nEXIT=0"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.166}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 115,
+      "tests_passed": 136,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= 115 passed in 5.17s ==============================\ntotals: {'covered_lines': 244, 'num_statements': 244, 'percent_covered': 100.0, 'percent_covered_display': '100', 'missing_lines': 0, 'excluded_lines': 0}"
+      "tool_evidence": "============================= test session starts ==============================\ncollected 136 items\n03-development/tests/test_fr02.py ...............................        [ 22%]\n03-development/tests/test_fr01.py ..................                     [ 36%]\n03-development/tests/test_fr03.py .............................          [ 57%]\n03-development/tests/test_fr05.py ..............                         [ 67%]\n03-development/tests/test_fr06.py .......................                [ 84%]\n03-development/tests/test_fr08.py .....................                  [100%]\n\n03-development/src/taskq_api/api/tasks.py                       62      0   100%\n03-development/src/taskq_api/service/runner.py                  91      0   100%\n03-development/src/taskq_api/repository/task_repo.py            83      0   100%\n03-development/src/taskq_api/models/orm.py                      39      0   100%\n\nTOTAL                                                         1005    111    89%\n============================= 136 passed in 10.86s ============================="
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken.\nEXIT=0"
+      "tool_evidence": "Import Linter\nContracts\nAnalyzed 52 files, 135 dependencies.\n\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\n\nContracts: 4 kept, 0 broken."
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -61,30 +61,30 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "821aea98b0447901f9f5d243824d9d61c4a339243295f6d63b6834cd54e3670e",
-      "bytes": 25,
-      "head": "All checks passed!\nEXIT=0"
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "ca20e94cff67884ee8b4d561938d9e1569ca4e6eceef5ebd49a9b1edb6c14af2",
-      "bytes": 142,
-      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.177}}\nEXIT=0"
+      "sha256": "c6d462edb4e40c1daf9f17116072f2d76e2572f0736048c8b3e12d54ec33cc76",
+      "bytes": 135,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.166}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "62295e8e340a606eb4659a135874a7b5eb680b375a0996afec176ee9a31ed1cb",
-      "bytes": 235,
-      "head": "============================= 115 passed in 5.17s ==============================\ntotals: {'covered_lines': 244, 'num_statements': 244, 'percent_covered': 100.0, 'percent_covered_display': '100', 'missing_lines': 0, 'excluded_lines': 0}"
+      "sha256": "0edb47a155bdb9cf5512f21bf2a4995a7b8be1b9cc0c78ed3313aebb746c9f62",
+      "bytes": 1068,
+      "head": "============================= test session starts ==============================\ncollected 136 items\n03-development/tests/test_fr02.py ...............................        [ 22%]\n03-development/tests/test_fr01.py ..................                     [ 36%]\n03-development/tests/test_fr03.py .............................          [ 57%]\n03-development/tests/test_fr05.py ..............                         [ 67%]\n03-development/tests/test_fr06.py .......................                [ 84%]\n03-development/tests/test_fr08.py .....................                  [100%]\n\n03-development/src/taskq_api/api/tasks.py                       62      0   100%\n03-development/src/taskq_api/service/runner.py                  91      0   100%\n03-development/src/taskq_api/repository/task_repo.py            83      0   100%\n03-development/src/taskq_api/models/orm.py                      39      0   100%\n\nTOTAL                                                         1005    111    89%\n============================= 136 passed in 10.86s ============================="
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "341575ec60e563343d6115d14eb9243453d599fb26196f80b7a81ab98a30fceb",
-      "bytes": 282,
-      "head": "Analyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken.\nEXIT=0"
+      "sha256": "aa34f9fcbfe686b6b902d4ac0aab807fa7c2ff12804d615fb674d7a43d271f83",
+      "bytes": 301,
+      "head": "Import Linter\nContracts\nAnalyzed 52 files, 135 dependencies.\n\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\n\nContracts: 4 kept, 0 broken."
     }
   },
   "composite_score": 100.0,
