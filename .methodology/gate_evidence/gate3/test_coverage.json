@@ -1,0 +1,66 @@
+[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m [ 26%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m [ 52%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m [ 78%]
+[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m             [100%][0m
+[33m=============================== warnings summary ===============================[0m
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+03-development/tests/test_fr07.py: 11 warnings
+  /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.11.15-final-0 _______________
+
+Name                                                         Stmts   Miss  Cover
+--------------------------------------------------------------------------------
+03-development/src/migrations/__init__.py                        0      0   100%
+03-development/src/migrations/env.py                            51      0   100%
+03-development/src/migrations/versions/__init__.py               0      0   100%
+03-development/src/migrations/versions/v1_initial.py            13      0   100%
+03-development/src/migrations/versions/v2_tags.py               15      0   100%
+03-development/src/migrations/versions/v3_split_results.py      17      0   100%
+03-development/src/taskq_api/__init__.py                         0      0   100%
+03-development/src/taskq_api/__main__.py                         5      0   100%
+03-development/src/taskq_api/api/__init__.py                     4      0   100%
+03-development/src/taskq_api/api/deps.py                        33      0   100%
+03-development/src/taskq_api/api/health.py                      67      0   100%
+03-development/src/taskq_api/api/tasks.py                       62      2    97%
+03-development/src/taskq_api/app.py                             80      0   100%
+03-development/src/taskq_api/cli.py                             28      3    89%
+03-development/src/taskq_api/config.py                          37      0   100%
+03-development/src/taskq_api/errors.py                          20      0   100%
+03-development/src/taskq_api/models/__init__.py                  3      0   100%
+03-development/src/taskq_api/models/orm.py                      39      0   100%
+03-development/src/taskq_api/models/schemas.py                  35      0   100%
+03-development/src/taskq_api/repository/__init__.py              4      0   100%
+03-development/src/taskq_api/repository/key_repo.py             43      0   100%
+03-development/src/taskq_api/repository/metrics.py              30      0   100%
+03-development/src/taskq_api/repository/rate_repo.py            63      0   100%
+03-development/src/taskq_api/repository/session.py              72      0   100%
+03-development/src/taskq_api/repository/task_repo.py            83      0   100%
+03-development/src/taskq_api/service/__init__.py                 3      0   100%
+03-development/src/taskq_api/service/auth.py                    29      0   100%
+03-development/src/taskq_api/service/ratelimit.py                8      0   100%
+03-development/src/taskq_api/service/run_state.py               45      0   100%
+03-development/src/taskq_api/service/runner.py                  91      0   100%
+03-development/src/taskq_api/service/tasks.py                   25      0   100%
+--------------------------------------------------------------------------------
+TOTAL                                                         1005      5    99%
+Coverage JSON written to file .methodology/gate_evidence/gate3/coverage.json
+
+[33m------------------------------------------------------------------------------------------ benchmark: 3 tests -----------------------------------------------------------------------------------------[0m
+Name (time in us)                 Min                 Max                Mean             StdDev              Median                IQR            Outliers  OPS (Kops/s)            Rounds  Iterations
+[33m-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------[0m
+test_perf_get_by_id        [32m[1m  234.9590 (1.0)    [0m[31m[1m  647.5830 (1.24)   [0m[32m[1m  247.1974 (1.0)    [0m[31m[1m  26.5973 (1.49)   [0m[32m[1m  240.4170 (1.0)    [0m[1m   6.2922 (1.35)   [0m     42;72[32m[1m        4.0453 (1.0)    [0m     569           1
+test_perf_create_task      [1m  308.1250 (1.31)   [0m[32m[1m  522.2500 (1.0)    [0m[31m[1m  341.1689 (1.38)   [0m[1m  25.0149 (1.40)   [0m[31m[1m  337.0000 (1.40)   [0m[31m[1m  19.1770 (4.10)   [0m     31;12[31m[1m        2.9311 (0.72)   [0m     167           1
+test_perf_list_paginated   [31m[1m  309.3750 (1.32)   [0m[1m  523.6660 (1.00)   [0m[1m  319.9895 (1.29)   [0m[32m[1m  17.8509 (1.0)    [0m[1m  314.5410 (1.31)   [0m[32m[1m   4.6775 (1.0)    [0m     48;71[1m        3.1251 (0.77)   [0m     541           1
+[33m-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------[0m
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+[33m[32m276 passed[0m, [33m[1m12 warnings[0m[33m in 88.30s (0:01:28)[0m[0m

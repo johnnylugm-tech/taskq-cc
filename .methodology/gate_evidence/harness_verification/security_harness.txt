@@ -4,7 +4,7 @@
 
 {
   "errors": [],
-  "generated_at": "2026-08-20T08:16:19Z",
+  "generated_at": "2026-08-20T20:32:10Z",
   "metrics": {
     "/Users/johnny/projects/taskq-cc/03-development/src/migrations/__init__.py": {
       "CONFIDENCE.HIGH": 0,
@@ -80,7 +80,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 75,
+      "loc": 80,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -158,7 +158,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 135,
+      "loc": 141,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -171,7 +171,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 235,
+      "loc": 243,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -184,7 +184,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 54,
+      "loc": 53,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -275,7 +275,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 89,
+      "loc": 92,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -288,7 +288,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 55,
+      "loc": 61,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -353,7 +353,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 72,
+      "loc": 75,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -379,7 +379,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 311,
+      "loc": 329,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -405,7 +405,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 2480,
+      "loc": 2528,
       "nosec": 0,
       "skipped_tests": 0
     }

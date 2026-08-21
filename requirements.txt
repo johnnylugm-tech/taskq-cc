@@ -3,24 +3,20 @@
 # Sources parsed: SAD.md, SPEC.md, SRS.md
 # Dependencies extracted: 10
 #
-# WARNING: AUTO-SCAFFOLDED FROM SSOT - REVIEW AND PIN VERSIONS BEFORE COMMIT
-#
-# Versions NOT pinned - SSOT did not declare versions. SAD.md section 4.7 requires
-# `==` pinned. Run `pip-compile --output-file=requirements.lock requirements.txt`
-# or pin manually. See NFR-07 in SPEC.md.
+# Pinned per SAD.md section 4.7 (NFR-07 — every dep pinned with `==`).
 
-uvicorn
-pip-licenses
-httpx
-pydantic
-sqlalchemy
-alembic
-fastapi
-import-linter
-mutmut
-pytest-benchmark
+uvicorn==0.52.3
+pip-licenses==5.5.5
+httpx==0.28.1
+pydantic==2.13.4
+sqlalchemy==2.0.52
+alembic==1.19.1
+fastapi==0.141.1
+import-linter==2.5.2
+mutmut==2.5.1
+pytest-benchmark==5.2.3
 # pytest-asyncio: required by env-check (asyncio test support; project
 # uses async def endpoints and asyncio.TaskGroup runner). Not extracted
 # by the SSOT scaffolder because SPEC/SAD/SRS §5.3/§2.9 dev-deps cells
 # do not list it explicitly — added by hand per env-contract classification.
-pytest-asyncio
+pytest-asyncio==1.4.0

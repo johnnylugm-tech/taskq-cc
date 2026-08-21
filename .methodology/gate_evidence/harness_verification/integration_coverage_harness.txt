@@ -1,9 +1,9 @@
 # Harness-executed: pytest-cov-integration
 # returncode: 0
-# agent_score: 66.2 | threshold: 60.0
+# agent_score: 79.0 | threshold: 60.0
 
-..............................                                           [100%]
-=============================== warnings summary ===============================
+[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m                                          [100%][0m
+[33m=============================== warnings summary ===============================[0m
 .venv/lib/python3.11/site-packages/fastapi/testclient.py:1
   /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
     from starlette.testclient import TestClient as TestClient  # noqa
@@ -17,33 +17,33 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/migrations/__init__.py                        0      0   100%
 03-development/src/migrations/env.py                            51     51     0%   32-173
 03-development/src/migrations/versions/__init__.py               0      0   100%
-03-development/src/migrations/versions/v1_initial.py            13      4    69%   27-41, 52-53
-03-development/src/migrations/versions/v2_tags.py               15      6    60%   23-47, 57-59
-03-development/src/migrations/versions/v3_split_results.py      17      8    53%   48-75, 87-101
+03-development/src/migrations/versions/v1_initial.py            13      4    69%   29-43, 54-55
+03-development/src/migrations/versions/v2_tags.py               15      6    60%   25-49, 59-61
+03-development/src/migrations/versions/v3_split_results.py      17      8    53%   50-77, 89-116
 03-development/src/taskq_api/__init__.py                         0      0   100%
-03-development/src/taskq_api/__main__.py                         3      3     0%   8-12
+03-development/src/taskq_api/__main__.py                         5      0   100%
 03-development/src/taskq_api/api/__init__.py                     4      0   100%
 03-development/src/taskq_api/api/deps.py                        33      5    85%   53-56, 60-61, 111
-03-development/src/taskq_api/api/health.py                      67      7    90%   102, 107, 174, 181-182, 188-191
-03-development/src/taskq_api/api/tasks.py                       56      2    96%   85, 105
+03-development/src/taskq_api/api/health.py                      67      7    90%   106, 111, 178, 185-186, 192-195
+03-development/src/taskq_api/api/tasks.py                       62      5    92%   51, 90, 110, 149-153
 03-development/src/taskq_api/app.py                             76      1    99%   87
-03-development/src/taskq_api/cli.py                             25      0   100%
-03-development/src/taskq_api/config.py                          31      4    87%   49-57, 71
-03-development/src/taskq_api/errors.py                          20      1    95%   58
+03-development/src/taskq_api/cli.py                             28      3    89%   45-49
+03-development/src/taskq_api/config.py                          31      4    87%   51-59, 73
+03-development/src/taskq_api/errors.py                          20      1    95%   60
 03-development/src/taskq_api/models/__init__.py                  3      0   100%
 03-development/src/taskq_api/models/orm.py                      39      0   100%
-03-development/src/taskq_api/models/schemas.py                  35      2    94%   42, 49
+03-development/src/taskq_api/models/schemas.py                  35      2    94%   44, 51
 03-development/src/taskq_api/repository/__init__.py              4      0   100%
-03-development/src/taskq_api/repository/key_repo.py             40      8    80%   87-98
-03-development/src/taskq_api/repository/metrics.py              24      2    92%   39, 41
+03-development/src/taskq_api/repository/key_repo.py             43     10    77%   60-65, 94-105
+03-development/src/taskq_api/repository/metrics.py              30      6    80%   28-32, 45, 47, 71-74
 03-development/src/taskq_api/repository/rate_repo.py            63      7    89%   110, 125, 151, 177-179, 192
 03-development/src/taskq_api/repository/session.py              72      7    90%   103-105, 150, 183, 188-189
 03-development/src/taskq_api/repository/task_repo.py            83     18    78%   44-45, 56-62, 96-97, 132-133, 135, 142-144, 170
 03-development/src/taskq_api/service/__init__.py                 3      0   100%
-03-development/src/taskq_api/service/auth.py                    26      2    92%   98, 104
+03-development/src/taskq_api/service/auth.py                    29      4    86%   89-93, 104, 110
 03-development/src/taskq_api/service/ratelimit.py                8      1    88%   32
-03-development/src/taskq_api/service/runner.py                 125     46    63%   124-125, 129-132, 146-149, 154-156, 161-162, 205-207, 215-216, 239, 302-303, 331-359, 387-411
+03-development/src/taskq_api/service/runner.py                 131     48    63%   124-125, 129-132, 141-142, 156-159, 164-166, 171-172, 215-217, 249, 263, 326-327, 355-388, 416-440
 03-development/src/taskq_api/service/tasks.py                   25      2    92%   39-40
 ------------------------------------------------------------------------------------------
-TOTAL                                                          961    187    81%
-30 passed, 1 warning in 1.06s
+TOTAL                                                          990    200    80%
+[33m[32m31 passed[0m, [33m[1m1 warning[0m[33m in 14.60s[0m[0m

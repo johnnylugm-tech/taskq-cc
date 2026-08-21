@@ -1173,7 +1173,11 @@ def test_enforce_rate_limit_admits_when_ratelimit_check_raises():
 
     with patch("taskq_api.api.deps.ratelimit.check", _raising_check):
         # Must not raise — admission rather than 500 is the contract.
-        deps_module._enforce_rate_limit("any_key_id")
+        admitted = deps_module._enforce_rate_limit("any_key_id")
+    assert admitted is None, (
+        "FR-05/FR-09: a bucket-engine failure must admit silently "
+        f"(return None), not signal a decision; got {admitted!r}"
+    )
 
 
 def test_enforce_rate_limit_raises_429_problem_when_bucket_empty():

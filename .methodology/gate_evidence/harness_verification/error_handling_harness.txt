@@ -1,0 +1,5 @@
+# Harness-executed: ast-error-handling
+# returncode: 0
+# agent_score: 86.7 | threshold: 80.0
+
+{"total": 15, "with_handler": 13, "no_handler": ["03-development/src/taskq_api/repository/rate_repo.py", "03-development/src/taskq_api/service/ratelimit.py"], "exempt_count": 7, "exempt_files": ["03-development/src/migrations/versions/v2_tags.py", "03-development/src/migrations/versions/v3_split_results.py", "03-development/src/migrations/versions/v1_initial.py", "03-development/src/taskq_api/config.py", "03-development/src/taskq_api/errors.py", "03-development/src/taskq_api/models/orm.py", "03-development/src/taskq_api/models/schemas.py"], "anti_patterns": []}

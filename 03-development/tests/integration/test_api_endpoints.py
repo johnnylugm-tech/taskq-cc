@@ -569,3 +569,64 @@ def test_metrics_response_outer_failure_returns_500() -> None:
     # Either 500 (middleware masks) or 500 (FastAPI default). The catch-all
     # path runs in both cases — the test just needs to exercise the route.
     assert resp.status_code == 500, resp.text
+
+
+def test_post_duplicate_name_returns_409() -> None:
+    """POST /v1/tasks twice with the same name must 409 problem+json.
+
+    AC-N10.3 requires the integration suite to trigger every documented
+    error code; 409 (name conflict, SPEC §7) is only reachable through
+    the full HTTP path because the conflict is detected by the
+    repository's unique constraint and translated by the service layer.
+    """
+    app = create_app()
+    write_key = _make_write_key()
+    payload = {"name": "integ_duplicate_409", "command": "echo dup"}
+    with TestClient(app) as client:
+        first = client.post("/v1/tasks", json=payload, headers={"X-API-Key": write_key})
+        second = client.post("/v1/tasks", json=payload, headers={"X-API-Key": write_key})
+    assert first.status_code == 201, first.text
+    assert second.status_code == 409, second.text
+    assert "problem+json" in second.headers.get("content-type", ""), second.headers
+    assert second.json()["status"] == 409, second.text
+
+
+def test_burst_over_capacity_returns_429_then_recovers() -> None:
+    """A burst past ``TASKQ_RATE_BURST`` must 429 + ``Retry-After``, then recover.
+
+    AC-N10.3 requires both the rate-limit trigger and the recovery to be
+    exercised end-to-end. The bucket is per-key and refills lazily from
+    ``TASKQ_RATE_PER_SEC``, so raising the refill rate back to the
+    default and minting a fresh key proves the limiter is not latched.
+    """
+    prev_burst = os.environ.get("TASKQ_RATE_BURST")
+    prev_rate = os.environ.get("TASKQ_RATE_PER_SEC")
+    os.environ["TASKQ_RATE_BURST"] = "1"
+    os.environ["TASKQ_RATE_PER_SEC"] = "0"
+    try:
+        app = create_app()
+        read_key = _make_read_key()
+        with TestClient(app) as client:
+            headers = {"X-API-Key": read_key}
+            first = client.get("/v1/tasks", headers=headers)
+            throttled = client.get("/v1/tasks", headers=headers)
+        assert first.status_code == 200, first.text
+        assert throttled.status_code == 429, throttled.text
+        assert throttled.headers.get("Retry-After"), throttled.headers
+
+        # Recovery: a refilled bucket admits again.
+        os.environ["TASKQ_RATE_BURST"] = "20"
+        os.environ["TASKQ_RATE_PER_SEC"] = "5"
+        recovered_key = _make_read_key()
+        with TestClient(create_app()) as client:
+            recovered = client.get("/v1/tasks", headers={"X-API-Key": recovered_key})
+        assert recovered.status_code == 200, recovered.text
+    finally:
+        for name, prev in (
+            ("TASKQ_RATE_BURST", prev_burst),
+            ("TASKQ_RATE_PER_SEC", prev_rate),
+        ):
+            if prev is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = prev

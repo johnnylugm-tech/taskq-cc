@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-05",
+  "fr_id": "FR-03",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -9,30 +9,30 @@
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!\n"
+      "tool_evidence": "All checks passed!\nEXIT=0"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1787223479601\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":30,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.167}}\n"
+      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1787284040499\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 31,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.165\n    }\n}\n\nEXIT=0"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 124,
+      "tests_passed": 143,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= 124 passed in 5.15s ==============================\nFR-05 files coverage: deps.py=100%, ratelimit.py=100%, rate_repo.py=100%, orm.py=100%\n"
+      "tool_evidence": "..................................................... [ 50%]\n....................................................................... [100%]\n================================ tests coverage ==============================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                                         Stmts   Miss  Cover   Missing\n------------------------------------------------------------------------------------------\n03-development/src/taskq_api/api/deps.py                        33      0   100%\n03-development/src/taskq_api/service/auth.py                    29      0   100%\n03-development/src/taskq_api/repository/key_repo.py             43      0   100%\n03-development/src/taskq_api/models/orm.py                      39      0   100%\n----------\n143 passed in 5.41s\nEXIT=0"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Contracts: 4 kept, 0 broken.\n"
+      "tool_evidence": "Import Linter\nContracts: 4 kept, 0 broken.\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nEXIT=0"
     }
   },
-  "enforcer_sha": "0efae09329744213ea821c48c3c8d5d755e90ac0",
+  "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
   "enforcer_surface": {
-    "core/quality_gate": "5021f0333ad5b068994f587ed08b37193cb8ee59",
+    "core/quality_gate": "e42e8a1db831bc1a315be867d3cb095c36c0b752",
     "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
     "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
   },
@@ -40,44 +40,51 @@
     "mutation_testing::setup.cfg": {
       "source": "setup.cfg (score-altering exclusions)",
       "kind": "file",
-      "sha256": "135fd63a9df71b8e6d47e274d06e464745e23005a839e669229c9198b9113244",
-      "bytes": 386,
-      "head": "[mutmut]\n# Mutation test scope — per SAB NFR-08.\n# Note: uses mutmut 2.x syntax (not 3.x); pin: pip install \"mutmut==2.5.1\"\npaths_to_mutate=03-development/src/taskq_api/repository,03-development/src/taskq_api/service\npaths_to_exclude=__init__.py,config.py\ntests_dir=03-development/tests\nrunner=/Users/johnny/projects/taskq-cc/.venv/bin/python -m pytest --tb=no -q -p no:cacheprovider"
+      "sha256": "45faf3237c9c35c9919ec7b08cfb20fe4cf1880e1dfeeb58c480c0a18eeb1fcc",
+      "bytes": 1386,
+      "head": "[mutmut]\n# Mutation test scope — per SAB NFR-08.\n# Note: uses mutmut 2.x syntax (not 3.x); pin: pip install \"mutmut==2.5.1\"\npaths_to_mutate=03-development/src/taskq_api/repository,03-development/src/taskq_api/service\npaths_to_exclude=__init__.py,config.py\ntests_dir=03-development/tests\n# Baseline scope, expressed with -k so it is cwd-independent (mutmut runs\n# the runner from a temp workdir, where a path-relative --ignore silently\n# matches nothing):\n#   * `test_ac_n*` — the NFR acceptance tests assert on the *environment*\n#     (degradations log, pinned deps, license scan, `make verify-system`).\n#     None of them can kill a mutant in repository/ or service/, two of\n#     them shell out to a nested pytest that the framework's\n#     PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 baseline env breaks, and one of\n#     them re-runs the whole suite — which would multiply every mutant's\n#     runtime by the suite's.\n#   * `test_perf_*` — pytest-benchmark's `benchmark` fixture is not\n#     importable under PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 (see\n#     harness/core/quality_gate/mutation_enforcer.py:_mutmut_subprocess_env).\n# CI itself runs `pytest 03-development/tests` unfiltered (NFR-09 AC-N9.3);"
+    },
+    "test_coverage::pyproject.toml": {
+      "source": "pyproject.toml (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "cb9635f56108f11f955a40d8e1b7cd66d657a405fd77e6902c94a9e19aa4700b",
+      "bytes": 713,
+      "head": "[tool.pytest.ini_options]\n# NFR-09 AC-N9.3 forbids structural test exclusion (`--ignore` / `-k` /\n# `--deselect` / `collect_ignore`), so this block declares no filters.\n# The three tests that used to be deselected here now run in-suite:\n#   - test_ac_n1_1 / test_ac_n1_2 seed their 10k rows with one bulk\n#     `executemany` instead of 10k ORM inserts (seconds -> milliseconds);\n#   - test_ac_n12_2 recurses into `make verify-system`, which exports\n#     TASKQ_INSIDE_VERIFY_SYSTEM=1 for the suite it chains, so the inner\n#     invocation asserts the sentinel rather than re-entering make.\n# The pytest-cov timeout for this project is raised to 900s in\n# .methodology/harness_config.json to cover the nested run."
     },
     "test_coverage::setup.cfg": {
       "source": "setup.cfg (score-altering exclusions)",
       "kind": "file",
-      "sha256": "135fd63a9df71b8e6d47e274d06e464745e23005a839e669229c9198b9113244",
-      "bytes": 386,
-      "head": "[mutmut]\n# Mutation test scope — per SAB NFR-08.\n# Note: uses mutmut 2.x syntax (not 3.x); pin: pip install \"mutmut==2.5.1\"\npaths_to_mutate=03-development/src/taskq_api/repository,03-development/src/taskq_api/service\npaths_to_exclude=__init__.py,config.py\ntests_dir=03-development/tests\nrunner=/Users/johnny/projects/taskq-cc/.venv/bin/python -m pytest --tb=no -q -p no:cacheprovider"
+      "sha256": "45faf3237c9c35c9919ec7b08cfb20fe4cf1880e1dfeeb58c480c0a18eeb1fcc",
+      "bytes": 1386,
+      "head": "[mutmut]\n# Mutation test scope — per SAB NFR-08.\n# Note: uses mutmut 2.x syntax (not 3.x); pin: pip install \"mutmut==2.5.1\"\npaths_to_mutate=03-development/src/taskq_api/repository,03-development/src/taskq_api/service\npaths_to_exclude=__init__.py,config.py\ntests_dir=03-development/tests\n# Baseline scope, expressed with -k so it is cwd-independent (mutmut runs\n# the runner from a temp workdir, where a path-relative --ignore silently\n# matches nothing):\n#   * `test_ac_n*` — the NFR acceptance tests assert on the *environment*\n#     (degradations log, pinned deps, license scan, `make verify-system`).\n#     None of them can kill a mutant in repository/ or service/, two of\n#     them shell out to a nested pytest that the framework's\n#     PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 baseline env breaks, and one of\n#     them re-runs the whole suite — which would multiply every mutant's\n#     runtime by the suite's.\n#   * `test_perf_*` — pytest-benchmark's `benchmark` fixture is not\n#     importable under PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 (see\n#     harness/core/quality_gate/mutation_enforcer.py:_mutmut_subprocess_env).\n# CI itself runs `pytest 03-development/tests` unfiltered (NFR-09 AC-N9.3);"
     },
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
-      "bytes": 18,
-      "head": "All checks passed!"
+      "sha256": "821aea98b0447901f9f5d243824d9d61c4a339243295f6d63b6834cd54e3670e",
+      "bytes": 25,
+      "head": "All checks passed!\nEXIT=0"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "99eef989d7b403921066953f758b66dcabdb46183aa7470d81c5094819a7a2b5",
-      "bytes": 170,
-      "head": "{\"version\":\"1.1.409\",\"time\":\"1787223479601\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":30,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.167}}"
+      "sha256": "c3f8e28f6143b82ffb651f0f0322911838bf2b9e33e44f983b7fd6cfd908953f",
+      "bytes": 258,
+      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1787284040499\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 31,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.165\n    }\n}\n\nEXIT=0"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "a4e0684ed6ccbc2c93ff0d7d6a6d13aa065fe6aeedfed797d60d3b780af59377",
-      "bytes": 166,
-      "head": "============================= 124 passed in 5.15s ==============================\nFR-05 files coverage: deps.py=100%, ratelimit.py=100%, rate_repo.py=100%, orm.py=100%"
+      "sha256": "d9b7e97472e37e55018fb7c65bcd5f3b53cd04308296243f964a17004cc0576d",
+      "bytes": 844,
+      "head": "..................................................... [ 50%]\n....................................................................... [100%]\n================================ tests coverage ==============================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                                         Stmts   Miss  Cover   Missing\n------------------------------------------------------------------------------------------\n03-development/src/taskq_api/api/deps.py                        33      0   100%\n03-development/src/taskq_api/service/auth.py                    29      0   100%\n03-development/src/taskq_api/repository/key_repo.py             43      0   100%\n03-development/src/taskq_api/models/orm.py                      39      0   100%\n----------\n143 passed in 5.41s\nEXIT=0"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "a354cf92faa3f1252abd65194214a021cc53e11b0eec2823156366ec5b9de8f0",
-      "bytes": 28,
-      "head": "Contracts: 4 kept, 0 broken."
+      "sha256": "dbad34e10814e7f3f9eb4a977c710de5dbac4a2072966fc97ca9342f932ff31d",
+      "bytes": 296,
+      "head": "Import Linter\nContracts: 4 kept, 0 broken.\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nEXIT=0"
     }
   },
   "composite_score": 100.0,
