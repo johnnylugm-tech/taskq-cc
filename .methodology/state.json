@@ -40,15 +40,15 @@
       "delivered_tree_sha256": "94c230f8fecf60e812c6123a35904e46ae9973027459845162a4b7150a1a42f1"
     },
     "4": {
-      "sha": "0fb33a8e1100616925c7a91c29c0353741cf29f5",
-      "timestamp": "2026-08-21T09:17:21.683033+00:00",
+      "sha": "1ed4daaea32c23c34d350413bcbfb786d8b2761c",
+      "timestamp": "2026-08-21T09:19:43.309364+00:00",
       "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
       "enforcer_surface": {
         "core/quality_gate": "e42e8a1db831bc1a315be867d3cb095c36c0b752",
         "harness/harness_bridge.py": "5e98c489bb31e1308a6e16b9426fb6bfbc377338",
         "harness/gate_configs": "92d5728b783841baed6e1beeb57d5e7fbe56c71e"
       },
-      "delivered_tree_sha256": "1ef8794490bfb80543ecba33ddcc8fae8d55f4a6b1dc9a835c5720127e9797a9"
+      "delivered_tree_sha256": "80dbf9a37cb0ec656f9b72c150c6d0eb07b144921b7c83fbbf7bfeed0f59f509"
     }
   },
   "test_inventory_checksum": "641c9d9652a71f6156dc0acd2bd7e966a1ffb2a9700e724eb8f5e1c994f96aaa",
