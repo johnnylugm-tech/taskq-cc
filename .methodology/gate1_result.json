@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 8,
-  "fr_id": "FR-05",
+  "fr_id": "FR-06",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -14,20 +14,20 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787323526345\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.178}}"
+      "tool_evidence": "{\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":31,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.209}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 144,
+      "tests_passed": 138,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= 144 passed in 5.49s ============================== Coverage totals: percent_covered=100.0% across deps.py, ratelimit.py, rate_repo.py, orm.py"
+      "tool_evidence": "============================= 138 passed in 5.46s ==============================\nFR-06 files coverage: session.py 100%, task_repo.py 100%, key_repo.py 100%, rate_repo.py 100%"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. (layer-hierarchy, independence-config-errors, sqlalchemy restricted, fastapi restricted)"
+      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. (api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT)"
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -68,23 +68,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "55cd2100e5656532affa89e7b2e425f342bd73b7bd8a148b5b984f8d4d3285b2",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1787323526345\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.178}}"
+      "sha256": "457b4567991ef4c8e42736f4cf7764ca7a8f007b2361fdc2335110b1f0a585f9",
+      "bytes": 123,
+      "head": "{\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":31,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.209}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "5a35eab1cfd7128dcf5397c0a368efdee51cf6bf298f5cbb7a46133d01779dbc",
-      "bytes": 171,
-      "head": "============================= 144 passed in 5.49s ============================== Coverage totals: percent_covered=100.0% across deps.py, ratelimit.py, rate_repo.py, orm.py"
+      "sha256": "6e71b73bde64e5a61ea36fc1a99adc9742e6624f66875032455ecce638c9f31d",
+      "bytes": 174,
+      "head": "============================= 138 passed in 5.46s ==============================\nFR-06 files coverage: session.py 100%, task_repo.py 100%, key_repo.py 100%, rate_repo.py 100%"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "13941eeec80c57e7f7349b49f6e51e618a75efd140ff88ab7d25aab9369a1151",
-      "bytes": 154,
-      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. (layer-hierarchy, independence-config-errors, sqlalchemy restricted, fastapi restricted)"
+      "sha256": "c7d6cfc39dbe58de47e43680760758f0cb8da430fb35d7be2f29cba229dc6b20",
+      "bytes": 280,
+      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. (api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT)"
     }
   },
   "composite_score": 100.0,
