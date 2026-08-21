@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 8,
-  "fr_id": "FR-09",
+  "fr_id": "FR-10",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -14,20 +14,20 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1787324885892\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":31,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.169}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787325239485\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.161}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 79,
+      "tests_passed": 116,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nrootdir: /Users/johnny/projects/taskq-cc\nconfigfile: pyproject.toml\nplugins: benchmark-5.2.3, cov-7.1.0, asyncio-1.4.0, anyio-4.14.2\ncollected 79 items\n\n03-development/tests/test_fr09.py .......................                [ 29%]\n03-development/tests/test_fr06.py .......................                [ 58%]\n03-development/tests/test_fr08.py .....................                  [ 84%]\n03-development/tests/test_fr10.py ............                           [100%]\n\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                                         Stmts   Miss  Cover\n03-development/src/taskq_api/api/health.py                      67      0   100%\n03-development/src/taskq_api/app.py                             80      0   100%\n03-development/src/taskq_api/config.py                          37      0   100%\n03-development/src/taskq_api/repository/session.py              72      0   100%\n------------------------------------------------------------------------------------------\nTOTAL                                                         1005    146    85%\n============================== 79 passed in 7.12s =============================="
+      "tool_evidence": "116 passed in 8.21s. coverage totals: percent_covered=100.0, covered_lines=133, num_statements=133"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "=============\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 135 dependencies.\n------------------------------------\n\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\n\nContracts: 4 kept, 0 broken."
+      "tool_evidence": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT."
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -68,23 +68,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "26f740a5af59fcde600a0f6ff24c8774e3f381a5e6342c72243503b902aec19e",
-      "bytes": 170,
-      "head": "{\"version\":\"1.1.409\",\"time\":\"1787324885892\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":31,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.169}}"
+      "sha256": "0f3e60c39eff2852978f6d92c6823971fe92b2f6785103b40ad095f1807e1102",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787325239485\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.161}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "d40893f2a44a8281f22e3c318225a5133c7472296313bfd5d474743b0ced8583",
-      "bytes": 1437,
-      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nrootdir: /Users/johnny/projects/taskq-cc\nconfigfile: pyproject.toml\nplugins: benchmark-5.2.3, cov-7.1.0, asyncio-1.4.0, anyio-4.14.2\ncollected 79 items\n\n03-development/tests/test_fr09.py .......................                [ 29%]\n03-development/tests/test_fr06.py .......................                [ 58%]\n03-development/tests/test_fr08.py .....................                  [ 84%]\n03-development/tests/test_fr10.py ............                           [100%]\n\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                                         Stmts   Miss  Cover\n03-development/src/taskq_api/api/health.py                      67      0   100%\n03-development/src/taskq_api/app.py                             80      0   100%\n03-development/src/taskq_api/config.py                          37      0   100%\n03-development/src/taskq_api/repository/session.py              72      0   100%"
+      "sha256": "5ad017511f4a101d8dd2077771b798a0c663fd22a933ca534dbcb45685777dce",
+      "bytes": 98,
+      "head": "116 passed in 8.21s. coverage totals: percent_covered=100.0, covered_lines=133, num_statements=133"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "31872f7ce62ad0bd8c47591e45a9d8a5b21b2c49a581c2b3e9cc801d35e324d5",
-      "bytes": 378,
-      "head": "=============\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 135 dependencies.\n------------------------------------\n\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\n\nContracts: 4 kept, 0 broken."
+      "sha256": "a660e907b263801434ab9cbd1263db824a4c103dd948259c2a19b40ea8c41ddb",
+      "bytes": 279,
+      "head": "Analyzed 52 files, 135 dependencies. Contracts: 4 kept, 0 broken. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT."
     }
   },
   "composite_score": 100.0,
