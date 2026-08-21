@@ -1,7 +1,7 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-02",
+  "fr_id": "FR-03",
   "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
@@ -14,20 +14,20 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787304757250\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.168}}"
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1787305142582\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.162}}"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 100,
-      "tests_passed": 136,
+      "tests_passed": 144,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= test session starts ============================== collected 136 items 03-development/tests/test_fr02.py ............................... [ 22%] 03-development/tests/test_fr01.py .................. [ 36%] 03-development/tests/test_fr03.py ............................. [ 57%] 03-development/tests/test_fr05.py .............. [ 67%] 03-development/tests/test_fr06.py ....................... [ 84%] 03-development/tests/test_fr08.py ..................... [100%] ============================= 136 passed in 10.89s ============================== coverage: platform darwin, python 3.11.15-final-0: 03-development/src/taskq_api/api/tasks.py 62 0 100%; 03-development/src/taskq_api/models/orm.py 39 0 100%; 03-development/src/taskq_api/repository/task_repo.py 83 0 100%; 03-development/src/taskq_api/service/runner.py 91 0 100%; TOTAL 1005 111 89%. All 4 FR-02 source files at 100% coverage. spec_cov_pct = 7/7 (100%) -> score = min(100, 100) = 100."
+      "tool_evidence": "============================= test session starts ==============================\ncollected 144 items\n03-development/tests/test_fr03.py .............................          [ 20%]\n03-development/tests/test_fr01.py ..................                     [ 32%]\n03-development/tests/test_fr02.py ...............................        [ 54%]\n03-development/tests/test_fr04.py .................                      [ 65%]\n03-development/tests/test_fr05.py ..............                         [ 75%]\n03-development/tests/test_fr06.py .......................                [ 91%]\n03-development/tests/test_fr10.py ............                           [100%]\n\nFR-03 source files coverage:\n  taskq_api/api/deps.py: 33/33 (100%)\n  taskq_api/service/auth.py: 29/29 (100%)\n  taskq_api/repository/key_repo.py: 43/43 (100%)\n  taskq_api/models/orm.py: 39/39 (100%)\n\nTOTAL 1005 stmts, 112 miss, 89% overall; FR-03 modules 100% covered\n\n============================= 144 passed in 5.44s =============================="
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Import Linter / Contracts / Analyzed 52 files, 135 dependencies. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT. Contracts: 4 kept, 0 broken."
+      "tool_evidence": "Import Linter\nContracts\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
     }
   },
   "enforcer_sha": "f6d984bc421b502ed104d9a328f053159e44f504",
@@ -68,23 +68,23 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "828f01ae27456d726a85fe514959dc027ffb999f5ba760e46e9183e20ac602f8",
+      "sha256": "e1cdfa5723c08b6a02d6e00a7cc7ece63206bc7a57ba56d77d09bce3d94ada4b",
       "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1787304757250\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.168}}"
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1787305142582\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 31, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.162}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "7cbaf2835b8caca0fe15065e60b85385bbefd2ed334240f8c02a24d116c094e0",
-      "bytes": 971,
-      "head": "============================= test session starts ============================== collected 136 items 03-development/tests/test_fr02.py ............................... [ 22%] 03-development/tests/test_fr01.py .................. [ 36%] 03-development/tests/test_fr03.py ............................. [ 57%] 03-development/tests/test_fr05.py .............. [ 67%] 03-development/tests/test_fr06.py ....................... [ 84%] 03-development/tests/test_fr08.py ..................... [100%] ============================= 136 passed in 10.89s ============================== coverage: platform darwin, python 3.11.15-final-0: 03-development/src/taskq_api/api/tasks.py 62 0 100%; 03-development/src/taskq_api/models/orm.py 39 0 100%; 03-development/src/taskq_api/repository/task_repo.py 83 0 100%; 03-development/src/taskq_api/service/runner.py 91 0 100%; TOTAL 1005 111 89%. All 4 FR-02 source files at 100% coverage. spec_cov_pct = 7/7 (100%) -> score = min(100, 100) = 100."
+      "sha256": "1f2ac85e746eee1169ef1905ea8dc7e4f680e4a5b4b3e2155fe3ac8af7a5519c",
+      "bytes": 1010,
+      "head": "============================= test session starts ==============================\ncollected 144 items\n03-development/tests/test_fr03.py .............................          [ 20%]\n03-development/tests/test_fr01.py ..................                     [ 32%]\n03-development/tests/test_fr02.py ...............................        [ 54%]\n03-development/tests/test_fr04.py .................                      [ 65%]\n03-development/tests/test_fr05.py ..............                         [ 75%]\n03-development/tests/test_fr06.py .......................                [ 91%]\n03-development/tests/test_fr10.py ............                           [100%]\n\nFR-03 source files coverage:\n  taskq_api/api/deps.py: 33/33 (100%)\n  taskq_api/service/auth.py: 29/29 (100%)\n  taskq_api/repository/key_repo.py: 43/43 (100%)\n  taskq_api/models/orm.py: 39/39 (100%)\n\nTOTAL 1005 stmts, 112 miss, 89% overall; FR-03 modules 100% covered\n\n============================= 144 passed in 5.44s =============================="
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "ba15708ce715370084399a48f3f27c4d23ade094028b9f9e36d5a69cee5626c0",
-      "bytes": 307,
-      "head": "Import Linter / Contracts / Analyzed 52 files, 135 dependencies. api > service > repository > models KEPT; config and errors do not import each other KEPT; sqlalchemy imports restricted to repository and models layers KEPT; fastapi imports restricted to api and app layers KEPT. Contracts: 4 kept, 0 broken."
+      "sha256": "bb01c96feee0bdd3e7afbeacd20f7e56e0f886cbbb16ce91d147d84553e4af98",
+      "bytes": 299,
+      "head": "Import Linter\nContracts\nAnalyzed 52 files, 135 dependencies.\napi > service > repository > models KEPT\nconfig and errors do not import each other KEPT\nsqlalchemy imports restricted to repository and models layers KEPT\nfastapi imports restricted to api and app layers KEPT\nContracts: 4 kept, 0 broken."
     }
   },
   "composite_score": 100.0,
