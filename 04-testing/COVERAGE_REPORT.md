@@ -16,10 +16,10 @@ Targets resolved via `core.quality_gate.test_suite_run.resolve_targets` (`Projec
 ## Overall coverage
 
 ```
-TOTAL                                                         1005      5    99%
+TOTAL                                                         1005      3    99%
 ```
 
-Read from `coverage report --format=total` (`04-testing/coverage_total.txt`). The exact `totals.percent_covered` reported by coverage's JSON backend is `99.50248756218906`; the table above reports the same number the framework's `_read_coverage` parses (`test_suite_run.py:422–433`).
+Read from `coverage report --format=total` (`04-testing/coverage_total.txt` returns `99`). The exact `totals.percent_covered` reported by coverage's JSON backend is `99.70149253731343`; the table above reports the same number the framework's `_read_coverage` parses (`test_suite_run.py:422–433`).
 
 **Gate 3 threshold: ≥ 80%. Result: PASS (99%).**
 
@@ -38,7 +38,7 @@ Read from `coverage report --format=total` (`04-testing/coverage_total.txt`). Th
 | 03-development/src/taskq_api/api/__init__.py | 4 | 0 | 100% | — |
 | 03-development/src/taskq_api/api/deps.py | 33 | 0 | 100% | — |
 | 03-development/src/taskq_api/api/health.py | 67 | 0 | 100% | — |
-| 03-development/src/taskq_api/api/tasks.py | 62 | 2 | 97% | 149-153 |
+| 03-development/src/taskq_api/api/tasks.py | 62 | 0 | 100% | — |
 | 03-development/src/taskq_api/app.py | 80 | 0 | 100% | — |
 | 03-development/src/taskq_api/cli.py | 28 | 3 | 89% | 45-49 |
 | 03-development/src/taskq_api/config.py | 37 | 0 | 100% | — |
@@ -58,17 +58,16 @@ Read from `coverage report --format=total` (`04-testing/coverage_total.txt`). Th
 | 03-development/src/taskq_api/service/run_state.py | 45 | 0 | 100% | — |
 | 03-development/src/taskq_api/service/runner.py | 91 | 0 | 100% | — |
 | 03-development/src/taskq_api/service/tasks.py | 25 | 0 | 100% | — |
-| **TOTAL** | **1005** | **5** | **99%** | — |
+| **TOTAL** | **1005** | **3** | **99%** | — |
 
 ## Uncovered lines
 
-Five lines total, all in two modules:
+Three lines total, all in one module:
 
-- **`03-development/src/taskq_api/api/tasks.py:149–153`** (2 statements uncovered, 97% on a 62-stmt module).
 - **`03-development/src/taskq_api/cli.py:45–49`** (3 statements uncovered, 89% on a 28-stmt module).
 
-Every other module — including the architecture-constraint boundary modules `repository/session.py`, `service/runner.py`, `service/auth.py`, and the migration split module `migrations/versions/v3_split_results.py` — sits at 100%.
+Every other module — including the architecture-constraint boundary modules `repository/session.py`, `service/runner.py`, `service/auth.py`, and the migration split module `migrations/versions/v3_split_results.py` — sits at 100%. The two statements previously uncovered in `api/tasks.py:149–153` are now covered (the prior snapshot recorded `97%` on that module; this run records `100%`).
 
 ## Reconciliation note
 
-`core.quality_gate.cross_artifact.check_coverage_reconciliation` re-measures the same scope at Gate 3 and compares its result against this document. Re-running `pytest 03-development/tests --cov=03-development/src` against an unchanged tree produces the same `99% / 5 missed` table because the run command, the targets, and the source/test trees all feed into the fingerprint `test_suite_run._fingerprint` builds before memoising the result. A change in any of those would change the fingerprint and trigger a re-measure; this document records the snapshot the framework will see on first run after it is written.
+`core.quality_gate.cross_artifact.check_coverage_reconciliation` re-measures the same scope at Gate 3 and compares its result against this document. Re-running `pytest 03-development/tests --cov=03-development/src` against an unchanged tree produces the same `99% / 3 missed` table because the run command, the targets, and the source/test trees all feed into the fingerprint `test_suite_run._fingerprint` builds before memoising the result. A change in any of those would change the fingerprint and trigger a re-measure; this document records the snapshot the framework will see on first run after it is written.

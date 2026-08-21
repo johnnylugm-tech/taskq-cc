@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-21T06:00:00.000000+00:00",
-  "git_sha": "ded68d09aacf82f530a9cb6c2cbe74aecdc71abd",
-  "rehunt_note": "Re-hunt on ded68d0. The runner module was refactored to extract pure state primitives (STATE_*, ExecResult, RunOutcome, DrainReport, _AdmissionGate) into service/run_state.py; behaviour is preserved (regression tests for runner#1 / runner#2 / health#1 / v3_split_results#1 all pass). app.py also received a more aggressive _sanitize_detail that replaces the previous 3-substring denylist with three regex classes (stack-trace marker, SQL fragment, POSIX absolute path) and pipes benign survivors through config.redact; this RESOLVES the previously-open errors#1 (T-05 mitigation) — test_ac_n2_5_500_error_body_no_stack_sql_or_paths now passes against the working-tree source. auth#1, ratelimit#1 (medium) and tasks#1 (low) remain open and do not block Gate 3 per the framework's adversarial_review rubric (critical/high only). All 8 threat-model entries re-verified: T-05 now blocks its declared vector (errors#1 resolved); the other 7 remain verified-effective.",
+  "generated_at": "2026-08-21T04:45:28.000000+00:00",
+  "git_sha": "b5b87b314e04a3e79a48eefa04abbabec236e8fc",
+  "rehunt_note": "Re-hunt on b5b87b3. All 5 confirmed critical/high findings from the prior re-hunt remain resolved on the current source (verified by re-running 03-development/tests/test_bug_hunt_regressions.py — 4/4 pass against HEAD; the 4 test functions cover v3_split_results#1, runner#1, runner#2, health#1, and errors#1 indirectly via test_nfr_spec_coverage.py). The T-05 mitigation in app.py was further hardened since ded68d0 (regex classes replace the 3-substring denylist, plus a redact() pass on benign survivors); a direct probe of _sanitize_detail with '/home/deploy/secrets/taskq.db' now returns 'Internal server error.' instead of the raw path. One new finding added: auth#2 — defense-in-depth gap where has_scope() ranks unknown required scopes as 0, allowing any read+ key to satisfy them. Latent today (no route uses an unregistered scope), severity medium. The previously-open medium findings auth#1, ratelimit#1, and low tasks#1 are unchanged — they do not block Gate 3 per the adversarial_review rubric (critical/high only). All 8 threat-model entries re-verified effective against the current source: T-01 (denylist + no-shell), T-03 (sha256+hmac.compare_digest+revoked_at filter), T-04 (scope-rank hierarchy, has_scope('write','admin')=False), T-06 (shlex+create_subprocess_exec, '; rm' is literal argv), T-07 (timeout+kill+wait on both TimeoutError and CancelledError paths; drain cancels stragglers), T-08 (Settings.__repr__ redacts userinfo + sa.engine.create logger raised to WARNING + /v1/metrics interpolates no settings). T-05 is verified effective via the resolved errors#1 finding.",
   "targets_manifest": ".methodology/bug_hunt_targets.json",
   "lenses": [
     "correctness",
@@ -9,8 +9,8 @@
     "resilience",
     "general"
   ],
-  "raw_count": 14,
-  "confirmed_count": 8,
+  "raw_count": 15,
+  "confirmed_count": 9,
   "refuted_count": 6,
   "findings": [
     {
@@ -21,18 +21,18 @@
       "title": "v3 downgrade uses a non-deterministic correlated subquery; silently drops run history",
       "description": "downgrade() runs `UPDATE tasks SET result_json = (SELECT result_json FROM task_results WHERE task_results.task_id = tasks.id)`. The subquery is a scalar context but returns one row per task_results entry; on SQLite the multi-row scalar subquery silently picks an arbitrary row instead of erroring (on SQLite >= 3.39 it raises 'subquery must return only one row'). For a task with N>=2 runs the downgrade 'succeeds' but only one run's payload survives — silently losing (N-1)/N of the run history. AC-7.2's byte-identical round-trip is violated whenever a task has been run more than once.",
       "file": "03-development/src/migrations/versions/v3_split_results.py",
-      "line_start": 92,
-      "line_end": 100,
-      "code_snippet": "bind.execute(\n    sa.text(\n        \"UPDATE tasks SET result_json = (\"\n        \"SELECT result_json FROM task_results \"\n        \"WHERE task_results.task_id = tasks.id\"\n        \")\"\n    )\n)",
-      "reasoning": "v3_split_results.py:92-100 emits an UPDATE with a scalar-context subquery. When task_results has multiple rows for the same task_id (the v3 multi-run schema's whole point), the subquery returns >1 row. SQLite's documented behavior for multi-row scalar subqueries is undefined for pre-3.39 (silent arbitrary pick) and a hard error for 3.39+. The downgrade 'succeeds' with one row of three restored — data loss. Repro: 3 runs inserted, downgrade runs, readback returns '{\"run\": 0}' instead of '{\"run\": 2}' (the latest).",
+      "line_start": 100,
+      "line_end": 113,
+      "code_snippet": "bind.execute(\n    sa.text(\n        \"UPDATE tasks SET result_json = (\"\n        \"SELECT result_json FROM task_results \"\n        \"WHERE task_results.task_id = tasks.id \"\n        \"AND task_results.id = (\"\n        \"SELECT id FROM task_results \"\n        \"WHERE task_results.task_id = tasks.id \"\n        \"ORDER BY started_at DESC, id DESC LIMIT 1\"\n        \")\"\n        \")\"\n    )\n)",
+      "reasoning": "v3_split_results.py:100-113 emits an UPDATE with a subquery ordered by started_at DESC, id DESC LIMIT 1 — fixed in commit 5c1c2cfdc6c1876e66b38e276ae7dd3174daf837. Re-verified against HEAD b5b87b3: regression test test_bughunt_v3_downgrade_restores_latest_result_for_multi_run_tasks still passes (3 task_results inserted, downgrade restores '{\"run\": 2}').",
       "suggested_fix": "Pick a deterministic single row: ORDER BY started_at DESC, id DESC LIMIT 1 inside the subquery, matching task_repo.list_runs's ordering.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Confirmer: v3_split_results.py:92-100 emits the broken correlated subquery; executed repro inserted 3 task_results rows, ran alembic downgrade -1, read tasks.result_json — got '{\"run\": 0}' (silent arbitrary pick) instead of '{\"run\": 2}' (latest). Refuter could not find a guard, fallback, or LIMIT that limits the subquery to a single row. The pre-fix test_ac_7_2 only inserts one row per task, so the multi-run case was never covered.",
+      "verify_evidence": "v3_split_results.py:100-113 emits the fixed subquery; regression test re-run on HEAD passes (latest run restored, not arbitrary).",
       "resolution": {
         "status": "resolved",
         "fix_commit": "5c1c2cfdc6c1876e66b38e276ae7dd3174daf837",
-        "repro_test": "03-development/tests/test_bug_hunt_regressions.py"
+        "repro_test": "03-development/tests/test_bug_hunt_regressions.py::test_bughunt_v3_downgrade_restores_latest_result_for_multi_run_tasks"
       }
     },
     {
@@ -43,18 +43,18 @@
       "title": "_AdmissionGate never releases slots — submit() permanently refuses after cap lifetime submissions",
       "description": "_AdmissionGate decrements _remaining on every admission and has no release path, so TASKQ_MAX_CONCURRENT is a process-lifetime budget rather than a concurrency limit. Once cap submissions have EVER completed, every later submit() returns final_state='queued' without spawning a subprocess and without ever being retried — a permanent, silent execution outage.",
       "file": "03-development/src/taskq_api/service/runner.py",
-      "line_start": 127,
-      "line_end": 132,
-      "code_snippet": "def try_admit(self) -> bool:\n    if self._remaining > 0:\n        self._remaining -= 1\n        return True\n    return False",
-      "reasoning": "runner.py:129-132 mutates _remaining downward only; the whole module contains no increment. _get_gate (runner.py:143-149) only rebuilds the gate when the configured cap CHANGES, so the counter is never reset in a stable deployment. Empirical repro with TASKQ_MAX_CONCURRENT=2 and four SEQUENTIAL submits (each awaited to completion before the next): states == ['done','done','queued','queued'] — submissions 3 and 4 were refused with nothing in flight.",
+      "line_start": 290,
+      "line_end": 290,
+      "code_snippet": "gate.release()",
+      "reasoning": "runner.py:290 calls gate.release() in the finally block of submit(); run_state.py:132-141 implements _AdmissionGate.release() with the bounded-by-cap increment. Re-verified against HEAD b5b87b3: regression test test_bughunt_runner_admission_slot_released_after_completion still passes (4 sequential submits with TASKQ_MAX_CONCURRENT=2 all return final_state=done).",
       "suggested_fix": "Add _AdmissionGate.release() and call it from submit()'s finally block.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Confirmer: runner.py:130 is the only write to _remaining; runner.py:147 rebuilds the gate only on cap change. Refuter could not cite any release/reset path. Executed repro output: ['done','done','queued','queued'].",
+      "verify_evidence": "runner.py:290 finally clause + run_state.py:132-141 release(); regression test re-run on HEAD passes.",
       "resolution": {
         "status": "resolved",
         "fix_commit": "c1351e550258f4570e32f174fdc6fb6d048e723c",
-        "repro_test": "03-development/tests/test_bug_hunt_regressions.py"
+        "repro_test": "03-development/tests/test_bug_hunt_regressions.py::test_bughunt_runner_admission_slot_released_after_completion"
       }
     },
     {
@@ -65,18 +65,18 @@
       "title": "Spawn failure (missing binary) escapes the runner and strands the task in 'running'",
       "description": "_collect_outcome only catches asyncio.TimeoutError. asyncio.create_subprocess_exec raises FileNotFoundError/PermissionError when the resolved binary does not exist or is not executable; that OSError propagates out of _run_and_persist BEFORE record_result/update_status run, so no task_results row is written and the task row stays at state='running' forever. Via POST /v1/tasks/{id}/run the exception dies inside the fire-and-forget asyncio task, so the client never learns.",
       "file": "03-development/src/taskq_api/service/runner.py",
-      "line_start": 236,
-      "line_end": 252,
-      "code_snippet": "try:\n    result = await execute_command(command, timeout=timeout)\nexcept asyncio.TimeoutError:\n    return RunOutcome(..., final_state=STATE_TIMEOUT)",
-      "reasoning": "execute_command (runner.py:191) calls create_subprocess_exec with argv[0] from shlex.split; a nonexistent path raises FileNotFoundError, which is an OSError, not TimeoutError. _run_and_persist (runner.py:276-285) writes the result row only AFTER the await returns, so the raise skips both persistence calls. Executed repro: run_task on command '/nonexistent/binary arg' raised FileNotFoundError; task status after == 'running'; task_results rows == 0.",
+      "line_start": 158,
+      "line_end": 171,
+      "code_snippet": "except (OSError, ValueError) as exc:\n    # The child never spawned at all — a missing binary\n    # (``FileNotFoundError``), a non-executable target\n    # (``PermissionError``), or an empty argv from ``shlex.split``\n    # (``ValueError``/``IndexError`` family). Without this branch the\n    # exception escapes the runner, no ``task_results`` row is\n    # written, and the task is stranded in ``running`` forever.\n    return RunOutcome(\n        exit_code=-1,\n        stdout_tail=\"\",\n        stderr_tail=str(exc),\n        duration_ms=0,\n        final_state=STATE_FAILED,\n    )",
+      "reasoning": "runner.py:158-171 catches (OSError, ValueError) and maps to STATE_FAILED with the OS error in stderr_tail. Re-verified against HEAD b5b87b3: regression test test_bughunt_runner_unspawnable_command_reaches_terminal_state still passes (task with /nonexistent/binary reaches status=failed with one task_results row).",
       "suggested_fix": "Catch (OSError, ValueError) in _collect_outcome and map to STATE_FAILED with the OS error in stderr_tail.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Confirmer: runner.py:238 catches only asyncio.TimeoutError; runner.py:276 is unreachable on the raise. Executed repro printed 'FileNotFoundError ... status: running, run rows: 0'.",
+      "verify_evidence": "runner.py:158 (OSError, ValueError) handler; regression test re-run on HEAD passes.",
       "resolution": {
         "status": "resolved",
         "fix_commit": "c1351e550258f4570e32f174fdc6fb6d048e723c",
-        "repro_test": "03-development/tests/test_bug_hunt_regressions.py"
+        "repro_test": "03-development/tests/test_bug_hunt_regressions.py::test_bughunt_runner_unspawnable_command_reaches_terminal_state"
       }
     },
     {
@@ -87,18 +87,18 @@
       "title": "/v1/metrics reports a frozen rate_limit_denials — always the import-time value (0)",
       "description": "api.health binds rate_limit_denials to the VALUE of ratelimit_service.denial_count at import time. ratelimit.record_denial() rebinds the service module's global int, which cannot mutate the already-copied binding in api.health, so the metrics_route body always returned 0 no matter how many 429s were served. FR-09's rate_limit_denials observability field was inert.",
       "file": "03-development/src/taskq_api/api/health.py",
-      "line_start": 52,
-      "line_end": 52,
-      "code_snippet": "rate_limit_denials = ratelimit_service.denial_count",
-      "reasoning": "health.py:52 copies an immutable int at import; ratelimit.py:29-32 does 'global denial_count; denial_count += 1' which rebinds only ratelimit.denial_count. health.py:231 returned the stale copy. Executed repro after two record_denial() calls: ratelimit.denial_count == 2 while health.rate_limit_denials == 0 and metrics_route()['rate_limit_denials'] == 0.",
+      "line_start": 235,
+      "line_end": 235,
+      "code_snippet": "\"rate_limit_denials\": ratelimit_service.denial_count,",
+      "reasoning": "health.py:235 reads ratelimit_service.denial_count at request time (not the import-time copy bound to api.health.rate_limit_denials at line 56). Re-verified against HEAD b5b87b3: regression test test_bughunt_metrics_reports_live_rate_limit_denials still passes (two record_denial() calls surface in metrics_route() body).",
       "suggested_fix": "Read ratelimit_service.denial_count inside metrics_route instead of the module-level copy.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Confirmer: health.py:52 + ratelimit.py:31 rebinding semantics; executed repro shows 2 vs 0.",
+      "verify_evidence": "health.py:235 live read + ratelimit.py:31 global rebind semantics; regression test re-run on HEAD passes.",
       "resolution": {
         "status": "resolved",
         "fix_commit": "c1351e550258f4570e32f174fdc6fb6d048e723c",
-        "repro_test": "03-development/tests/test_bug_hunt_regressions.py"
+        "repro_test": "03-development/tests/test_bug_hunt_regressions.py::test_bughunt_metrics_reports_live_rate_limit_denials"
       }
     },
     {
@@ -107,22 +107,23 @@
       "lens": "general",
       "severity": "medium",
       "title": "T-05 mitigation: 3-substring denylist lets absolute paths outside /Users leak in the 500 detail",
-      "description": "_sanitize_detail masks a 500 detail only when the raw exception message contains 'Traceback', 'SQL' or '/Users'. Any unhandled exception whose message embeds a deployment path (/home/..., /opt/..., /var/...) — the normal case on a Linux container, the actual deployment target — is echoed verbatim into the problem+json body.",
+      "description": "_sanitize_detail used to mask a 500 detail only when the raw exception message contained 'Traceback', 'SQL' or '/Users'. Any unhandled exception whose message embedded a deployment path (/home/..., /opt/..., /var/...) — the normal case on a Linux container, the actual deployment target — was echoed verbatim into the problem+json body. The current code now uses three regex classes (_TRACEBACK_MARKER, _SQL_FRAGMENT, _ABSOLUTE_PATH) and pipes benign survivors through config.redact(), which together block the declared T-05 attack vector on every known deployment target.",
       "file": "03-development/src/taskq_api/app.py",
-      "line_start": 64,
-      "line_end": 88,
-      "code_snippet": "_INTERNAL_DETAIL_DENYLIST: tuple[str, ...] = (\"Traceback\", \"SQL\", \"/Users\")",
-      "reasoning": "app.py:64 hardcodes a macOS-only home prefix. app.py:227 feeds str(exc) straight into _make_500_body. Executed: _sanitize_detail(\"[Errno 2] No such file or directory: '/home/deploy/secrets/taskq.db'\") returns the string UNCHANGED. Severity is medium rather than high because reaching it requires an unhandled exception on an authenticated /v1 route; every currently-known route path funnels through Problem handlers.",
+      "line_start": 67,
+      "line_end": 83,
+      "code_snippet": "_TRACEBACK_MARKER = re.compile(r\"Traceback|File \\\"|File '\")\n_SQL_FRAGMENT = re.compile(\n    r\"(?i:sql)|\\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|FROM|WHERE|JOIN|TABLE)\\b\"\n)\n_ABSOLUTE_PATH = re.compile(r\"(?<![\\w])/(?:[\\w.\\-]+/)*[\\w.\\-]+\")",
+      "reasoning": "app.py:67-77 defines the three pattern classes; app.py:112-115 returns the 'Internal server error.' sentinel when any pattern matches and pipes benign survivors through redact(). Live probe against HEAD b5b87b3: _sanitize_detail(\"[Errno 2] No such file or directory: '/home/deploy/secrets/taskq.db'\") returns 'Internal server error.' (was: the raw path before this commit). NFR-04 also covered: 'failed: Bearer abc123' returns '[REDACTED]'.",
       "suggested_fix": "Allowlist instead: emit a constant 'Internal server error.' for every 500 and keep the raw message only in the log.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Confirmer: app.py:64 + app.py:85-88; executed sanitizer returned the path unchanged.",
+      "verify_evidence": "Direct probe on HEAD: Linux-style absolute path -> 'Internal server error.'; SQL fragment -> 'Internal server error.'; stack-trace marker -> 'Internal server error.'; benign 'task not found' -> 'task not found'; secret line -> '[REDACTED]'.",
       "resolution": {
         "status": "resolved",
-        "repro_test": "03-development/tests/test_nfr_spec_coverage.py"
+        "fix_commit": "c1351e550258f4570e32f174fdc6fb6d048e723c",
+        "repro_test": "03-development/tests/test_nfr_spec_coverage.py::test_ac_n2_5_500_error_body_no_stack_sql_or_paths"
       },
       "attack_vector": "T-05 information_disclosure — unhandled exception leaks stack trace / SQL / file paths via detail field",
-      "attempted_exploit": "Drive _sanitize_detail with a Linux-style absolute path in the exception message (FileNotFoundError on /home/deploy/secrets/taskq.db).",
+      "attempted_exploit": "Drive _sanitize_detail with a Linux-style absolute path in the exception message (FileNotFoundError on /home/deploy/secrets/taskq.db), a stack-trace marker, and a SQL fragment.",
       "mitigation_effective": true
     },
     {
@@ -136,11 +137,31 @@
       "line_start": 48,
       "line_end": 99,
       "code_snippet": "return getattr(key_repo.get_active_by_hash, \"__name__\", \"\") == \"_stub_active\"",
-      "reasoning": "auth.py:60 reads the callable's name at request time; auth.py:92-99 selects NOT_FOUND vs None from it. Both values are treated identically as 401 by deps.py:87, so there is no privilege-escalation path — hence medium, not high. The defect is that test scaffolding is compiled into the production decision.",
+      "reasoning": "auth.py:60 reads the callable's name at request time; auth.py:92-99 selects NOT_FOUND vs None from it. Both values are treated identically as 401 by deps.py:87, so there is no privilege-escalation path — hence medium, not high. The defect is that test scaffolding is compiled into the production decision. No source change since ded68d0 — finding still applies on HEAD b5b87b3.",
       "suggested_fix": "Delete _is_wrong_key_stub_active; always return NOT_FOUND on the no-row path and adjust the FR-03 test.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Confirmer: auth.py:60 verbatim; refuter established the 401 outcome is identical either way (deps.py:87), which caps severity at medium.",
+      "verify_evidence": "auth.py:60 verbatim; refuter established the 401 outcome is identical either way (deps.py:87), which caps severity at medium.",
+      "resolution": {
+        "status": "open"
+      }
+    },
+    {
+      "id": "auth#2",
+      "module": "taskq_api.service.auth",
+      "lens": "correctness",
+      "severity": "medium",
+      "title": "Defense-in-depth gap: has_scope() ranks unknown required scopes as 0, allowing any read+ key to satisfy them",
+      "description": "has_scope uses `_SCOPE_RANK.get(required, 0)` so a required scope name not registered in the rank table is treated as rank 0. A write key (rank 2) and an admin key (rank 3) therefore both satisfy any unknown required scope. Live probe: has_scope('write', 'superadmin') == True, has_scope('admin', 'superadmin') == True. Today no route uses an unregistered scope, so the bug is latent — but a future route added without updating _SCOPE_RANK would be silently over-privileged for every existing key. Severity is medium (defense-in-depth, not currently exploitable).",
+      "file": "03-development/src/taskq_api/service/auth.py",
+      "line_start": 37,
+      "line_end": 37,
+      "code_snippet": "_SCOPE_RANK: dict[str, int] = {\"read\": 1, \"write\": 2, \"admin\": 3}",
+      "reasoning": "auth.py:37 declares a 3-entry table; auth.py:123 reads both held and required from it with .get(..., 0). The required-side default of 0 means missing required scopes rank below read, so a held rank of 1+ is enough. Refuter could not find any whitelisting/validation that constrains the required argument to the table's keys (the per-route dependency factory at deps.py:136-164 accepts the scope string verbatim with no _SCOPE_RANK membership check).",
+      "suggested_fix": "Either (a) deny when required is not in _SCOPE_RANK, or (b) keep a parallel set of valid scopes and have require_api_key_with_scope() raise at dependency-construction time on an unknown value.",
+      "confidence": "high",
+      "confirmed": true,
+      "verify_evidence": "Live probe against HEAD b5b87b3: has_scope('write', 'superadmin') == True; has_scope('admin', 'superadmin') == True; has_scope('read', 'superadmin') == True. Refuter could not find a guard that rejects unknown required scopes before they reach _SCOPE_RANK.get.",
       "resolution": {
         "status": "open"
       }
@@ -156,11 +177,11 @@
       "line_start": 51,
       "line_end": 56,
       "code_snippet": "try:\n    allowed, retry_after = ratelimit.check(key_id)\nexcept Exception:  # noqa: BLE001\n    return",
-      "reasoning": "deps.py:51-56 swallows every bucket failure and admits; deps.py:149-153 places _enforce_rate_limit strictly after _resolve_or_raise. The declared T-02 threat is 'excessive request volume exhausts DB connections' — the unauthenticated arm of that volume bypasses the bucket entirely, and each 401 attempt opens a session via key_repo.get_active_by_hash (key_repo.py:70). The token bucket itself (rate_repo.withdraw) is correct for authenticated callers, so this is a coverage gap, not a broken bucket.",
+      "reasoning": "deps.py:51-56 swallows every bucket failure and admits; deps.py:149-153 places _enforce_rate_limit strictly after _resolve_or_raise. The declared T-02 threat is 'excessive request volume exhausts DB connections' — the unauthenticated arm of that volume bypasses the bucket entirely, and each 401 attempt opens a session via key_repo.get_active_by_hash (key_repo.py:69). The token bucket itself (rate_repo.withdraw) is correct for authenticated callers, so this is a coverage gap, not a broken bucket. Live probe on HEAD b5b87b3: monkey-patching ratelimit.check to raise still admits the request — fail-open confirmed.",
       "suggested_fix": "Fail closed (429) on bucket errors, and apply a coarse per-IP bucket before key resolution.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Confirmer: deps.py:53 bare except + deps.py:149-153 ordering; key_repo.py:70 opens a session_scope per unauthenticated attempt.",
+      "verify_evidence": "Live probe on HEAD: monkey-patching ratelimit.check to raise RuntimeError, _enforce_rate_limit admits; deps.py:53 bare except + deps.py:149-153 ordering.",
       "resolution": {
         "status": "open"
       },
@@ -179,11 +200,11 @@
       "line_start": 108,
       "line_end": 115,
       "code_snippet": "effective_limit = limit if limit is not None else _DEFAULT_LIMIT\nif effective_limit > _MAX_LIMIT:\n    raise make_problem(status=422, ...)",
-      "reasoning": "tasks.py:109 tests only the upper bound; task_repo.py:129 applies .limit(limit + 1) unconditionally. Low severity: the page-size DoS needs a negative value AND SQLite's negative-LIMIT semantics, and each row is still eagerly loaded once (no N+1).",
+      "reasoning": "tasks.py:109 tests only the upper bound; task_repo.py:129 applies .limit(limit + 1) unconditionally. Low severity: the page-size DoS needs a negative value AND SQLite's negative-LIMIT semantics, and each row is still eagerly loaded once (no N+1). No source change since ded68d0 — finding still applies on HEAD b5b87b3.",
       "suggested_fix": "Reject effective_limit < 1 with the same 422 problem.",
       "confidence": "high",
       "confirmed": true,
-      "verify_evidence": "Confirmer: tasks.py:109 (no lower-bound test) + task_repo.py:129.",
+      "verify_evidence": "tasks.py:109 (no lower-bound test) + task_repo.py:129.",
       "resolution": {
         "status": "open"
       }
@@ -199,14 +220,14 @@
       "line_start": 16,
       "line_end": 16,
       "code_snippet": "",
-      "reasoning": "schemas.py:16 _INJECTION_CHARS = re.compile(r\"[;&|`$><\\n\\r\\\\]\") is enforced by the field_validator at schemas.py:45-52 on every TaskCreate, so the body is rejected with 422 before service.tasks.create_task runs. Defence in depth holds even if the validator were bypassed: runner.py:190 shlex-splits and runner.py:191 uses create_subprocess_exec (no shell), so metacharacters become literal argv tokens. Mitigation blocks the declared vector.",
+      "reasoning": "schemas.py:16 _INJECTION_CHARS = re.compile(r\"[;&|`$><\\n\\r\\\\]\") is enforced by the field_validator at schemas.py:45-52 on every TaskCreate, so the body is rejected with 422 before service.tasks.create_task runs. Defence in depth holds even if the validator were bypassed: runner.py:102 shlex-splits and runner.py:103 uses create_subprocess_exec (no shell), so metacharacters become literal argv tokens. Mitigation blocks the declared vector. Re-verified on HEAD b5b87b3 (no source change to schemas or runner since ded68d0).",
       "suggested_fix": "",
       "confidence": "high",
       "confirmed": false,
-      "verify_evidence": "schemas.py:16 _INJECTION_CHARS = re.compile(r\"[;&|`$><\\n\\r\\\\]\") is enforced by the field_validator at schemas.py:45-52 on every TaskCreate, so the body is rejected with 422 before service.tasks.create_task runs. Defence in depth holds even if the validator were bypassed: runner.py:190 shlex-splits and runner.py:191 uses create_subprocess_exec (no shell), so metacharacters become literal argv tokens. Mitigation blocks the declared vector.",
+      "verify_evidence": "schemas.py:16 _INJECTION_CHARS = re.compile(r\"[;&|`$><\\n\\r\\\\]\") is enforced by the field_validator at schemas.py:45-52 on every TaskCreate, so the body is rejected with 422 before service.tasks.create_task runs. Defence in depth holds even if the validator were bypassed: runner.py:102 shlex-splits and runner.py:103 uses create_subprocess_exec (no shell), so metacharacters become literal argv tokens. Mitigation blocks the declared vector.",
       "resolution": {
         "status": "refuted",
-        "refute_evidence": "schemas.py:16 _INJECTION_CHARS = re.compile(r\"[;&|`$><\\n\\r\\\\]\") is enforced by the field_validator at schemas.py:45-52 on every TaskCreate, so the body is rejected with 422 before service.tasks.create_task runs. Defence in depth holds even if the validator were bypassed: runner.py:190 shlex-splits and runner.py:191 uses create_subprocess_exec (no shell), so metacharacters become literal argv tokens. Mitigation blocks the declared vector."
+        "refute_evidence": "schemas.py:16 _INJECTION_CHARS = re.compile(r\"[;&|`$><\\n\\r\\\\]\") is enforced by the field_validator at schemas.py:45-52 on every TaskCreate, so the body is rejected with 422 before service.tasks.create_task runs. Defence in depth holds even if the validator were bypassed: runner.py:102 shlex-splits and runner.py:103 uses create_subprocess_exec (no shell), so metacharacters become literal argv tokens. Mitigation blocks the declared vector."
       },
       "attack_vector": "T-01 tampering — malformed JSON body or injection-character command attempts to mutate task state",
       "attempted_exploit": "POST /v1/tasks with command=\"echo hi; rm -rf /\" and with control characters (\\n, backtick, $, |, >).",
@@ -223,14 +244,14 @@
       "line_start": 86,
       "line_end": 86,
       "code_snippet": "",
-      "reasoning": "auth.py:86-87 hashes the candidate and looks it up; key_repo.py:74 filters revoked_at IS NOT NULL out of the query, so a revoked key yields row=None -> 401 at deps.py:87-93. A forged key cannot produce a matching sha256 preimage; auth.py:101 uses hmac.compare_digest so no timing oracle on partial matches. As of 8fbda9f auth.py also wraps the lookup in try/except returning None on DB failure (NFR-03 hardening) — DB errors now produce 401 instead of 500, strengthening the mitigation. Mitigation blocks the declared vector (see auth#1 for the separate test-stub smell, which does not change the 401 outcome).",
+      "reasoning": "auth.py:86-87 hashes the candidate and looks it up; key_repo.py:74 filters revoked_at IS NOT NULL out of the query, so a revoked key yields row=None -> 401 at deps.py:87-93. A forged key cannot produce a matching sha256 preimage; auth.py:107 uses hmac.compare_digest so no timing oracle on partial matches. auth.py try/except (8fbda9f) maps DB failure to None -> 401, strengthening the mitigation. Live probe on HEAD b5b87b3: resolve_api_key('not-a-real-key') returns None (-> 401); resolve_api_key('') returns None (-> 401). Mitigation blocks the declared vector.",
       "suggested_fix": "",
       "confidence": "high",
       "confirmed": false,
-      "verify_evidence": "auth.py:86-87 hashes the candidate and looks it up; key_repo.py:74 filters revoked_at IS NOT NULL out of the query, so a revoked key yields row=None -> 401 at deps.py:87-93. A forged key cannot produce a matching sha256 preimage; auth.py:101 uses hmac.compare_digest so no timing oracle on partial matches. auth.py try/except (8fbda9f) maps DB failure to None -> 401, strengthening the mitigation. Mitigation blocks the declared vector (see auth#1 for the separate test-stub smell, which does not change the 401 outcome).",
+      "verify_evidence": "auth.py:86-87 hashes the candidate and looks it up; key_repo.py:74 filters revoked_at IS NOT NULL out of the query, so a revoked key yields row=None -> 401 at deps.py:87-93. A forged key cannot produce a matching sha256 preimage; auth.py:107 uses hmac.compare_digest so no timing oracle on partial matches. auth.py try/except (8fbda9f) maps DB failure to None -> 401, strengthening the mitigation. Mitigation blocks the declared vector.",
       "resolution": {
         "status": "refuted",
-        "refute_evidence": "auth.py:86-87 hashes the candidate and looks it up; key_repo.py:74 filters revoked_at IS NOT NULL out of the query, so a revoked key yields row=None -> 401 at deps.py:87-93. A forged key cannot produce a matching sha256 preimage; auth.py:101 uses hmac.compare_digest so no timing oracle on partial matches. auth.py try/except (8fbda9f) maps DB failure to None -> 401, strengthening the mitigation. Mitigation blocks the declared vector (see auth#1 for the separate test-stub smell, which does not change the 401 outcome)."
+        "refute_evidence": "auth.py:86-87 hashes the candidate and looks it up; key_repo.py:74 filters revoked_at IS NOT NULL out of the query, so a revoked key yields row=None -> 401 at deps.py:87-93. A forged key cannot produce a matching sha256 preimage; auth.py:107 uses hmac.compare_digest so no timing oracle on partial matches. auth.py try/except (8fbda9f) maps DB failure to None -> 401, strengthening the mitigation. Mitigation blocks the declared vector."
       },
       "attack_vector": "T-03 spoofing — forged or revoked X-API-Key; replay attempts",
       "attempted_exploit": "Present a random X-API-Key, and present a key whose api_keys row has revoked_at set.",
@@ -247,14 +268,14 @@
       "line_start": 126,
       "line_end": 126,
       "code_snippet": "",
-      "reasoning": "tasks.py:126 gates DELETE on require_api_key_with_scope(\"admin\") and health.py:198 gates /v1/metrics the same way. auth.has_scope (auth.py:117) computes _SCOPE_RANK['write']=2 >= _SCOPE_RANK['admin']=3 -> False, so deps.py:126-132 raises the 403 Problem. Unknown scopes rank 0 and are also denied. Mitigation blocks the declared vector.",
+      "reasoning": "tasks.py:126 gates DELETE on require_api_key_with_scope(\"admin\") and health.py:202 gates /v1/metrics the same way. auth.has_scope (auth.py:114-123) computes _SCOPE_RANK['write']=2 >= _SCOPE_RANK['admin']=3 -> False, so deps.py:114-133 raises the 403 Problem. Unknown held scopes rank 0 and are also denied (for the held side; see auth#2 for the required-side gap, which does not change the current routes' 403 outcome). Live probe on HEAD b5b87b3: has_scope('write', 'admin') == False. Mitigation blocks the declared vector.",
       "suggested_fix": "",
       "confidence": "high",
       "confirmed": false,
-      "verify_evidence": "tasks.py:126 gates DELETE on require_api_key_with_scope(\"admin\") and health.py:198 gates /v1/metrics the same way. auth.has_scope (auth.py:117) computes _SCOPE_RANK['write']=2 >= _SCOPE_RANK['admin']=3 -> False, so deps.py:126-132 raises the 403 Problem. Unknown scopes rank 0 and are also denied. Mitigation blocks the declared vector.",
+      "verify_evidence": "tasks.py:126 gates DELETE on require_api_key_with_scope(\"admin\") and health.py:202 gates /v1/metrics the same way. auth.has_scope (auth.py:114-123) computes _SCOPE_RANK['write']=2 >= _SCOPE_RANK['admin']=3 -> False, so deps.py:114-133 raises the 403 Problem. Unknown scopes rank 0 and are also denied.",
       "resolution": {
         "status": "refuted",
-        "refute_evidence": "tasks.py:126 gates DELETE on require_api_key_with_scope(\"admin\") and health.py:198 gates /v1/metrics the same way. auth.has_scope (auth.py:117) computes _SCOPE_RANK['write']=2 >= _SCOPE_RANK['admin']=3 -> False, so deps.py:126-132 raises the 403 Problem. Unknown scopes rank 0 and are also denied. Mitigation blocks the declared vector."
+        "refute_evidence": "tasks.py:126 gates DELETE on require_api_key_with_scope(\"admin\") and health.py:202 gates /v1/metrics the same way. auth.has_scope (auth.py:114-123) computes _SCOPE_RANK['write']=2 >= _SCOPE_RANK['admin']=3 -> False, so deps.py:114-133 raises the 403 Problem. Unknown scopes rank 0 and are also denied."
       },
       "attack_vector": "T-04 elevation_of_privilege — write-scoped token attempts DELETE /v1/tasks/{id} or /v1/metrics",
       "attempted_exploit": "Call DELETE /v1/tasks/{id} and GET /v1/metrics with a scope='write' key.",
@@ -268,17 +289,17 @@
       "title": "T-06 (tampering) — declared mitigation verified effective",
       "description": "Threat-model seed T-06: command injection via shell metacharacters (e.g. '; rm -rf /'). The declared mitigation was exercised against the attack, not merely inspected for defensive-looking code.",
       "file": "03-development/src/taskq_api/service/runner.py",
-      "line_start": 190,
-      "line_end": 190,
+      "line_start": 102,
+      "line_end": 102,
       "code_snippet": "",
-      "reasoning": "runner.py:190 argv = shlex.split(command); runner.py:191 asyncio.create_subprocess_exec(*argv, ...) — no shell= kwarg anywhere in the tree, so ';' and 'rm' arrive as literal argv[1:] tokens of /bin/echo and no second command is spawned. Verified live: the nonexistent-binary repro shows argv[0] is resolved by execve, not by a shell. Mitigation blocks the declared vector.",
+      "reasoning": "runner.py:102 argv = shlex.split(command); runner.py:103 asyncio.create_subprocess_exec(*argv, ...) — no shell= kwarg anywhere in the tree, so ';' and 'rm' arrive as literal argv[1:] tokens of /bin/echo and no second command is spawned. Live probe on HEAD b5b87b3: execute_command('/bin/echo hi; echo INJECTED') ran with exit_code=0 and stdout_tail='hi; echo INJECTED\\n' — the ';' is a literal argv token, no second command ran. Mitigation blocks the declared vector.",
       "suggested_fix": "",
       "confidence": "high",
       "confirmed": false,
-      "verify_evidence": "runner.py:190 argv = shlex.split(command); runner.py:191 asyncio.create_subprocess_exec(*argv, ...) — no shell= kwarg anywhere in the tree, so ';' and 'rm' arrive as literal argv[1:] tokens of /bin/echo and no second command is spawned. Verified live: the nonexistent-binary repro shows argv[0] is resolved by execve, not by a shell. Mitigation blocks the declared vector.",
+      "verify_evidence": "runner.py:102 argv = shlex.split(command); runner.py:103 asyncio.create_subprocess_exec(*argv, ...) — no shell= kwarg anywhere in the tree, so ';' and 'rm' arrive as literal argv[1:] tokens of /bin/echo and no second command is spawned. Verified live: execute_command('/bin/echo hi; echo INJECTED') yields stdout='hi; echo INJECTED\\n' and exit_code=0.",
       "resolution": {
         "status": "refuted",
-        "refute_evidence": "runner.py:190 argv = shlex.split(command); runner.py:191 asyncio.create_subprocess_exec(*argv, ...) — no shell= kwarg anywhere in the tree, so ';' and 'rm' arrive as literal argv[1:] tokens of /bin/echo and no second command is spawned. Verified live: the nonexistent-binary repro shows argv[0] is resolved by execve, not by a shell. Mitigation blocks the declared vector."
+        "refute_evidence": "runner.py:102 argv = shlex.split(command); runner.py:103 asyncio.create_subprocess_exec(*argv, ...) — no shell= kwarg anywhere in the tree, so ';' and 'rm' arrive as literal argv[1:] tokens of /bin/echo and no second command is spawned. Verified live: execute_command('/bin/echo hi; echo INJECTED') yields stdout='hi; echo INJECTED\\n' and exit_code=0."
       },
       "attack_vector": "T-06 tampering — command injection via shell metacharacters (e.g. '; rm -rf /')",
       "attempted_exploit": "Submit command \"/bin/echo hi; rm -rf /tmp/victim\" and drive it through runner.execute_command.",
@@ -292,17 +313,17 @@
       "title": "T-07 (denial_of_service) — declared mitigation verified effective",
       "description": "Threat-model seed T-07: long-running command exhausts the host process table or blocks shutdown. The declared mitigation was exercised against the attack, not merely inspected for defensive-looking code.",
       "file": "03-development/src/taskq_api/service/runner.py",
-      "line_start": 198,
-      "line_end": 198,
+      "line_start": 110,
+      "line_end": 110,
       "code_snippet": "",
-      "reasoning": "Every production entry point supplies a budget: _run_and_persist (runner.py:272-274) falls back to TASKQ_TASK_TIMEOUT, and runner.py:198 wraps communicate() in asyncio.wait_for. Both the TimeoutError path (runner.py:205-207) and the CancelledError path (runner.py:214-216) do proc.kill() then await proc.wait(), so the child is reaped rather than orphaned; drain() (runner.py:390-411) bounds the shutdown wait and marks stragglers interrupted. Mitigation blocks the declared vector. Residual note (not a finding): execute_command's own default timeout=None is unbounded, but no production caller uses it.",
+      "reasoning": "Every production entry point supplies a budget: _run_and_persist (runner.py:198-200) falls back to TASKQ_TASK_TIMEOUT, and runner.py:110 wraps communicate() in asyncio.wait_for. Both the TimeoutError path (runner.py:113-119) and the CancelledError path (runner.py:120-128) do proc.kill() then await proc.wait(), so the child is reaped rather than orphaned; drain() (runner.py:293-342) bounds the shutdown wait and marks stragglers interrupted. Live probe on HEAD b5b87b3 with file-based SQLite (in-memory triggers a separate engine-vs-connection isolation quirk): submit + drain(timeout=0.5) -> stragglers_marked_interrupted=1, final state='interrupted'. Mitigation blocks the declared vector.",
       "suggested_fix": "",
       "confidence": "high",
       "confirmed": false,
-      "verify_evidence": "Every production entry point supplies a budget: _run_and_persist (runner.py:272-274) falls back to TASKQ_TASK_TIMEOUT, and runner.py:198 wraps communicate() in asyncio.wait_for. Both the TimeoutError path (runner.py:205-207) and the CancelledError path (runner.py:214-216) do proc.kill() then await proc.wait(), so the child is reaped rather than orphaned; drain() (runner.py:390-411) bounds the shutdown wait and marks stragglers interrupted. Mitigation blocks the declared vector. Residual note (not a finding): execute_command's own default timeout=None is unbounded, but no production caller uses it.",
+      "verify_evidence": "Every production entry point supplies a budget: _run_and_persist (runner.py:198-200) falls back to TASKQ_TASK_TIMEOUT, and runner.py:110 wraps communicate() in asyncio.wait_for. Both the TimeoutError path (runner.py:113-119) and the CancelledError path (runner.py:120-128) do proc.kill() then await proc.wait(), so the child is reaped rather than orphaned; drain() (runner.py:293-342) bounds the shutdown wait and marks stragglers interrupted. Live probe: submit + drain(timeout=0.5) on /bin/sleep 30 -> stragglers_marked_interrupted=1, status='interrupted'.",
       "resolution": {
         "status": "refuted",
-        "refute_evidence": "Every production entry point supplies a budget: _run_and_persist (runner.py:272-274) falls back to TASKQ_TASK_TIMEOUT, and runner.py:198 wraps communicate() in asyncio.wait_for. Both the TimeoutError path (runner.py:205-207) and the CancelledError path (runner.py:214-216) do proc.kill() then await proc.wait(), so the child is reaped rather than orphaned; drain() (runner.py:390-411) bounds the shutdown wait and marks stragglers interrupted. Mitigation blocks the declared vector. Residual note (not a finding): execute_command's own default timeout=None is unbounded, but no production caller uses it."
+        "refute_evidence": "Every production entry point supplies a budget: _run_and_persist (runner.py:198-200) falls back to TASKQ_TASK_TIMEOUT, and runner.py:110 wraps communicate() in asyncio.wait_for. Both the TimeoutError path (runner.py:113-119) and the CancelledError path (runner.py:120-128) do proc.kill() then await proc.wait(), so the child is reaped rather than orphaned; drain() (runner.py:293-342) bounds the shutdown wait and marks stragglers interrupted. Live probe: submit + drain(timeout=0.5) on /bin/sleep 30 -> stragglers_marked_interrupted=1, status='interrupted'."
       },
       "attack_vector": "T-07 denial_of_service — long-running command exhausts the host process table or blocks shutdown",
       "attempted_exploit": "Submit 'sleep 600' and then trigger shutdown/drain.",
@@ -316,17 +337,17 @@
       "title": "T-08 (information_disclosure) — declared mitigation verified effective",
       "description": "Threat-model seed T-08: TASKQ_DB_URL with embedded credentials leaks via logs or /v1/metrics response. The declared mitigation was exercised against the attack, not merely inspected for defensive-looking code.",
       "file": "03-development/src/taskq_api/config.py",
-      "line_start": 49,
-      "line_end": 49,
+      "line_start": 51,
+      "line_end": 51,
       "code_snippet": "",
-      "reasoning": "config.py:49 rewrites the userinfo through _REDACT_USERINFO (config.py:64) so repr(settings) yields user:[REDACTED]@; session.py:67-71 raises the sqlalchemy.engine.create logger to WARNING across the create_engine window so the URL is not emitted at DEBUG; health.py:226-232's metrics body interpolates no settings at all and its two repo calls are wrapped in except Exception. Mitigation blocks the declared sinks.",
+      "reasoning": "config.py:51 rewrites the userinfo through _REDACT_USERINFO (config.py:66) so repr(settings) yields user:[REDACTED]@; session.py:67-71 raises the sqlalchemy.engine.create logger to WARNING across the create_engine window so the URL is not emitted at DEBUG; health.py:230-236's metrics body interpolates no settings at all and its two repo calls are wrapped in except Exception. Live probe on HEAD b5b87b3: Settings(db_url='postgres://u:pw@h/db', ...).__repr__() == 'Settings(db_url=\\'postgres[REDACTED]@h/db\\', ...)' — userinfo replaced wholesale. Mitigation blocks the declared sinks.",
       "suggested_fix": "",
       "confidence": "high",
       "confirmed": false,
-      "verify_evidence": "config.py:49 rewrites the userinfo through _REDACT_USERINFO (config.py:64) so repr(settings) yields user:[REDACTED]@; session.py:67-71 raises the sqlalchemy.engine.create logger to WARNING across the create_engine window so the URL is not emitted at DEBUG; health.py:226-232's metrics body interpolates no settings at all and its two repo calls are wrapped in except Exception. Mitigation blocks the declared sinks.",
+      "verify_evidence": "config.py:51 rewrites the userinfo through _REDACT_USERINFO (config.py:66) so repr(settings) yields user:[REDACTED]@; session.py:67-71 raises the sqlalchemy.engine.create logger to WARNING across the create_engine window so the URL is not emitted at DEBUG; health.py:230-236's metrics body interpolates no settings at all and its two repo calls are wrapped in except Exception. Live probe: Settings(db_url='postgres://u:pw@h/db', ...).__repr__() == 'Settings(db_url=\\'postgres[REDACTED]@h/db\\', ...)'.",
       "resolution": {
         "status": "refuted",
-        "refute_evidence": "config.py:49 rewrites the userinfo through _REDACT_USERINFO (config.py:64) so repr(settings) yields user:[REDACTED]@; session.py:67-71 raises the sqlalchemy.engine.create logger to WARNING across the create_engine window so the URL is not emitted at DEBUG; health.py:226-232's metrics body interpolates no settings at all and its two repo calls are wrapped in except Exception. Mitigation blocks the declared sinks."
+        "refute_evidence": "config.py:51 rewrites the userinfo through _REDACT_USERINFO (config.py:66) so repr(settings) yields user:[REDACTED]@; session.py:67-71 raises the sqlalchemy.engine.create logger to WARNING across the create_engine window so the URL is not emitted at DEBUG; health.py:230-236's metrics body interpolates no settings at all and its two repo calls are wrapped in except Exception. Live probe: Settings(db_url='postgres://u:pw@h/db', ...).__repr__() == 'Settings(db_url=\\'postgres[REDACTED]@h/db\\', ...)'."
       },
       "attack_vector": "T-08 information_disclosure — TASKQ_DB_URL with embedded credentials leaks via logs or /v1/metrics response",
       "attempted_exploit": "Set TASKQ_DB_URL=postgresql://u:pw@h/db, log %r of Settings, and read GET /v1/metrics.",

@@ -1,24 +1,74 @@
-........................................................................ [ 26%]
-........................................................................ [ 52%]
-........................................................................ [ 78%]
-..........................F.................................             [100%]
+........................................................................ [ 25%]
+........................................................................ [ 50%]
+........................................................................ [ 75%]
+....................................................FF............F...   [100%]
 =================================== FAILURES ===================================
-_____________ test_ac_n3_6_failed_migration_rolls_back_readyz_503 ______________
+______ test_ac_n8_2_mutmut_score_at_least_70_over_service_and_repository _______
 
-    def test_ac_n3_6_failed_migration_rolls_back_readyz_503():  # NFR-03
-        """NFR-03 — a forced migration failure surfaces as /readyz 503."""
-        from starlette.testclient import TestClient
-        from taskq_api.app import create_app
+    def test_ac_n8_2_mutmut_score_at_least_70_over_service_and_repository():  # NFR-08
+        """NFR-08 — mutmut score ≥ 70 across service + repository."""
+        if os.environ.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD") == "1":
+            pytest.skip("NFR-08 acceptance check is satisfied by the framework's "
+                        "mutation_testing dimension and would be self-referential "
+                        "under the mutmut baseline env "
+                        "(PYTEST_DISABLE_PLUGIN_AUTOLOAD=1).")
+        score = json.loads(_MUTATION_SCORE.read_text())
+>       assert score.get("score") is not None
+E       AssertionError: assert None is not None
+E        +  where None = <built-in method get of dict object at 0x10c320640>('score')
+E        +    where <built-in method get of dict object at 0x10c320640> = {'could_not_measure': 'mutmut run failed (return code 14).\nSTDOUT:\n236  ⏰ 2  🤔 1  🙁 97  🔇 0\n⠇ 336/339  🎉 236  ⏰ 2  ...a': 'f6d984bc421b502ed104d9a328f053159e44f504', 'generated_at': '2026-08-20T23:51:52.642775+00:00', 'score': None, ...}.get
+
+03-development/tests/test_nfr_spec_coverage.py:682: AssertionError
+___ test_ac_n8_3_mutation_scope_annotated_service_repository_with_rationale ____
+
+    def test_ac_n8_3_mutation_scope_annotated_service_repository_with_rationale():  # NFR-08
+        """NFR-08 — mutation scope lists service + repository with a rationale."""
+        if os.environ.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD") == "1":
+            pytest.skip("NFR-08 acceptance check is satisfied by the framework's "
+                        "mutation_testing dimension and would be self-referential "
+                        "under the mutmut baseline env "
+                        "(PYTEST_DISABLE_PLUGIN_AUTOLOAD=1).")
+        score = json.loads(_MUTATION_SCORE.read_text())
+        paths = score.get("paths_to_mutate", "")
+>       assert "service" in paths
+E       AssertionError: assert 'service' in ''
+
+03-development/tests/test_nfr_spec_coverage.py:695: AssertionError
+_______ test_ac_n12_2_make_verify_system_exits_zero_stdout_contains_pass _______
+
+    def test_ac_n12_2_make_verify_system_exits_zero_stdout_contains_pass():  # NFR-12
+        """NFR-12 — ``make verify-system`` exits 0 and prints ``verify-system: PASS``."""
         import os
-        os.environ["TASKQ_MIGRATION_AUTO_FAIL"] = "1"
-        try:
-            client = TestClient(create_app())
-            r = client.get("/readyz")
->           assert r.status_code == 503
-E           assert 200 == 503
-E            +  where 200 = <Response [200 OK]>.status_code
+    
+        if os.environ.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD") == "1":
+            pytest.skip("NFR-12 acceptance check re-runs the full suite via "
+                        "`make verify-system`; under the mutmut baseline env that "
+                        "would recurse without bound. Gate 3 "
+                        "execute_verification_target records the same measurement.")
+        if os.environ.get(_VERIFY_SYSTEM_SENTINEL):
+            # Inner invocation: we ARE the suite `make verify-system` chains.
+            # Asserting the sentinel proves the target reached the test suite;
+            # re-invoking make here would recurse without bound.
+            assert os.environ[_VERIFY_SYSTEM_SENTINEL] == "1"
+            return
+        proc = subprocess.run(
+            ["make", "verify-system"],
+            capture_output=True, text=True, timeout=900,
+            cwd=str(_REPO_ROOT),
+        )
+>       assert proc.returncode == 0, proc.stdout[-3000:] + proc.stderr[-3000:]
+E       AssertionError:   OPS: Operations Per Second, computed as 1 / Mean
+E         =========================== short test summary info ============================
+E         FAILED 03-development/tests/test_nfr_spec_coverage.py::test_ac_n8_2_mutmut_score_at_least_70_over_service_and_repository
+E         FAILED 03-development/tests/test_nfr_spec_coverage.py::test_ac_n8_3_mutation_scope_annotated_service_repository_with_rationale
+E         2 failed, 284 passed, 12 warnings in 44.12s
+E         verify-system: FAIL
+E         make: *** [verify-system] Error 1
+E         
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['make', 'verify-system'], returncode=2, stdout='  OPS: Operations Per Second, computed as 1 / M...ale\n2 failed, 284 passed, 12 warnings in 44.12s\nverify-system: FAIL\n', stderr='make: *** [verify-system] Error 1\n').returncode
 
-03-development/tests/test_nfr_spec_coverage.py:385: AssertionError
+03-development/tests/test_nfr_spec_coverage.py:978: AssertionError
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/fastapi/testclient.py:1
   /Users/johnny/projects/taskq-cc/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
@@ -45,7 +95,7 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/api/__init__.py                     4      0   100%
 03-development/src/taskq_api/api/deps.py                        33      0   100%
 03-development/src/taskq_api/api/health.py                      67      0   100%
-03-development/src/taskq_api/api/tasks.py                       62      2    97%   149-153
+03-development/src/taskq_api/api/tasks.py                       62      0   100%
 03-development/src/taskq_api/app.py                             80      0   100%
 03-development/src/taskq_api/cli.py                             28      3    89%   45-49
 03-development/src/taskq_api/config.py                          37      0   100%
@@ -66,19 +116,21 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/runner.py                  91      0   100%
 03-development/src/taskq_api/service/tasks.py                   25      0   100%
 ------------------------------------------------------------------------------------------
-TOTAL                                                         1005      5    99%
+TOTAL                                                         1005      3    99%
 
---------------------------------------------------------------------------------------------- benchmark: 3 tests --------------------------------------------------------------------------------------------
-Name (time in us)                 Min                    Max                Mean                StdDev              Median                IQR            Outliers  OPS (Kops/s)            Rounds  Iterations
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-test_perf_get_by_id          242.7500 (1.0)         508.4590 (1.0)      255.7940 (1.0)         18.2933 (1.0)      249.0420 (1.0)      11.6665 (1.0)         57;53        3.9094 (1.0)         521           1
-test_perf_list_paginated     317.6250 (1.31)     25,100.3750 (49.37)    376.3319 (1.47)     1,038.5261 (56.77)    324.7080 (1.30)     14.6885 (1.26)         1;59        2.6572 (0.68)        569           1
-test_perf_create_task        339.0830 (1.40)        896.3330 (1.76)     388.2198 (1.52)        62.4409 (3.41)     368.7295 (1.48)     37.5420 (3.22)        26;26        2.5759 (0.66)        218           1
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------ benchmark: 3 tests -----------------------------------------------------------------------------------------
+Name (time in us)                 Min                 Max                Mean             StdDev              Median                IQR            Outliers  OPS (Kops/s)            Rounds  Iterations
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_perf_get_by_id          237.3330 (1.0)      387.2920 (1.0)      254.4064 (1.0)      20.2519 (1.0)      244.8330 (1.0)      20.7915 (1.0)         82;35        3.9307 (1.0)         561           1
+test_perf_list_paginated     309.2500 (1.30)     635.4170 (1.64)     331.7911 (1.30)     29.7825 (1.47)     316.5000 (1.29)     34.6145 (1.66)        63;10        3.0139 (0.77)        471           1
+test_perf_create_task        321.6250 (1.36)     554.8340 (1.43)     356.1160 (1.40)     30.0605 (1.48)     348.3335 (1.42)     21.8750 (1.05)        21;13        2.8081 (0.71)        208           1
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Legend:
   Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
   OPS: Operations Per Second, computed as 1 / Mean
 =========================== short test summary info ============================
-FAILED 03-development/tests/test_nfr_spec_coverage.py::test_ac_n3_6_failed_migration_rolls_back_readyz_503
-1 failed, 275 passed, 12 warnings in 99.00s (0:01:39)
+FAILED 03-development/tests/test_nfr_spec_coverage.py::test_ac_n8_2_mutmut_score_at_least_70_over_service_and_repository
+FAILED 03-development/tests/test_nfr_spec_coverage.py::test_ac_n8_3_mutation_scope_annotated_service_repository_with_rationale
+FAILED 03-development/tests/test_nfr_spec_coverage.py::test_ac_n12_2_make_verify_system_exits_zero_stdout_contains_pass
+3 failed, 283 passed, 12 warnings in 89.18s (0:01:29)
